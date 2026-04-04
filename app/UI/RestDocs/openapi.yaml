@@ -1,0 +1,17 @@
+openapi: 3.1.0
+info:
+  title: QS Core API
+  version: 1.0.0
+paths:
+  /wp-json/qs/v1/health:
+    get:
+      summary: Health status
+      responses:
+        '200':
+          description: Service health payload
+  /wp-json/qs/v1/version:
+    get:
+      summary: Plugin version info
+      responses:
+        '200':
+          description: Plugin metadata
