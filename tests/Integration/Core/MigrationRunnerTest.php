@@ -11,7 +11,7 @@ use QS\Core\Logging\Logger;
 use QS\Core\Versioning\MigrationRunner;
 use QS\Core\Versioning\PluginVersion;
 use QS\Core\Wordpress\PostTypeRegistrar;
-use QS\Core\Wordpress\RoleRegistrar;
+use QS\Modules\IdentityAccess\Infrastructure\Wordpress\RoleRegistrar;
 use QS\Shared\Testing\WpTestCase;
 
 final class MigrationRunnerTest extends WpTestCase
