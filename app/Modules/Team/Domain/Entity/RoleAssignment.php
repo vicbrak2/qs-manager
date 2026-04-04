@@ -16,4 +16,24 @@ final class RoleAssignment
         private readonly ?DateTimeImmutable $assignedUntil
     ) {
     }
+
+    public function staffId(): StaffId
+    {
+        return $this->staffId;
+    }
+
+    public function role(): string
+    {
+        return $this->role;
+    }
+
+    public function assignedFrom(): DateTimeImmutable
+    {
+        return $this->assignedFrom;
+    }
+
+    public function assignedUntil(): ?DateTimeImmutable
+    {
+        return $this->assignedUntil;
+    }
 }

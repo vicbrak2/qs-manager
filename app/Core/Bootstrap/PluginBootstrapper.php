@@ -18,10 +18,8 @@ final class PluginBootstrapper
 {
     private ?Container $container = null;
 
-    public function __construct(
-        private readonly string $rootDir,
-        private readonly string $pluginFile
-    ) {
+    public function __construct(private readonly string $rootDir)
+    {
     }
 
     public function boot(): void

@@ -60,7 +60,7 @@ if (! file_exists($autoload)) {
 
 require_once $autoload;
 
-$bootstrapper = new PluginBootstrapper(QS_CORE_ROOT_DIR, QS_CORE_PLUGIN_FILE);
+$bootstrapper = new PluginBootstrapper(QS_CORE_ROOT_DIR);
 
 register_activation_hook(
     QS_CORE_PLUGIN_FILE,

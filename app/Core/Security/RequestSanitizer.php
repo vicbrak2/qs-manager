@@ -14,7 +14,7 @@ final class RequestSanitizer
             return (string) sanitize_text_field($normalized);
         }
 
-        return trim(filter_var($normalized, FILTER_UNSAFE_RAW) ?? '');
+        return trim((string) filter_var($normalized, FILTER_UNSAFE_RAW));
     }
 
     public function sanitizeNullableText(mixed $value): ?string

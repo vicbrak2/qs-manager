@@ -1,0 +1,7 @@
+/vendor/
+/.php-cs-fixer.cache
+/var/cache/phpunit/
+/var/cache/phpstan/
+/var/logs/*.log
+/app/UI/Admin/Assets/node_modules/
+/.env

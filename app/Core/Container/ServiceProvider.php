@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace QS\Core\Container;
 
-use DI\autowire;
+use function DI\autowire;
+
 use DI\Container as DiContainer;
-use DI\factory;
-use DI\get;
+
+use function DI\factory;
+use function DI\get;
+
 use Psr\Container\ContainerInterface;
 use QS\Core\Bootstrap\HookLoader;
 use QS\Core\Bootstrap\ModuleRegistry;
@@ -43,8 +46,8 @@ use QS\Modules\IdentityAccess\Infrastructure\Persistence\WpUserRepository;
 use QS\Modules\IdentityAccess\Infrastructure\Wordpress\RoleRegistrar;
 use QS\Modules\IdentityAccess\Interfaces\Hooks\RoleHooks;
 use QS\Modules\Team\Application\QueryHandler\GetAllStaffHandler;
-use QS\Modules\Team\Application\QueryHandler\GetStaffByIdHandler;
 use QS\Modules\Team\Application\QueryHandler\GetStaffAvailabilityHandler;
+use QS\Modules\Team\Application\QueryHandler\GetStaffByIdHandler;
 use QS\Modules\Team\Domain\Repository\StaffRepository;
 use QS\Modules\Team\Domain\Service\AvailabilityChecker;
 use QS\Modules\Team\Infrastructure\Persistence\WpdbStaffRepository;

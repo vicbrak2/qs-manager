@@ -50,10 +50,10 @@ final class ErrorHandler
         $this->logger->error(
             sprintf(
                 'Shutdown error [%d] %s in %s:%d',
-                (int) ($error['type'] ?? 0),
-                (string) ($error['message'] ?? 'Unknown shutdown error'),
-                (string) ($error['file'] ?? 'unknown'),
-                (int) ($error['line'] ?? 0)
+                (int) $error['type'],
+                (string) $error['message'],
+                (string) $error['file'],
+                (int) $error['line']
             )
         );
     }

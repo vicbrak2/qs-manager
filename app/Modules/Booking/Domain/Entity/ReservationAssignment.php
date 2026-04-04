@@ -14,4 +14,14 @@ final class ReservationAssignment
         private readonly StaffId $staffId
     ) {
     }
+
+    public function reservationId(): ReservationId
+    {
+        return $this->reservationId;
+    }
+
+    public function staffId(): StaffId
+    {
+        return $this->staffId;
+    }
 }

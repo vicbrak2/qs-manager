@@ -7,11 +7,11 @@ namespace QS\Modules\Team\Interfaces\Rest;
 use QS\Core\Security\CapabilityChecker;
 use QS\Core\Security\RequestSanitizer;
 use QS\Modules\Team\Application\Query\GetAllStaff;
-use QS\Modules\Team\Application\Query\GetStaffById;
 use QS\Modules\Team\Application\Query\GetStaffAvailability;
+use QS\Modules\Team\Application\Query\GetStaffById;
 use QS\Modules\Team\Application\QueryHandler\GetAllStaffHandler;
-use QS\Modules\Team\Application\QueryHandler\GetStaffByIdHandler;
 use QS\Modules\Team\Application\QueryHandler\GetStaffAvailabilityHandler;
+use QS\Modules\Team\Application\QueryHandler\GetStaffByIdHandler;
 use QS\Modules\Team\Domain\ValueObject\Specialty;
 use QS\Shared\DTO\RestResponse;
 

@@ -13,7 +13,8 @@
     "brain/monkey": "^2.6",
     "phpstan/phpstan": "^1.10",
     "infection/infection": "^0.27",
-    "friendsofphp/php-cs-fixer": "^3.0"
+    "friendsofphp/php-cs-fixer": "^3.0",
+    "php-stubs/wordpress-stubs": "^6.9"
   },
   "autoload": {
     "psr-4": {

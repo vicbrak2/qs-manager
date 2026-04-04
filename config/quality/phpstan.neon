@@ -1,22 +1,13 @@
 parameters:
   level: 6
+  tmpDir: ../../var/cache/phpstan
   paths:
-    - app
-    - tests
+    - ../../app
+    - ../../tests
   excludePaths:
-    - app/UI/Admin/Assets/node_modules
+    - ../../app/UI/Admin/Assets/node_modules
   bootstrapFiles:
-    - vendor/autoload.php
-  ignoreErrors:
-    - '#Function add_action not found#'
-    - '#Function add_filter not found#'
-    - '#Function add_role not found#'
-    - '#Function current_user_can not found#'
-    - '#Function delete_option not found#'
-    - '#Function flush_rewrite_rules not found#'
-    - '#Function get_option not found#'
-    - '#Function get_role not found#'
-    - '#Function register_post_type not found#'
-    - '#Function register_rest_route not found#'
-    - '#Function sanitize_text_field not found#'
-    - '#Function update_option not found#'
+    - ../../vendor/autoload.php
+    - phpstan-bootstrap.php
+  scanFiles:
+    - ../../vendor/php-stubs/wordpress-stubs/wordpress-stubs.php

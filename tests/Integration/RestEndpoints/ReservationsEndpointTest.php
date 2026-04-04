@@ -17,7 +17,7 @@ final class ReservationsEndpointTest extends WpTestCase
             self::markTestSkipped('REST server is not available.');
         }
 
-        $bootstrapper = new PluginBootstrapper(QS_CORE_ROOT_DIR, QS_CORE_ROOT_DIR . '/plugin/qs-core.php');
+        $bootstrapper = new PluginBootstrapper(QS_CORE_ROOT_DIR);
         $bootstrapper->boot();
         do_action('rest_api_init');
 
