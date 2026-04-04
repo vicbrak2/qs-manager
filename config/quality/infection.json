@@ -1,0 +1,16 @@
+{
+  "source": {
+    "directories": [
+      "app"
+    ]
+  },
+  "phpUnit": {
+    "configDir": "."
+  },
+  "logs": {
+    "text": "tools/mutation/reports/infection.log"
+  },
+  "mutators": {
+    "@default": true
+  }
+}

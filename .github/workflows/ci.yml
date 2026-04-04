@@ -1,0 +1,35 @@
+name: QS Core CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: xdebug
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: PHP CS Fixer
+        run: vendor/bin/php-cs-fixer fix --dry-run --config=config/quality/.php-cs-fixer.dist.php
+
+      - name: PHPStan
+        run: vendor/bin/phpstan analyse --configuration=config/quality/phpstan.neon
+
+      - name: PHPUnit
+        run: vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-text
+
+      - name: Infection
+        if: github.event_name == 'pull_request'
+        run: vendor/bin/infection --configuration=config/quality/infection.json --min-msi=65 --threads=4

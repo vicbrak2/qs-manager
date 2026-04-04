@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<ruleset name="QS Core">
+    <description>Baseline coding standard placeholder for QS Core.</description>
+    <file>app</file>
+    <exclude-pattern>app/UI/Admin/Assets/node_modules/*</exclude-pattern>
+</ruleset>
