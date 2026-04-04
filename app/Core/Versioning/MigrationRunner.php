@@ -7,7 +7,7 @@ namespace QS\Core\Versioning;
 use QS\Core\Errors\QsException;
 use QS\Core\Logging\Logger;
 use QS\Core\Wordpress\PostTypeRegistrar;
-use QS\Core\Wordpress\RoleRegistrar;
+use QS\Modules\IdentityAccess\Infrastructure\Wordpress\RoleRegistrar;
 
 final class MigrationRunner
 {

@@ -42,9 +42,28 @@ final class RestRouteRegistrar implements HookableInterface
                 [
                     'methods' => (string) $route['methods'],
                     'callback' => [$controller, (string) $route['action']],
-                    'permission_callback' => (string) ($route['permission_callback'] ?? '__return_true'),
+                    'permission_callback' => $this->resolvePermissionCallback($controller, $route),
+                    'args' => is_array($route['args'] ?? null) ? $route['args'] : [],
                 ]
             );
         }
+    }
+
+    /**
+     * @param array<string, mixed> $route
+     */
+    private function resolvePermissionCallback(object $controller, array $route): callable|string
+    {
+        $permissionCallback = $route['permission_callback'] ?? '__return_true';
+
+        if (is_string($permissionCallback) && method_exists($controller, $permissionCallback)) {
+            return [$controller, $permissionCallback];
+        }
+
+        if (is_callable($permissionCallback)) {
+            return $permissionCallback;
+        }
+
+        return (string) $permissionCallback;
     }
 }

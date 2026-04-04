@@ -11,7 +11,8 @@ use QS\Core\Logging\Logger;
 use QS\Core\Versioning\MigrationRunner;
 use QS\Core\Wordpress\PostTypeRegistrar;
 use QS\Core\Wordpress\RestRouteRegistrar;
-use QS\Core\Wordpress\RoleRegistrar;
+use QS\Modules\IdentityAccess\Infrastructure\Wordpress\RoleRegistrar;
+use QS\Modules\IdentityAccess\Interfaces\Hooks\RoleHooks;
 
 final class PluginBootstrapper
 {
@@ -31,6 +32,7 @@ final class PluginBootstrapper
         $container->get(ModuleRegistry::class);
         $container->get(HookLoader::class)->register([
             $container->get(RoleRegistrar::class),
+            $container->get(RoleHooks::class),
             $container->get(PostTypeRegistrar::class),
             $container->get(RestRouteRegistrar::class),
         ]);

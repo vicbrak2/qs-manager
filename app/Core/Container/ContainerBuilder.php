@@ -6,6 +6,7 @@ namespace QS\Core\Container;
 
 use DI\Container;
 use DI\ContainerBuilder as DiContainerBuilder;
+use Dotenv\Dotenv;
 use QS\Core\Config\EnvironmentDetector;
 
 final class ContainerBuilder
@@ -16,6 +17,10 @@ final class ContainerBuilder
 
     public function build(): Container
     {
+        if (file_exists($this->rootDir . '/.env')) {
+            Dotenv::createImmutable($this->rootDir)->safeLoad();
+        }
+
         $builder = new DiContainerBuilder();
         $environmentDetector = new EnvironmentDetector();
 

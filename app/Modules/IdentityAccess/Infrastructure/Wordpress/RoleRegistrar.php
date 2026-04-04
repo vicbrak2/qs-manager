@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace QS\Core\Wordpress;
+namespace QS\Modules\IdentityAccess\Infrastructure\Wordpress;
 
 use QS\Core\Config\ConfigLoader;
 use QS\Core\Contracts\HookableInterface;
