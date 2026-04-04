@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'name' => 'finance',
-    'enabled' => false,
+    'enabled' => true,
     'phase' => 2,
     'description' => 'Control financiero y resumenes mensuales.',
 ];

@@ -28,6 +28,17 @@ use QS\Core\Versioning\PluginVersion;
 use QS\Core\Wordpress\PostTypeRegistrar;
 use QS\Core\Wordpress\RestRouteRegistrar;
 use QS\Interfaces\Rest\SystemController;
+use QS\Modules\Bitacora\Application\CommandHandler\AddBitacoraNoteHandler;
+use QS\Modules\Bitacora\Application\CommandHandler\CreateBitacoraHandler;
+use QS\Modules\Bitacora\Application\CommandHandler\UpdateBitacoraHandler;
+use QS\Modules\Bitacora\Application\QueryHandler\GetBitacoraByIdHandler;
+use QS\Modules\Bitacora\Application\QueryHandler\GetBitacorasHandler;
+use QS\Modules\Bitacora\Application\QueryHandler\GetBitacoraSummaryHandler;
+use QS\Modules\Bitacora\Domain\Policy\BitacoraPolicy;
+use QS\Modules\Bitacora\Domain\Repository\BitacoraRepository;
+use QS\Modules\Bitacora\Infrastructure\Persistence\CptBitacoraRepository;
+use QS\Modules\Bitacora\Infrastructure\Persistence\MetaFieldMapper;
+use QS\Modules\Bitacora\Interfaces\Rest\BitacoraController;
 use QS\Modules\Booking\Application\QueryHandler\GetAllReservationsHandler;
 use QS\Modules\Booking\Application\QueryHandler\GetMuaAgendaHandler;
 use QS\Modules\Booking\Application\QueryHandler\GetReservationByIdHandler;
@@ -38,6 +49,20 @@ use QS\Modules\Booking\Infrastructure\Persistence\WpdbLatepointRepository;
 use QS\Modules\Booking\Infrastructure\Wordpress\LatepointTableMap;
 use QS\Modules\Booking\Interfaces\Rest\MuaAgendaController;
 use QS\Modules\Booking\Interfaces\Rest\ReservationsController;
+use QS\Modules\Finance\Application\CommandHandler\RegisterPaymentHandler;
+use QS\Modules\Finance\Application\QueryHandler\GetExpensesHandler;
+use QS\Modules\Finance\Application\QueryHandler\GetMonthlyFinanceSummaryHandler;
+use QS\Modules\Finance\Application\QueryHandler\GetPaymentsHandler;
+use QS\Modules\Finance\Application\QueryHandler\GetServiceMarginHandler;
+use QS\Modules\Finance\Domain\Repository\ExpenseRepository;
+use QS\Modules\Finance\Domain\Repository\PaymentRepository;
+use QS\Modules\Finance\Domain\Repository\ServiceCostRepository;
+use QS\Modules\Finance\Domain\Service\MarginCalculator;
+use QS\Modules\Finance\Domain\Service\MonthlySummaryBuilder;
+use QS\Modules\Finance\Infrastructure\Persistence\ExpenseCptRepository;
+use QS\Modules\Finance\Infrastructure\Persistence\PaymentCptRepository;
+use QS\Modules\Finance\Infrastructure\Persistence\WpServiceCostRepository;
+use QS\Modules\Finance\Interfaces\Rest\FinanceController;
 use QS\Modules\IdentityAccess\Application\CommandHandler\AssignQsRoleHandler;
 use QS\Modules\IdentityAccess\Application\QueryHandler\GetUserPermissionsHandler;
 use QS\Modules\IdentityAccess\Domain\Policy\AccessPolicy;
@@ -98,6 +123,15 @@ final class ServiceProvider
             RoleHooks::class => autowire(),
             PostTypeRegistrar::class => autowire(),
             RestRouteRegistrar::class => autowire(),
+            MetaFieldMapper::class => autowire(),
+            BitacoraPolicy::class => autowire(),
+            BitacoraRepository::class => autowire(CptBitacoraRepository::class),
+            GetBitacorasHandler::class => autowire(),
+            GetBitacoraByIdHandler::class => autowire(),
+            GetBitacoraSummaryHandler::class => autowire(),
+            CreateBitacoraHandler::class => autowire(),
+            UpdateBitacoraHandler::class => autowire(),
+            AddBitacoraNoteHandler::class => autowire(),
             StaffRepository::class => autowire(WpdbStaffRepository::class),
             AvailabilityChecker::class => autowire(),
             GetAllStaffHandler::class => autowire(),
@@ -110,6 +144,16 @@ final class ServiceProvider
             GetTodayReservationsHandler::class => autowire(),
             GetReservationByIdHandler::class => autowire(),
             GetMuaAgendaHandler::class => autowire(),
+            PaymentRepository::class => autowire(PaymentCptRepository::class),
+            ExpenseRepository::class => autowire(ExpenseCptRepository::class),
+            ServiceCostRepository::class => autowire(WpServiceCostRepository::class),
+            MarginCalculator::class => autowire(),
+            MonthlySummaryBuilder::class => autowire(),
+            GetMonthlyFinanceSummaryHandler::class => autowire(),
+            GetServiceMarginHandler::class => autowire(),
+            GetPaymentsHandler::class => autowire(),
+            RegisterPaymentHandler::class => autowire(),
+            GetExpensesHandler::class => autowire(),
             AssignQsRoleHandler::class => autowire(),
             GetUserPermissionsHandler::class => autowire(),
             MigrationRunner::class => autowire()->constructor(
@@ -120,9 +164,11 @@ final class ServiceProvider
                 get(PostTypeRegistrar::class)
             ),
             SystemController::class => autowire(),
+            BitacoraController::class => autowire(),
             StaffController::class => autowire(),
             ReservationsController::class => autowire(),
             MuaAgendaController::class => autowire(),
+            FinanceController::class => autowire(),
         ];
     }
 }
