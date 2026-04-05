@@ -10,7 +10,8 @@ final class ReindexContentHandler
 {
     public function __construct(
         private readonly IngestGateway $gateway
-    ) {}
+    ) {
+    }
 
     /**
      * Itera todos los posts publicados y los envía al pipeline RAG.

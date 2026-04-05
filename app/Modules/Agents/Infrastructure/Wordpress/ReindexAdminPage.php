@@ -11,7 +11,8 @@ final class ReindexAdminPage implements HookableInterface
 {
     public function __construct(
         private readonly ReindexContentHandler $handler
-    ) {}
+    ) {
+    }
 
     public function register(): void
     {
