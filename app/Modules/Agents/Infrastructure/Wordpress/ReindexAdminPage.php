@@ -34,6 +34,7 @@ final class ReindexAdminPage implements HookableInterface
 
         add_action('admin_menu', [$this, 'registerPage']);
         add_action('wp_ajax_qs_reindex_all', [$this, 'handleAjax']);
+        add_action('wp_ajax_qs_test_connectivity', [$this, 'handleConnectivityTest']);
         add_action('admin_post_qs_save_chatbot_settings', [$this, 'handleSettingsSave']);
         add_action('admin_post_qs_upload_context_document', [$this, 'handleContextUpload']);
     }
@@ -58,6 +59,7 @@ final class ReindexAdminPage implements HookableInterface
     public function render(): void
     {
         $nonce = wp_create_nonce('qs_reindex_nonce');
+        $connectivityNonce = wp_create_nonce('qs_connectivity_nonce');
         $chatbotUrl = $this->option(self::CHATBOT_URL_OPTION);
         $ingestUrl = $this->option(self::INGEST_URL_OPTION);
         $qdrantUrl = $this->option(self::QDRANT_URL_OPTION);
@@ -153,6 +155,19 @@ final class ReindexAdminPage implements HookableInterface
 
                 <?php submit_button('Guardar configuracion'); ?>
             </form>
+
+            <p style="margin-top:16px;">
+                <button id="qs-test-connectivity-btn" class="button button-secondary">Probar conectividad</button>
+            </p>
+            <p class="description" style="max-width:960px;">
+                Usa las URLs escritas actualmente en el formulario, aunque aun no las hayas guardado.<br>
+                La prueba de ingesta envia un documento tecnico minimo al webhook para diagnosticar el HTTP/body del pipeline.
+            </p>
+
+            <div id="qs-connectivity-status" style="margin-top:16px;padding:12px;background:#f6f7f7;border-left:4px solid #ccc;display:none;">
+                <span id="qs-connectivity-msg">Probando conectividad…</span>
+                <pre id="qs-connectivity-detail" style="white-space:pre-wrap;margin-top:12px;display:none;"></pre>
+            </div>
 
             <hr style="margin:24px 0;">
 
@@ -306,6 +321,67 @@ final class ReindexAdminPage implements HookableInterface
                 btn.textContent = 'Iniciar re-indexación';
             });
         });
+
+        document.getElementById('qs-test-connectivity-btn').addEventListener('click', function () {
+            const btn = this;
+            const status = document.getElementById('qs-connectivity-status');
+            const msg = document.getElementById('qs-connectivity-msg');
+            const detail = document.getElementById('qs-connectivity-detail');
+
+            btn.disabled = true;
+            btn.textContent = 'Probando…';
+            status.style.display = 'block';
+            status.style.borderLeftColor = '#007cba';
+            msg.textContent = 'Ejecutando pruebas desde WordPress…';
+            detail.style.display = 'none';
+            detail.textContent = '';
+
+            fetch(ajaxurl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    action: 'qs_test_connectivity',
+                    nonce: '<?php echo esc_js($connectivityNonce); ?>',
+                    chatbot_url: document.getElementById('qs_n8n_chatbot_url').value || '',
+                    ingest_url: document.getElementById('qs_n8n_ingest_url').value || '',
+                    qdrant_url: document.getElementById('qs_qdrant_url').value || ''
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) {
+                    status.style.borderLeftColor = '#dc3232';
+                    msg.textContent = '✗ Error: ' + (data.data || 'Error desconocido');
+                    return;
+                }
+
+                const tests = Array.isArray(data.data.tests) ? data.data.tests : [];
+                const ok = tests.every(item => item.ok === true);
+
+                status.style.borderLeftColor = ok ? '#46b450' : '#dba617';
+                msg.textContent = ok
+                    ? '✓ Conectividad verificada.'
+                    : '⚠ Hay servicios con error. Revisa el detalle.';
+
+                detail.style.display = 'block';
+                detail.textContent = tests.map(item =>
+                    '[' + item.service + '] ' + (item.ok ? 'OK' : 'ERROR') + '\n' +
+                    'URL: ' + (item.url || '-') + '\n' +
+                    'Metodo: ' + (item.method || '-') + '\n' +
+                    (item.status_code ? 'HTTP: ' + item.status_code + '\n' : '') +
+                    (item.error ? 'Error: ' + item.error + '\n' : '') +
+                    (item.response_body ? 'Body: ' + item.response_body + '\n' : '')
+                ).join('\n');
+            })
+            .catch(() => {
+                status.style.borderLeftColor = '#dc3232';
+                msg.textContent = '✗ Error de red al ejecutar la prueba.';
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.textContent = 'Probar conectividad';
+            });
+        });
         </script>
         <?php
     }
@@ -320,6 +396,38 @@ final class ReindexAdminPage implements HookableInterface
 
         $result = $this->handler->handle();
         wp_send_json_success($result);
+    }
+
+    public function handleConnectivityTest(): void
+    {
+        check_ajax_referer('qs_connectivity_nonce', 'nonce');
+
+        if (! current_user_can('manage_options')) {
+            wp_send_json_error('Permisos insuficientes.', 403);
+        }
+
+        $chatbotUrl = $this->postedTestUrl('chatbot_url', $this->chatbotGateway->webhookUrl());
+        $ingestUrl = $this->postedTestUrl('ingest_url', $this->ingestGateway->webhookUrl());
+        $qdrantUrl = $this->postedTestUrl('qdrant_url', $this->effectiveQdrantUrl());
+
+        $tests = [
+            $this->probeGetEndpoint('n8n_health', $this->replacePath($chatbotUrl, '/healthz')),
+            $this->probeJsonEndpoint('chatbot_webhook', $chatbotUrl, [
+                'message' => '[diagnostic] ping',
+                'session_id' => 'qs_admin_probe',
+            ]),
+            $this->probeJsonEndpoint('ingest_webhook', $ingestUrl, [
+                'post_id' => 0,
+                'title' => '[diagnostic] qs connectivity probe',
+                'url' => 'context://diagnostics/ingest-probe',
+                'content' => 'Connectivity probe from WordPress admin.',
+            ]),
+            $this->probeGetEndpoint('qdrant', $qdrantUrl),
+        ];
+
+        wp_send_json_success([
+            'tests' => $tests,
+        ]);
     }
 
     public function handleSettingsSave(): void
@@ -427,6 +535,13 @@ final class ReindexAdminPage implements HookableInterface
         return is_string($value) ? trim(esc_url_raw($value)) : '';
     }
 
+    private function postedTestUrl(string $key, string $fallback): string
+    {
+        $value = $this->postedUrl($key);
+
+        return $value !== '' ? $value : $fallback;
+    }
+
     private function storeOption(string $key, string $value): void
     {
         if ($value === '') {
@@ -449,6 +564,162 @@ final class ReindexAdminPage implements HookableInterface
         }
 
         return add_query_arg($queryArgs, $url);
+    }
+
+    /**
+     * @param array<string, scalar> $payload
+     * @return array<string, mixed>
+     */
+    private function probeJsonEndpoint(string $service, string $url, array $payload): array
+    {
+        $body = wp_json_encode($payload);
+
+        if (! is_string($body)) {
+            return [
+                'service' => $service,
+                'url' => $url,
+                'method' => 'POST',
+                'ok' => false,
+                'status_code' => null,
+                'error' => 'No se pudo serializar el payload de prueba.',
+                'response_body' => '',
+            ];
+        }
+
+        return $this->probeRequest($service, 'POST', $url, [
+            'body' => $body,
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ],
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function probeGetEndpoint(string $service, string $url): array
+    {
+        return $this->probeRequest($service, 'GET', $url, [
+            'headers' => [
+                'Accept' => 'application/json',
+            ],
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $args
+     * @return array<string, mixed>
+     */
+    private function probeRequest(string $service, string $method, string $url, array $args): array
+    {
+        $startedAt = microtime(true);
+        $response = wp_remote_request($url, array_merge($args, [
+            'method' => $method,
+            'timeout' => 20,
+        ]));
+        $latencyMs = (int) round((microtime(true) - $startedAt) * 1000);
+
+        if (is_wp_error($response)) {
+            return [
+                'service' => $service,
+                'url' => $url,
+                'method' => $method,
+                'ok' => false,
+                'status_code' => null,
+                'latency_ms' => $latencyMs,
+                'error' => $response->get_error_message(),
+                'response_body' => '',
+            ];
+        }
+
+        $statusCode = (int) wp_remote_retrieve_response_code($response);
+        $responseBody = $this->truncateResponseBody((string) wp_remote_retrieve_body($response));
+
+        return [
+            'service' => $service,
+            'url' => $url,
+            'method' => $method,
+            'ok' => $statusCode >= 200 && $statusCode < 300,
+            'status_code' => $statusCode,
+            'latency_ms' => $latencyMs,
+            'error' => $statusCode >= 200 && $statusCode < 300 ? null : 'HTTP ' . $statusCode,
+            'response_body' => $responseBody,
+        ];
+    }
+
+    private function truncateResponseBody(string $body, int $limit = 1200): string
+    {
+        $body = trim($body);
+
+        if ($body === '') {
+            return '';
+        }
+
+        if (strlen($body) <= $limit) {
+            return $body;
+        }
+
+        return substr($body, 0, $limit) . '...';
+    }
+
+    private function effectiveQdrantUrl(): string
+    {
+        if (defined('QDRANT_STATUS_URL') && is_string(QDRANT_STATUS_URL) && trim(QDRANT_STATUS_URL) !== '') {
+            return trim(QDRANT_STATUS_URL);
+        }
+
+        $envStatus = $this->env('QDRANT_STATUS_URL');
+
+        if ($envStatus !== '') {
+            return $envStatus;
+        }
+
+        if (defined('QDRANT_URL') && is_string(QDRANT_URL) && trim(QDRANT_URL) !== '') {
+            return $this->replacePath(trim(QDRANT_URL), '/');
+        }
+
+        $envQdrant = $this->env('QDRANT_URL');
+
+        if ($envQdrant !== '') {
+            return $this->replacePath($envQdrant, '/');
+        }
+
+        $optionValue = $this->option(self::QDRANT_URL_OPTION);
+
+        if ($optionValue !== '') {
+            return $this->replacePath($optionValue, '/');
+        }
+
+        return 'http://localhost:6333/';
+    }
+
+    private function env(string $name, string $default = ''): string
+    {
+        $value = getenv($name);
+
+        if (is_string($value) && trim($value) !== '') {
+            return trim($value);
+        }
+
+        return $default;
+    }
+
+    private function replacePath(string $url, string $path): string
+    {
+        $parts = wp_parse_url($url);
+
+        if (! is_array($parts) || ! isset($parts['scheme'], $parts['host'])) {
+            return $url;
+        }
+
+        $rebuilt = $parts['scheme'] . '://' . $parts['host'];
+
+        if (isset($parts['port'])) {
+            $rebuilt .= ':' . $parts['port'];
+        }
+
+        return $rebuilt . $path;
     }
 
     /**
