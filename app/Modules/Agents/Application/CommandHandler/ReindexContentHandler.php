@@ -8,6 +8,8 @@ use QS\Modules\Agents\Infrastructure\N8n\IngestGateway;
 
 final class ReindexContentHandler
 {
+    private const CONTEXT_DOCUMENTS_OPTION = 'qs_chatbot_context_documents';
+
     public function __construct(
         private readonly IngestGateway $gateway
     ) {
@@ -71,6 +73,73 @@ final class ReindexContentHandler
             ];
         }
 
+        foreach ($this->contextDocuments() as $document) {
+            $result = $this->gateway->ingestWithDiagnostics(
+                $this->syntheticPostId($document['id']),
+                $document['title'],
+                $document['url'],
+                $document['content']
+            );
+
+            if ($result['ok']) {
+                $indexed++;
+                continue;
+            }
+
+            $failed++;
+            $failures[] = [
+                'post_id' => $this->syntheticPostId($document['id']),
+                'title' => $document['title'],
+                'error' => $result['error'],
+                'status_code' => $result['status_code'],
+                'webhook_url' => $result['webhook_url'],
+                'response_body' => $result['response_body'],
+            ];
+        }
+
         return compact('indexed', 'failed', 'failures');
+    }
+
+    /**
+     * @return array<int, array{id: string, title: string, url: string, content: string}>
+     */
+    private function contextDocuments(): array
+    {
+        $documents = get_option(self::CONTEXT_DOCUMENTS_OPTION, []);
+
+        if (! is_array($documents)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($documents as $document) {
+            if (! is_array($document)) {
+                continue;
+            }
+
+            $id = isset($document['id']) && is_string($document['id']) ? trim($document['id']) : '';
+            $title = isset($document['title']) && is_string($document['title']) ? trim($document['title']) : '';
+            $url = isset($document['url']) && is_string($document['url']) ? trim($document['url']) : '';
+            $content = isset($document['content']) && is_string($document['content']) ? $document['content'] : '';
+
+            if ($id === '' || $title === '' || trim($content) === '') {
+                continue;
+            }
+
+            $normalized[] = [
+                'id' => $id,
+                'title' => $title,
+                'url' => $url !== '' ? $url : 'context://manual/' . $id,
+                'content' => $content,
+            ];
+        }
+
+        return $normalized;
+    }
+
+    private function syntheticPostId(string $seed): int
+    {
+        return (int) sprintf('%u', crc32($seed));
     }
 }
