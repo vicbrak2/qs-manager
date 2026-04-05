@@ -80,7 +80,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: qs-core-package
-          path: .
+          path: dist
 
       - name: Deploy to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
