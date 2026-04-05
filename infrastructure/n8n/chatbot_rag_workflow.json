@@ -5,38 +5,33 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "wp-chatbot-rag",
-        "responseMode": "responseNode",
+        "responseMode": "lastNode",
         "options": {}
       },
       "name": "Webhook (WP REST API)",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [0, 0]
+      "position": [
+        0,
+        0
+      ]
     },
     {
       "parameters": {
         "promptType": "define",
         "text": "={{ $json.body.message }}",
         "options": {
-          "systemMessage": "Eres el asistente virtual de QS Manager, un sistema de gestión de citas y servicios. Tu rol es ayudar a los usuarios a encontrar información sobre servicios disponibles, horarios, precios, profesionales y procedimientos de reserva.\n\nReglas:\n- Responde SIEMPRE en español, de forma clara y amigable.\n- Basa tus respuestas ÚNICAMENTE en la información recuperada de la base de conocimientos (contexto RAG). No inventes datos.\n- Si no encuentras información relevante en el contexto, indica al usuario que no tienes esa información disponible y sugiere que contacte directamente al negocio.\n- Para preguntas sobre disponibilidad en tiempo real o para hacer reservas, indica al usuario que use el formulario de reserva del sitio.\n- Sé conciso: respuestas de máximo 3-4 oraciones salvo que el usuario pida más detalle.\n- Nunca menciones que eres un modelo de lenguaje, n8n, ni la infraestructura técnica."
-        }
+          "systemMessage": "Eres un asistente virtual amigable. Responde a las consultas del usuario basandote unicamente en la informacion obtenida a traves de tus herramientas de contexto. Responde en espanol."
+        },
+        "agent": "toolsAgent"
       },
       "name": "AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.4,
-      "position": [250, 0]
-    },
-    {
-      "parameters": {
-        "model": "llama3-70b-8192",
-        "options": {
-          "temperature": 0.3
-        }
-      },
-      "name": "Groq Chat Model",
-      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
-      "typeVersion": 1.1,
-      "position": [100, 250]
+      "position": [
+        256,
+        0
+      ]
     },
     {
       "parameters": {
@@ -47,38 +42,55 @@
       "name": "Window Buffer Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.2,
-      "position": [300, 250]
+      "position": [
+        304,
+        256
+      ]
     },
     {
       "parameters": {
-        "mode": "retrieve",
+        "qdrantCollection": "wordpress_context",
+        "options": {},
         "collectionName": "wordpress_context",
-        "options": {}
+        "collection": "wordpress_context",
+        "mode": "retrieve-as-tool",
+        "toolName": "knowledge_base",
+        "toolDescription": "Busca informacion sobre servicios, precios, horarios y profesionales disponibles en QS Manager",
+        "topK": 4,
+        "includeDocumentMetadata": true
       },
       "name": "Qdrant Vector Store Tool",
       "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
       "typeVersion": 1,
-      "position": [500, 250]
-    },
-    {
-      "parameters": {},
-      "name": "Hugging Face Embeddings",
-      "type": "@n8n/n8n-nodes-langchain.embeddingsHuggingFace",
-      "typeVersion": 1,
-      "position": [500, 450]
+      "position": [
+        512,
+        256
+      ]
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ reply: $json.output, session_id: $('Webhook (WP REST API)').item.json.body.session_id }) }}",
-        "options": {
-          "responseCode": 200
-        }
+        "options": {},
+        "model": "llama-3.3-70b-versatile"
       },
-      "name": "Respond to Webhook",
-      "type": "n8n-nodes-base.respondToWebhook",
+      "name": "Groq Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
       "typeVersion": 1,
-      "position": [500, 0]
+      "position": [
+        128,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Embeddings HuggingFace Inference",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsHuggingFaceInference",
+      "typeVersion": 1,
+      "position": [
+        496,
+        480
+      ]
     }
   ],
   "connections": {
@@ -88,28 +100,6 @@
           {
             "node": "AI Agent",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "AI Agent": {
-      "main": [
-        [
-          {
-            "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Groq Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_languageModel",
             "index": 0
           }
         ]
@@ -137,7 +127,18 @@
         ]
       ]
     },
-    "Hugging Face Embeddings": {
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings HuggingFace Inference": {
       "ai_embedding": [
         [
           {
@@ -148,5 +149,6 @@
         ]
       ]
     }
-  }
+  },
+  "settings": {}
 }
