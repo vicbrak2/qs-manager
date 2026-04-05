@@ -12,8 +12,7 @@ final class IngestGateway
 
     public function __construct(
         private readonly Logger $logger
-    )
-    {
+    ) {
         $this->webhookUrl = $this->resolveWebhookUrl();
     }
 
