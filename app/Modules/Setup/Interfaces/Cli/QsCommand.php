@@ -79,7 +79,7 @@ final class QsCommand
 
         $this->render($result);
 
-        if (($result['failed'] ?? 0) > 0) {
+        if ($result['failed'] > 0) {
             $this->warning('La reindexacion termino con documentos fallidos.');
             return;
         }
@@ -178,8 +178,10 @@ final class QsCommand
 
     private function invokeCliMethod(string $method, string $message): void
     {
-        if (is_callable(['\WP_CLI', $method])) {
-            call_user_func(['\WP_CLI', $method], $message);
+        $className = '\WP_CLI';
+
+        if (class_exists($className) && is_callable([$className, $method])) {
+            $className::$method($message);
             return;
         }
 
