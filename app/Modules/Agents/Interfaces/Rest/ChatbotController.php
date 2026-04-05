@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QS\Modules\Agents\Interfaces\Rest;
 
 use QS\Modules\Agents\Infrastructure\N8n\ChatbotGateway;
+use QS\Modules\Agents\Infrastructure\Wordpress\ChatbotFallbackResponder;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -12,7 +13,8 @@ use WP_REST_Response;
 final class ChatbotController
 {
     public function __construct(
-        private readonly ChatbotGateway $gateway
+        private readonly ChatbotGateway $gateway,
+        private readonly ChatbotFallbackResponder $fallbackResponder
     ) {
     }
 
@@ -31,6 +33,10 @@ final class ChatbotController
         $reply = $this->gateway->ask($message, $sessionId);
 
         if (is_wp_error($reply)) {
+            if ($this->shouldUseFallback($reply)) {
+                return new WP_REST_Response($this->fallbackResponder->unavailableResponse($reply), 200);
+            }
+
             return $reply;
         }
 
@@ -38,5 +44,20 @@ final class ChatbotController
             'success'  => true,
             'response' => $reply,
         ], 200);
+    }
+
+    private function shouldUseFallback(WP_Error $error): bool
+    {
+        if ($error->get_error_code() === 'n8n_connection_error') {
+            return true;
+        }
+
+        $data = $error->get_error_data();
+
+        if (! is_array($data) || ! isset($data['status']) || ! is_numeric($data['status'])) {
+            return false;
+        }
+
+        return (int) $data['status'] >= 500;
     }
 }
