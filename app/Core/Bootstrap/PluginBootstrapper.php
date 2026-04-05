@@ -11,6 +11,7 @@ use QS\Core\Logging\Logger;
 use QS\Core\Versioning\MigrationRunner;
 use QS\Core\Wordpress\PostTypeRegistrar;
 use QS\Core\Wordpress\RestRouteRegistrar;
+use QS\Modules\Agents\Infrastructure\Wordpress\ChatbotShortcode;
 use QS\Modules\Agents\Infrastructure\Wordpress\ReindexAdminPage;
 use QS\Modules\IdentityAccess\Infrastructure\Wordpress\RoleRegistrar;
 use QS\Modules\IdentityAccess\Interfaces\Hooks\RoleHooks;
@@ -52,6 +53,7 @@ final class PluginBootstrapper
             $container->get(PostTypeRegistrar::class),
             $container->get(RestRouteRegistrar::class),
             $container->get(ReindexAdminPage::class),
+            $container->get(ChatbotShortcode::class),
             $container->get(CliCommandRegistrar::class),
         ]);
     }
