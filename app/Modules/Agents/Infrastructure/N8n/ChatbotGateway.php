@@ -12,9 +12,7 @@ final class ChatbotGateway
 
     public function __construct()
     {
-        $this->webhookUrl = defined('QS_N8N_CHATBOT_URL')
-            ? QS_N8N_CHATBOT_URL
-            : 'http://localhost:5678/webhook/wp-chatbot-rag';
+        $this->webhookUrl = $this->resolveWebhookUrl();
     }
 
     /**
@@ -67,5 +65,20 @@ final class ChatbotGateway
 
         // El workflow activo puede devolver 'reply' (Respond to Webhook) u 'output' (lastNode del AI Agent)
         return (string) ($body['reply'] ?? $body['output'] ?? $body['response'] ?? '');
+    }
+
+    private function resolveWebhookUrl(): string
+    {
+        if (defined('QS_N8N_CHATBOT_URL') && is_string(QS_N8N_CHATBOT_URL) && QS_N8N_CHATBOT_URL !== '') {
+            return QS_N8N_CHATBOT_URL;
+        }
+
+        $envValue = getenv('QS_N8N_CHATBOT_URL');
+
+        if (is_string($envValue) && trim($envValue) !== '') {
+            return trim($envValue);
+        }
+
+        return 'http://localhost:5678/webhook/wp-chatbot-rag';
     }
 }

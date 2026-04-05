@@ -58,6 +58,7 @@ final class ReindexAdminPage implements HookableInterface
 
             <div id="qs-reindex-status" style="margin-top:16px;padding:12px;background:#f6f7f7;border-left:4px solid #ccc;display:none;">
                 <span id="qs-reindex-msg">Procesando…</span>
+                <pre id="qs-reindex-detail" style="white-space:pre-wrap;margin-top:12px;display:none;"></pre>
             </div>
         </div>
 
@@ -66,12 +67,15 @@ final class ReindexAdminPage implements HookableInterface
             const btn    = this;
             const status = document.getElementById('qs-reindex-status');
             const msg    = document.getElementById('qs-reindex-msg');
+            const detail = document.getElementById('qs-reindex-detail');
 
             btn.disabled = true;
             btn.textContent = 'Procesando…';
             status.style.display = 'block';
             status.style.borderLeftColor = '#007cba';
             msg.textContent = 'Enviando contenido a Qdrant, por favor espera…';
+            detail.style.display = 'none';
+            detail.textContent = '';
 
             fetch(ajaxurl, {
                 method: 'POST',
@@ -84,8 +88,23 @@ final class ReindexAdminPage implements HookableInterface
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    status.style.borderLeftColor = '#46b450';
-                    msg.textContent = '✓ Completado: ' + data.data.indexed + ' documentos indexados, ' + data.data.failed + ' fallidos.';
+                    const failures = Array.isArray(data.data.failures) ? data.data.failures : [];
+
+                    if ((data.data.failed || 0) > 0) {
+                        status.style.borderLeftColor = '#dba617';
+                        msg.textContent = '⚠ Completado: ' + data.data.indexed + ' documentos indexados, ' + data.data.failed + ' fallidos.';
+                        detail.style.display = 'block';
+                        detail.textContent = failures.slice(0, 5).map(item =>
+                            '#'+ item.post_id + ' ' + item.title + '\n' +
+                            'Error: ' + (item.error || 'sin detalle') + '\n' +
+                            'Webhook: ' + (item.webhook_url || '-') + '\n' +
+                            (item.status_code ? 'HTTP: ' + item.status_code + '\n' : '') +
+                            (item.response_body ? 'Body: ' + item.response_body + '\n' : '')
+                        ).join('\n');
+                    } else {
+                        status.style.borderLeftColor = '#46b450';
+                        msg.textContent = '✓ Completado: ' + data.data.indexed + ' documentos indexados, ' + data.data.failed + ' fallidos.';
+                    }
                 } else {
                     status.style.borderLeftColor = '#dc3232';
                     msg.textContent = '✗ Error: ' + (data.data || 'Error desconocido');

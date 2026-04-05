@@ -17,12 +17,13 @@ final class ReindexContentHandler
      * Itera todos los posts publicados y los envía al pipeline RAG.
      *
      * @param array<int,string> $postTypes  Tipos de post a indexar (default: post y page)
-     * @return array{indexed: int, failed: int}
+     * @return array{indexed: int, failed: int, failures: array<int, array<string, mixed>>}
      */
     public function handle(array $postTypes = ['post', 'page']): array
     {
         $indexed = 0;
         $failed  = 0;
+        $failures = [];
 
         $query = new \WP_Query([
             'post_type'      => $postTypes,
@@ -47,16 +48,29 @@ final class ReindexContentHandler
                 continue;
             }
 
-            $ok = $this->gateway->ingest(
+            $result = $this->gateway->ingestWithDiagnostics(
                 $postId,
                 $post->post_title,
                 (string) get_permalink($postId),
                 $content
             );
 
-            $ok ? $indexed++ : $failed++;
+            if ($result['ok']) {
+                $indexed++;
+                continue;
+            }
+
+            $failed++;
+            $failures[] = [
+                'post_id' => $postId,
+                'title' => $post->post_title,
+                'error' => $result['error'],
+                'status_code' => $result['status_code'],
+                'webhook_url' => $result['webhook_url'],
+                'response_body' => $result['response_body'],
+            ];
         }
 
-        return compact('indexed', 'failed');
+        return compact('indexed', 'failed', 'failures');
     }
 }
