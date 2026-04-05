@@ -195,4 +195,12 @@ return [
         'action' => 'expenses',
         'permission_callback' => 'canViewFinance',
     ],
+    [
+        'namespace' => 'qs/v1',
+        'route' => '/agents/chat',
+        'methods' => 'POST',
+        'controller' => \QS\Modules\Agents\Interfaces\Rest\ChatbotController::class,
+        'action' => 'chat',
+        'permission_callback' => '__return_true', // Abierto por ahora para pruebas
+    ],
 ];

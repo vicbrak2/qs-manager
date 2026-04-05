@@ -63,6 +63,8 @@ use QS\Modules\Finance\Infrastructure\Persistence\ExpenseCptRepository;
 use QS\Modules\Finance\Infrastructure\Persistence\PaymentCptRepository;
 use QS\Modules\Finance\Infrastructure\Persistence\WpServiceCostRepository;
 use QS\Modules\Finance\Interfaces\Rest\FinanceController;
+use QS\Modules\Agents\Infrastructure\N8n\ChatbotGateway;
+use QS\Modules\Agents\Interfaces\Rest\ChatbotController;
 use QS\Modules\IdentityAccess\Application\CommandHandler\AssignQsRoleHandler;
 use QS\Modules\IdentityAccess\Application\QueryHandler\GetUserPermissionsHandler;
 use QS\Modules\IdentityAccess\Domain\Policy\AccessPolicy;
@@ -181,6 +183,8 @@ final class ServiceProvider
             MuaAgendaController::class => autowire(),
             ServicesController::class => autowire(),
             FinanceController::class => autowire(),
+            ChatbotGateway::class => autowire(),
+            ChatbotController::class => autowire(),
         ];
     }
 }
