@@ -8,6 +8,8 @@ use QS\Core\Logging\Logger;
 
 final class IngestGateway
 {
+    private const OPTION_NAME = 'qs_n8n_ingest_url';
+
     private string $webhookUrl;
 
     public function __construct(
@@ -31,6 +33,11 @@ final class IngestGateway
     public function ingestWithDiagnostics(int $postId, string $title, string $url, string $content): array
     {
         return $this->dispatch($postId, $title, $url, $content);
+    }
+
+    public function webhookUrl(): string
+    {
+        return $this->webhookUrl;
     }
 
     /**
@@ -106,6 +113,12 @@ final class IngestGateway
 
         if (is_string($envValue) && trim($envValue) !== '') {
             return trim($envValue);
+        }
+
+        $optionValue = get_option(self::OPTION_NAME, '');
+
+        if (is_string($optionValue) && trim($optionValue) !== '') {
+            return trim($optionValue);
         }
 
         return 'http://localhost:5678/webhook/wp-ingest-rag';

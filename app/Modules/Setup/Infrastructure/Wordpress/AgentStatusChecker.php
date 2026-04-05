@@ -8,6 +8,8 @@ use QS\Core\Logging\Logger;
 
 final class AgentStatusChecker
 {
+    private const CHATBOT_URL_OPTION = 'qs_n8n_chatbot_url';
+
     public function __construct(
         private readonly Logger $logger
     ) {
@@ -39,9 +41,7 @@ final class AgentStatusChecker
             return $explicit;
         }
 
-        $chatbotUrl = defined('QS_N8N_CHATBOT_URL')
-            ? (string) QS_N8N_CHATBOT_URL
-            : $this->env('QS_N8N_CHATBOT_URL', 'http://localhost:5678/webhook/wp-chatbot-rag');
+        $chatbotUrl = $this->resolveChatbotUrl();
 
         return $this->replacePath($chatbotUrl, '/healthz');
     }
@@ -112,6 +112,27 @@ final class AgentStatusChecker
         }
 
         return $default;
+    }
+
+    private function resolveChatbotUrl(): string
+    {
+        if (defined('QS_N8N_CHATBOT_URL') && is_string(QS_N8N_CHATBOT_URL) && QS_N8N_CHATBOT_URL !== '') {
+            return QS_N8N_CHATBOT_URL;
+        }
+
+        $envValue = $this->env('QS_N8N_CHATBOT_URL');
+
+        if ($envValue !== '') {
+            return $envValue;
+        }
+
+        $optionValue = get_option(self::CHATBOT_URL_OPTION, '');
+
+        if (is_string($optionValue) && trim($optionValue) !== '') {
+            return trim($optionValue);
+        }
+
+        return 'http://localhost:5678/webhook/wp-chatbot-rag';
     }
 
     private function replacePath(string $url, string $path): string

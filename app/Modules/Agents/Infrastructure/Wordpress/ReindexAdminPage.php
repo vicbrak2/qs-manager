@@ -6,11 +6,18 @@ namespace QS\Modules\Agents\Infrastructure\Wordpress;
 
 use QS\Core\Contracts\HookableInterface;
 use QS\Modules\Agents\Application\CommandHandler\ReindexContentHandler;
+use QS\Modules\Agents\Infrastructure\N8n\ChatbotGateway;
+use QS\Modules\Agents\Infrastructure\N8n\IngestGateway;
 
 final class ReindexAdminPage implements HookableInterface
 {
+    private const CHATBOT_URL_OPTION = 'qs_n8n_chatbot_url';
+    private const INGEST_URL_OPTION = 'qs_n8n_ingest_url';
+
     public function __construct(
-        private readonly ReindexContentHandler $handler
+        private readonly ReindexContentHandler $handler,
+        private readonly IngestGateway $ingestGateway,
+        private readonly ChatbotGateway $chatbotGateway
     ) {
     }
 
@@ -22,6 +29,7 @@ final class ReindexAdminPage implements HookableInterface
 
         add_action('admin_menu', [$this, 'registerPage']);
         add_action('wp_ajax_qs_reindex_all', [$this, 'handleAjax']);
+        add_action('admin_post_qs_save_chatbot_settings', [$this, 'handleSettingsSave']);
     }
 
     public function registerPage(): void
@@ -44,9 +52,65 @@ final class ReindexAdminPage implements HookableInterface
     public function render(): void
     {
         $nonce = wp_create_nonce('qs_reindex_nonce');
+        $chatbotUrl = $this->option(self::CHATBOT_URL_OPTION);
+        $ingestUrl = $this->option(self::INGEST_URL_OPTION);
+        $settingsSaved = isset($_GET['qs_settings_updated']) && $_GET['qs_settings_updated'] === '1';
         ?>
         <div class="wrap">
             <h1>QS Chatbot — Re-indexar contenido en Qdrant</h1>
+
+            <?php if ($settingsSaved) : ?>
+                <div class="notice notice-success is-dismissible"><p>Configuracion del chatbot guardada.</p></div>
+            <?php endif; ?>
+
+            <h2>Configuracion de Webhooks</h2>
+            <p>
+                Define las URLs publicas de n8n para que WordPress pueda llamar al chatbot y a la ingesta.<br>
+                Prioridad de resolucion: constantes PHP, variables de entorno, opciones guardadas aqui y luego <code>localhost</code>.
+            </p>
+
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-top:16px;max-width:960px;">
+                <?php wp_nonce_field('qs_save_chatbot_settings'); ?>
+                <input type="hidden" name="action" value="qs_save_chatbot_settings">
+
+                <table class="form-table" role="presentation">
+                    <tbody>
+                        <tr>
+                            <th scope="row"><label for="qs_n8n_chatbot_url">URL webhook chatbot</label></th>
+                            <td>
+                                <input
+                                    id="qs_n8n_chatbot_url"
+                                    name="qs_n8n_chatbot_url"
+                                    type="url"
+                                    class="regular-text code"
+                                    value="<?php echo esc_attr($chatbotUrl); ?>"
+                                    placeholder="https://tu-n8n/webhook/wp-chatbot-rag"
+                                >
+                                <p class="description">Valor efectivo actual: <code><?php echo esc_html($this->chatbotGateway->webhookUrl()); ?></code></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="qs_n8n_ingest_url">URL webhook ingesta</label></th>
+                            <td>
+                                <input
+                                    id="qs_n8n_ingest_url"
+                                    name="qs_n8n_ingest_url"
+                                    type="url"
+                                    class="regular-text code"
+                                    value="<?php echo esc_attr($ingestUrl); ?>"
+                                    placeholder="https://tu-n8n/webhook/wp-ingest-rag"
+                                >
+                                <p class="description">Valor efectivo actual: <code><?php echo esc_html($this->ingestGateway->webhookUrl()); ?></code></p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <?php submit_button('Guardar configuracion'); ?>
+            </form>
+
+            <hr style="margin:24px 0;">
+
             <p>
                 Este proceso envía todos los posts y páginas publicados al pipeline RAG (n8n → Qdrant).<br>
                 Úsalo cuando hayas cambiado contenido masivamente o al inicializar el sistema por primera vez.
@@ -133,5 +197,53 @@ final class ReindexAdminPage implements HookableInterface
 
         $result = $this->handler->handle();
         wp_send_json_success($result);
+    }
+
+    public function handleSettingsSave(): void
+    {
+        if (! current_user_can('manage_options')) {
+            wp_die('Permisos insuficientes.');
+        }
+
+        check_admin_referer('qs_save_chatbot_settings');
+
+        $chatbotUrl = $this->postedUrl('qs_n8n_chatbot_url');
+        $ingestUrl = $this->postedUrl('qs_n8n_ingest_url');
+
+        $this->storeOption(self::CHATBOT_URL_OPTION, $chatbotUrl);
+        $this->storeOption(self::INGEST_URL_OPTION, $ingestUrl);
+
+        $redirectUrl = add_query_arg('qs_settings_updated', '1', menu_page_url('qs-chatbot-reindex', false));
+
+        wp_safe_redirect($redirectUrl);
+        exit;
+    }
+
+    private function option(string $key): string
+    {
+        $value = get_option($key, '');
+
+        return is_string($value) ? trim($value) : '';
+    }
+
+    private function postedUrl(string $key): string
+    {
+        if (! isset($_POST[$key])) {
+            return '';
+        }
+
+        $value = wp_unslash($_POST[$key]);
+
+        return is_string($value) ? trim(esc_url_raw($value)) : '';
+    }
+
+    private function storeOption(string $key, string $value): void
+    {
+        if ($value === '') {
+            delete_option($key);
+            return;
+        }
+
+        update_option($key, $value, false);
     }
 }

@@ -8,6 +8,8 @@ use WP_Error;
 
 final class ChatbotGateway
 {
+    private const OPTION_NAME = 'qs_n8n_chatbot_url';
+
     private string $webhookUrl;
 
     public function __construct()
@@ -67,6 +69,11 @@ final class ChatbotGateway
         return (string) ($body['reply'] ?? $body['output'] ?? $body['response'] ?? '');
     }
 
+    public function webhookUrl(): string
+    {
+        return $this->webhookUrl;
+    }
+
     private function resolveWebhookUrl(): string
     {
         if (defined('QS_N8N_CHATBOT_URL') && is_string(QS_N8N_CHATBOT_URL) && QS_N8N_CHATBOT_URL !== '') {
@@ -77,6 +84,12 @@ final class ChatbotGateway
 
         if (is_string($envValue) && trim($envValue) !== '') {
             return trim($envValue);
+        }
+
+        $optionValue = get_option(self::OPTION_NAME, '');
+
+        if (is_string($optionValue) && trim($optionValue) !== '') {
+            return trim($optionValue);
         }
 
         return 'http://localhost:5678/webhook/wp-chatbot-rag';
