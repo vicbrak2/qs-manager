@@ -80,6 +80,34 @@ O para cualquier endpoint:
 powershell -ExecutionPolicy Bypass -File tools/http/Invoke-QsApi.ps1 -Path 'health'
 ```
 
+Setup inicial del sitio via REST autenticada:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/http/Invoke-QsSetup.ps1 -SiteName 'QS Studio' -SiteDescription 'Beauty studio'
+```
+
+Estado de agentes desde terminal:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/http/Get-QsAgentStatus.ps1
+```
+
+Si tienes WP-CLI disponible en el host, tambien puedes operar directo dentro de WordPress:
+
+```bash
+wp qs setup --site-name="QS Studio"
+wp qs status
+wp qs reindex
+wp qs chat "que servicios tienen?"
+```
+
+Fallback PHP/SSH cuando WP-CLI no este instalado:
+
+```bash
+wp eval-file tools/setup/wp-setup.php -- --site-name="QS Studio"
+php tools/setup/wp-setup.php --wp-load=/ruta/a/wp-load.php --site-name="QS Studio"
+```
+
 Si quieres persistir esos valores como variables de entorno de usuario en Windows, el helper sigue disponible:
 
 ```powershell

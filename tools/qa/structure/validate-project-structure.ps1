@@ -88,8 +88,8 @@ if ($errors.Count -gt 0) {
     Write-Host 'Project structure validation failed.' -ForegroundColor Red
     Write-Host ''
 
-    foreach ($error in $errors) {
-        Write-Host "- $error"
+    foreach ($validationError in $errors) {
+        Write-Host "- $validationError"
     }
 
     Write-Host ''

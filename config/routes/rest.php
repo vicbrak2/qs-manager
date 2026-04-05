@@ -21,6 +21,14 @@ return [
     ],
     [
         'namespace' => 'qs/v1',
+        'route' => '/setup',
+        'methods' => 'POST',
+        'controller' => \QS\Modules\Setup\Interfaces\Rest\SetupController::class,
+        'action' => 'setup',
+        'permission_callback' => 'canManageSetup',
+    ],
+    [
+        'namespace' => 'qs/v1',
         'route' => '/staff',
         'methods' => 'GET',
         'controller' => \QS\Modules\Team\Interfaces\Rest\StaffController::class,
@@ -194,6 +202,14 @@ return [
         'controller' => \QS\Modules\Finance\Interfaces\Rest\FinanceController::class,
         'action' => 'expenses',
         'permission_callback' => 'canViewFinance',
+    ],
+    [
+        'namespace' => 'qs/v1',
+        'route' => '/agents/status',
+        'methods' => 'GET',
+        'controller' => \QS\Modules\Setup\Interfaces\Rest\SetupController::class,
+        'action' => 'agentsStatus',
+        'permission_callback' => 'canViewAgentsStatus',
     ],
     [
         'namespace' => 'qs/v1',

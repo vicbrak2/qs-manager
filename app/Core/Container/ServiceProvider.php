@@ -80,6 +80,16 @@ use QS\Modules\ServicesCatalog\Application\QueryHandler\GetServiceByIdHandler;
 use QS\Modules\ServicesCatalog\Domain\Repository\ServiceRepository;
 use QS\Modules\ServicesCatalog\Infrastructure\Persistence\WpdbServiceCatalogRepository;
 use QS\Modules\ServicesCatalog\Interfaces\Rest\ServicesController;
+use QS\Modules\Setup\Application\CommandHandler\SetupSiteHandler;
+use QS\Modules\Setup\Infrastructure\Wordpress\AgentStatusChecker;
+use QS\Modules\Setup\Infrastructure\Wordpress\MenuProvisioner;
+use QS\Modules\Setup\Infrastructure\Wordpress\OptionProvisioner;
+use QS\Modules\Setup\Infrastructure\Wordpress\PageProvisioner;
+use QS\Modules\Setup\Infrastructure\Wordpress\PermalinkProvisioner;
+use QS\Modules\Setup\Interfaces\Cli\CliCommandRegistrar;
+use QS\Modules\Setup\Interfaces\Cli\QsCommand;
+use QS\Modules\Setup\Interfaces\Hooks\ActivationSetupHooks;
+use QS\Modules\Setup\Interfaces\Rest\SetupController;
 use QS\Modules\Team\Application\QueryHandler\GetAllStaffHandler;
 use QS\Modules\Team\Application\QueryHandler\GetStaffAvailabilityHandler;
 use QS\Modules\Team\Application\QueryHandler\GetStaffByIdHandler;
@@ -162,6 +172,12 @@ final class ServiceProvider
             ServiceRepository::class => autowire(WpdbServiceCatalogRepository::class),
             GetAllServicesHandler::class => autowire(),
             GetServiceByIdHandler::class => autowire(),
+            PageProvisioner::class => autowire(),
+            OptionProvisioner::class => autowire(),
+            MenuProvisioner::class => autowire(),
+            PermalinkProvisioner::class => autowire(),
+            AgentStatusChecker::class => autowire(),
+            SetupSiteHandler::class => autowire(),
             PaymentRepository::class => autowire(PaymentCptRepository::class),
             ExpenseRepository::class => autowire(ExpenseCptRepository::class),
             ServiceCostRepository::class => autowire(WpServiceCostRepository::class),
@@ -191,6 +207,10 @@ final class ServiceProvider
             ReindexContentHandler::class => autowire(),
             ReindexAdminPage::class => autowire(),
             ChatbotController::class => autowire(),
+            QsCommand::class => autowire(),
+            CliCommandRegistrar::class => autowire(),
+            ActivationSetupHooks::class => autowire(),
+            SetupController::class => autowire(),
         ];
     }
 }

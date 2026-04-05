@@ -14,6 +14,8 @@ use QS\Core\Wordpress\RestRouteRegistrar;
 use QS\Modules\Agents\Infrastructure\Wordpress\ReindexAdminPage;
 use QS\Modules\IdentityAccess\Infrastructure\Wordpress\RoleRegistrar;
 use QS\Modules\IdentityAccess\Interfaces\Hooks\RoleHooks;
+use QS\Modules\Setup\Interfaces\Cli\CliCommandRegistrar;
+use QS\Modules\Setup\Interfaces\Hooks\ActivationSetupHooks;
 
 final class PluginBootstrapper
 {
@@ -50,6 +52,7 @@ final class PluginBootstrapper
             $container->get(PostTypeRegistrar::class),
             $container->get(RestRouteRegistrar::class),
             $container->get(ReindexAdminPage::class),
+            $container->get(CliCommandRegistrar::class),
         ]);
     }
 
@@ -60,6 +63,7 @@ final class PluginBootstrapper
         $container->get(MigrationRunner::class)->run();
         $container->get(RoleRegistrar::class)->syncRoles();
         $container->get(PostTypeRegistrar::class)->registerPostTypes();
+        $container->get(ActivationSetupHooks::class)->run();
         $container->get(Logger::class)->info('QS Core activated.');
     }
 
