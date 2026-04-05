@@ -1,0 +1,14 @@
+#!/bin/sh
+
+if command -v pwsh >/dev/null 2>&1; then
+  pwsh -NoProfile -File tools/qa/structure/validate-project-structure.ps1
+  exit $?
+fi
+
+if command -v powershell.exe >/dev/null 2>&1; then
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/qa/structure/validate-project-structure.ps1
+  exit $?
+fi
+
+echo "PowerShell is required to validate the project structure before commit."
+exit 1

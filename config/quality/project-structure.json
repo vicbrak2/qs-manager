@@ -1,0 +1,45 @@
+{
+  "allowed_root_entries": [
+    ".claude",
+    ".editorconfig",
+    ".env",
+    ".env.example",
+    ".git",
+    ".github",
+    ".githooks",
+    ".gitignore",
+    ".php-cs-fixer.cache",
+    ".vscode",
+    "app",
+    "composer.json",
+    "composer.lock",
+    "config",
+    "database",
+    "dist",
+    "docs",
+    "infrastructure",
+    "phpunit.xml.dist",
+    "qs-core.php",
+    "README.md",
+    "readme.txt",
+    "tests",
+    "tools",
+    "uninstall.php",
+    "var",
+    "vendor"
+  ],
+  "restricted_paths": [
+    {
+      "relative_path": "infrastructure/n8n",
+      "description": "solo manifiestos de despliegue, documentacion y workflows",
+      "allowed_extensions": ["json", "md", "yml", "yaml"],
+      "allowed_filenames": []
+    },
+    {
+      "relative_path": "tools/n8n",
+      "description": "solo scripts operativos y archivos de soporte",
+      "allowed_extensions": ["js", "json", "md", "php", "ps1", "txt"],
+      "allowed_filenames": []
+    }
+  ]
+}

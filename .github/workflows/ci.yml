@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
 
+      - name: Validate project structure
+        run: composer run validate:structure
+
       - name: PHP CS Fixer
         run: vendor/bin/php-cs-fixer fix --dry-run --config=config/quality/.php-cs-fixer.dist.php
 
@@ -58,6 +61,9 @@ jobs:
 
       - name: Install production dependencies
         run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Validate project structure
+        run: composer run validate:structure
 
       - name: Build plugin package
         run: php tools/package-plugin.php

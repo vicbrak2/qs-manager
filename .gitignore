@@ -1,9 +1,12 @@
 /vendor/
 /dist/
 /.php-cs-fixer.cache
+/.claude/
 /var/cache/phpunit/
 /var/cache/phpstan/
 /var/logs/*.log
+/var/tmp/n8n/*
+!/var/tmp/n8n/.gitkeep
 /tools/mutation/reports/*.log
 /app/UI/Admin/Assets/node_modules/
 /.env

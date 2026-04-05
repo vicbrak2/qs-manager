@@ -49,6 +49,12 @@
 *   Unit tests pasan en CI/CD.
 *   Cobertura Domain/Application > 80% (solo módulos Fase 1).
 
+### Validacion de estructura
+*   `composer run validate:structure` valida que la raiz del repo no acumule archivos fuera de politica.
+*   `composer install` y `composer update` instalan un `pre-commit` local que ejecuta esa validacion antes de cada commit.
+*   En Windows, si no tienes `composer`/`php` en `PATH`, puedes instalar el hook con `pwsh -NoProfile -File tools/git-hooks/install.ps1`.
+*   CI tambien ejecuta la misma regla antes de quality y package.
+
 ## CI/CD
 *   **Plataforma:** GitHub Actions (gratis para repos privados).
 *   **Pipeline:** Lint → Static Analysis → Tests → Build Assets.
