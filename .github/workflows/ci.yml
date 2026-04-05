@@ -97,4 +97,4 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: dist/qs-core/
-          server-dir: /public_html/wp-content/plugins/qs-core/
+          server-dir: /
