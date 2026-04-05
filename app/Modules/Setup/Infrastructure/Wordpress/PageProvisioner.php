@@ -22,16 +22,16 @@ final class PageProvisioner
         $result = [];
 
         foreach ($pages as $page) {
-            $slug = sanitize_title((string) ($page['slug'] ?? ''));
-            $title = trim((string) ($page['title'] ?? ''));
-            $content = (string) ($page['content'] ?? '');
-            $status = (string) ($page['status'] ?? 'publish');
+            $slug = sanitize_title($page['slug']);
+            $title = trim($page['title']);
+            $content = $page['content'];
+            $status = $page['status'];
 
             if ($slug === '' || $title === '') {
                 continue;
             }
 
-            $existing = get_page_by_path($slug, OBJECT, 'page');
+            $existing = get_page_by_path($slug);
 
             if ($existing instanceof \WP_Post) {
                 $pageId = (int) $existing->ID;

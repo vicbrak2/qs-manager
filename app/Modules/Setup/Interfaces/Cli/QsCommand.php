@@ -23,6 +23,9 @@ final class QsCommand
     /**
      * Configura el sitio base de QS.
      *
+     * @param array<int, string> $args
+     * @param array<string, mixed> $assocArgs
+     *
      * ## OPTIONS
      *
      * [--site-name=<name>]
@@ -52,11 +55,14 @@ final class QsCommand
         $result = $this->setupSiteHandler->handle($command);
 
         $this->render($result);
-        \WP_CLI::success('QS setup ejecutado.');
+        $this->success('QS setup ejecutado.');
     }
 
     /**
      * Reindexa posts y paginas hacia el pipeline RAG.
+     *
+     * @param array<int, string> $args
+     * @param array<string, mixed> $assocArgs
      *
      * ## OPTIONS
      *
@@ -74,15 +80,18 @@ final class QsCommand
         $this->render($result);
 
         if (($result['failed'] ?? 0) > 0) {
-            \WP_CLI::warning('La reindexacion termino con documentos fallidos.');
+            $this->warning('La reindexacion termino con documentos fallidos.');
             return;
         }
 
-        \WP_CLI::success('Reindexacion completada.');
+        $this->success('Reindexacion completada.');
     }
 
     /**
      * Envia un mensaje al chatbot.
+     *
+     * @param array<int, string> $args
+     * @param array<string, mixed> $assocArgs
      *
      * ## OPTIONS
      *
@@ -97,14 +106,14 @@ final class QsCommand
         $message = trim(implode(' ', $args));
 
         if ($message === '') {
-            \WP_CLI::error('Debes enviar un mensaje. Ejemplo: wp qs chat "que servicios tienen?"');
+            $this->error('Debes enviar un mensaje. Ejemplo: wp qs chat "que servicios tienen?"');
         }
 
         $sessionId = trim((string) ($assocArgs['session'] ?? 'wp_cli'));
         $reply = $this->chatbotGateway->ask($message, $sessionId !== '' ? $sessionId : 'wp_cli');
 
         if (is_wp_error($reply)) {
-            \WP_CLI::error($reply->get_error_message());
+            $this->error($reply->get_error_message());
         }
 
         $this->render([
@@ -112,11 +121,14 @@ final class QsCommand
             'session_id' => $sessionId !== '' ? $sessionId : 'wp_cli',
             'response' => $reply,
         ]);
-        \WP_CLI::success('Respuesta del chatbot recibida.');
+        $this->success('Respuesta del chatbot recibida.');
     }
 
     /**
      * Consulta el estado de n8n y Qdrant.
+     *
+     * @param array<int, string> $args
+     * @param array<string, mixed> $assocArgs
      */
     public function status(array $args, array $assocArgs): void
     {
@@ -125,11 +137,11 @@ final class QsCommand
         $this->render($status);
 
         if (($status['overall_ok'] ?? false) === true) {
-            \WP_CLI::success('Agentes disponibles.');
+            $this->success('Agentes disponibles.');
             return;
         }
 
-        \WP_CLI::warning('Al menos un servicio de agentes no esta disponible.');
+        $this->warning('Al menos un servicio de agentes no esta disponible.');
     }
 
     /**
@@ -139,6 +151,42 @@ final class QsCommand
     {
         $json = wp_json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-        \WP_CLI::log(is_string($json) ? $json : print_r($payload, true));
+        $this->log(is_string($json) ? $json : print_r($payload, true));
+    }
+
+    private function success(string $message): void
+    {
+        $this->invokeCliMethod('success', $message);
+    }
+
+    private function warning(string $message): void
+    {
+        $this->invokeCliMethod('warning', $message);
+    }
+
+    private function error(string $message): never
+    {
+        $this->invokeCliMethod('error', $message);
+
+        throw new \RuntimeException($message);
+    }
+
+    private function log(string $message): void
+    {
+        $this->invokeCliMethod('log', $message);
+    }
+
+    private function invokeCliMethod(string $method, string $message): void
+    {
+        if (is_callable(['\WP_CLI', $method])) {
+            call_user_func(['\WP_CLI', $method], $message);
+            return;
+        }
+
+        if ($method === 'error') {
+            throw new \RuntimeException($message);
+        }
+
+        echo $message . PHP_EOL;
     }
 }

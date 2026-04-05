@@ -36,7 +36,11 @@ final class CliCommandRegistrar implements HookableInterface
             return;
         }
 
-        \WP_CLI::add_command('qs', $this->command);
+        if (! is_callable(['\WP_CLI', 'add_command'])) {
+            return;
+        }
+
+        call_user_func(['\WP_CLI', 'add_command'], 'qs', $this->command);
         $this->registered = true;
     }
 }

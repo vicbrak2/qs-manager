@@ -52,7 +52,7 @@ final class MenuProvisioner
         $existingPages = [];
 
         foreach ($pages as $page) {
-            $pageId = (int) ($page['id'] ?? 0);
+            $pageId = $page['id'];
 
             if ($pageId <= 0) {
                 continue;
