@@ -76,19 +76,11 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Download package artifact
+        uses: actions/download-artifact@v4
         with:
-          php-version: '8.2'
-
-      - name: Install production dependencies
-        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Build plugin package
-        run: php tools/package-plugin.php
+          name: qs-core-package
+          path: .
 
       - name: Deploy to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
@@ -98,3 +90,4 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: dist/qs-core/
           server-dir: /
+          state-name: .ftp-deploy-sync-state.json

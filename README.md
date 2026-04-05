@@ -57,8 +57,28 @@
 ### Packaging y Deploy
 *   **Packaging local:** `php tools/package-plugin.php` o `composer run package`.
 *   **Salida:** `dist/qs-core/` y `dist/qs-core.zip`.
-*   **Deploy automático:** push a `main` luego de pasar `quality`, usando FTP hacia `public_html/wp-content/plugins/qs-core/`.
+*   **Deploy automático:** push a `main` luego de pasar `quality`, reutilizando el artifact generado en `package` y desplegando por FTP incremental.
 *   **Secrets requeridos en GitHub:** `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`.
+*   **Estado remoto de sync FTP:** `.ftp-deploy-sync-state.json` en la raíz remota del usuario FTP.
+
+### Scripts locales para probar la API
+Una sola vez por máquina:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/http/Set-QsApiEnv.ps1 -Password 'TU_APPLICATION_PASSWORD'
+```
+
+Luego, en una terminal nueva:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/http/Get-QsBookingsToday.ps1
+```
+
+O para cualquier endpoint:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/http/Invoke-QsApi.ps1 -Path 'health'
+```
 
 ## Roles Operativos Iniciales (3 roles)
 *   `qs_admin`: Administrador global (ej. Víctor - acceso total).
