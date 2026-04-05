@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: qs-n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=America/Santiago 
+    volumes:
+      - n8n_data:/home/node/.n8n
+      # Montamos la carpeta actual para que n8n pueda leer el JSON interior
+      - ./:/import
+    restart: unless-stopped
+
+volumes:
+  n8n_data:

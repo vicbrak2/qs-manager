@@ -70,6 +70,11 @@ use QS\Modules\IdentityAccess\Domain\Repository\UserRepository;
 use QS\Modules\IdentityAccess\Infrastructure\Persistence\WpUserRepository;
 use QS\Modules\IdentityAccess\Infrastructure\Wordpress\RoleRegistrar;
 use QS\Modules\IdentityAccess\Interfaces\Hooks\RoleHooks;
+use QS\Modules\ServicesCatalog\Application\QueryHandler\GetAllServicesHandler;
+use QS\Modules\ServicesCatalog\Application\QueryHandler\GetServiceByIdHandler;
+use QS\Modules\ServicesCatalog\Domain\Repository\ServiceRepository;
+use QS\Modules\ServicesCatalog\Infrastructure\Persistence\WpdbServiceCatalogRepository;
+use QS\Modules\ServicesCatalog\Interfaces\Rest\ServicesController;
 use QS\Modules\Team\Application\QueryHandler\GetAllStaffHandler;
 use QS\Modules\Team\Application\QueryHandler\GetStaffAvailabilityHandler;
 use QS\Modules\Team\Application\QueryHandler\GetStaffByIdHandler;
@@ -149,6 +154,9 @@ final class ServiceProvider
             GetTodayReservationsHandler::class => autowire(),
             GetReservationByIdHandler::class => autowire(),
             GetMuaAgendaHandler::class => autowire(),
+            ServiceRepository::class => autowire(WpdbServiceCatalogRepository::class),
+            GetAllServicesHandler::class => autowire(),
+            GetServiceByIdHandler::class => autowire(),
             PaymentRepository::class => autowire(PaymentCptRepository::class),
             ExpenseRepository::class => autowire(ExpenseCptRepository::class),
             ServiceCostRepository::class => autowire(WpServiceCostRepository::class),
@@ -171,6 +179,7 @@ final class ServiceProvider
             StaffController::class => autowire(),
             ReservationsController::class => autowire(),
             MuaAgendaController::class => autowire(),
+            ServicesController::class => autowire(),
             FinanceController::class => autowire(),
         ];
     }

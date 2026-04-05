@@ -93,6 +93,22 @@ return [
     ],
     [
         'namespace' => 'qs/v1',
+        'route' => '/services',
+        'methods' => 'GET',
+        'controller' => \QS\Modules\ServicesCatalog\Interfaces\Rest\ServicesController::class,
+        'action' => 'index',
+        'permission_callback' => 'canViewServices',
+    ],
+    [
+        'namespace' => 'qs/v1',
+        'route' => '/services/(?P<id>\d+)',
+        'methods' => 'GET',
+        'controller' => \QS\Modules\ServicesCatalog\Interfaces\Rest\ServicesController::class,
+        'action' => 'show',
+        'permission_callback' => 'canViewServices',
+    ],
+    [
+        'namespace' => 'qs/v1',
         'route' => '/bitacoras',
         'methods' => 'GET',
         'controller' => \QS\Modules\Bitacora\Interfaces\Rest\BitacoraController::class,

@@ -19,7 +19,7 @@ final class PluginVersion
 
     public function schemaVersion(): string
     {
-        return (string) $this->config->get('schema_version', '0006');
+        return (string) $this->config->get('schema_version', '0007');
     }
 
     public function restNamespace(): string

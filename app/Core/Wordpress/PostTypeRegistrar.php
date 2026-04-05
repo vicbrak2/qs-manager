@@ -17,11 +17,6 @@ final class PostTypeRegistrar implements HookableInterface
             'singular_label' => 'Bitacora QS',
             'menu_icon' => 'dashicons-location-alt',
         ],
-        'qs_service' => [
-            'label' => 'Servicios QS',
-            'singular_label' => 'Servicio QS',
-            'menu_icon' => 'dashicons-store',
-        ],
         'qs_payment' => [
             'label' => 'Pagos QS',
             'singular_label' => 'Pago QS',

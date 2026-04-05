@@ -25,6 +25,7 @@ final class MigrationRunnerTest extends WpTestCase
 
         self::assertSame('1.0.0', get_option('qs_core_version'));
         self::assertSame($wpdb->prefix . 'qs_staff', $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->prefix . 'qs_staff')));
+        self::assertSame($wpdb->prefix . 'qs_service_costs', $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->prefix . 'qs_service_costs')));
     }
 
     private function runner(): MigrationRunner

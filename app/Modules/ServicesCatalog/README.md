@@ -1,3 +1,3 @@
 # ServicesCatalog
 
-Modulo reservado para el catalogo de servicios QS.
+Catalogo de servicios QS enriquecido sobre LatePoint.

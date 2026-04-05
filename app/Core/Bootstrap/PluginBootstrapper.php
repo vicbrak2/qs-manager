@@ -41,6 +41,7 @@ final class PluginBootstrapper
         }
 
         $container->get(ErrorHandler::class)->register();
+        $container->get(MigrationRunner::class)->runIfNeeded();
         $container->get(ModuleRegistry::class);
         $container->get(HookLoader::class)->register([
             $container->get(RoleRegistrar::class),

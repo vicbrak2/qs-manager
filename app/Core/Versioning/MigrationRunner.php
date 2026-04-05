@@ -60,6 +60,21 @@ final class MigrationRunner
         $this->logger->info('Database migrations completed.');
     }
 
+    public function runIfNeeded(): void
+    {
+        if (! function_exists('get_option')) {
+            return;
+        }
+
+        $installedSchemaVersion = (string) (get_option($this->pluginVersion->schemaOptionKey(), '0000') ?: '0000');
+
+        if (strcmp($installedSchemaVersion, $this->pluginVersion->schemaVersion()) >= 0) {
+            return;
+        }
+
+        $this->run();
+    }
+
     public function cleanup(): void
     {
         $options = [
