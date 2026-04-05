@@ -9,6 +9,7 @@ use QS\Core\Logging\Logger;
 final class AgentStatusChecker
 {
     private const CHATBOT_URL_OPTION = 'qs_n8n_chatbot_url';
+    private const QDRANT_URL_OPTION = 'qs_qdrant_url';
 
     public function __construct(
         private readonly Logger $logger
@@ -54,7 +55,19 @@ final class AgentStatusChecker
             return $explicit;
         }
 
-        return $this->replacePath($this->env('QDRANT_URL', 'http://localhost:6333'), '/');
+        $qdrantUrl = $this->env('QDRANT_URL');
+
+        if ($qdrantUrl !== '') {
+            return $this->replacePath($qdrantUrl, '/');
+        }
+
+        $optionValue = get_option(self::QDRANT_URL_OPTION, '');
+
+        if (is_string($optionValue) && trim($optionValue) !== '') {
+            return $this->replacePath(trim($optionValue), '/');
+        }
+
+        return 'http://localhost:6333/';
     }
 
     /**

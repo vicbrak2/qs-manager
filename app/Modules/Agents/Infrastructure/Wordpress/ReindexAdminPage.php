@@ -13,6 +13,7 @@ final class ReindexAdminPage implements HookableInterface
 {
     private const CHATBOT_URL_OPTION = 'qs_n8n_chatbot_url';
     private const INGEST_URL_OPTION = 'qs_n8n_ingest_url';
+    private const QDRANT_URL_OPTION = 'qs_qdrant_url';
 
     public function __construct(
         private readonly ReindexContentHandler $handler,
@@ -54,6 +55,7 @@ final class ReindexAdminPage implements HookableInterface
         $nonce = wp_create_nonce('qs_reindex_nonce');
         $chatbotUrl = $this->option(self::CHATBOT_URL_OPTION);
         $ingestUrl = $this->option(self::INGEST_URL_OPTION);
+        $qdrantUrl = $this->option(self::QDRANT_URL_OPTION);
         $settingsSaved = isset($_GET['qs_settings_updated']) && $_GET['qs_settings_updated'] === '1';
         ?>
         <div class="wrap">
@@ -101,6 +103,20 @@ final class ReindexAdminPage implements HookableInterface
                                     placeholder="https://tu-n8n/webhook/wp-ingest-rag"
                                 >
                                 <p class="description">Valor efectivo actual: <code><?php echo esc_html($this->ingestGateway->webhookUrl()); ?></code></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="qs_qdrant_url">URL Qdrant</label></th>
+                            <td>
+                                <input
+                                    id="qs_qdrant_url"
+                                    name="qs_qdrant_url"
+                                    type="url"
+                                    class="regular-text code"
+                                    value="<?php echo esc_attr($qdrantUrl); ?>"
+                                    placeholder="https://tu-cluster.qdrant.io"
+                                >
+                                <p class="description">Usada por el chequeo <code>/agents/status</code> para validar conectividad desde WordPress.</p>
                             </td>
                         </tr>
                     </tbody>
@@ -209,9 +225,11 @@ final class ReindexAdminPage implements HookableInterface
 
         $chatbotUrl = $this->postedUrl('qs_n8n_chatbot_url');
         $ingestUrl = $this->postedUrl('qs_n8n_ingest_url');
+        $qdrantUrl = $this->postedUrl('qs_qdrant_url');
 
         $this->storeOption(self::CHATBOT_URL_OPTION, $chatbotUrl);
         $this->storeOption(self::INGEST_URL_OPTION, $ingestUrl);
+        $this->storeOption(self::QDRANT_URL_OPTION, $qdrantUrl);
 
         $redirectUrl = add_query_arg('qs_settings_updated', '1', menu_page_url('qs-chatbot-reindex', false));
 
