@@ -20,7 +20,7 @@ final class ChatbotShortcode implements HookableInterface
             return;
         }
 
-        $pluginUrl = plugin_dir_url(QS_CORE_PLUGIN_FILE);
+        $pluginUrl = plugin_dir_url($this->pluginFile());
         $version   = defined('QS_CORE_VERSION') ? QS_CORE_VERSION : '1.0.0';
 
         wp_enqueue_style(
@@ -106,5 +106,10 @@ final class ChatbotShortcode implements HookableInterface
         }
 
         return has_shortcode($post->post_content, 'qs_chatbot');
+    }
+
+    private function pluginFile(): string
+    {
+        return dirname(__DIR__, 5) . '/qs-core.php';
     }
 }
