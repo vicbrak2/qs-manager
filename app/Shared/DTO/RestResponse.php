@@ -7,7 +7,7 @@ namespace QS\Shared\DTO;
 final class RestResponse
 {
     /**
-     * @param array<string, mixed> $data
+     * @param array<array-key, mixed> $data
      * @param array<string, mixed> $meta
      */
     public function __construct(

@@ -1,7 +1,7 @@
 # QS Manager: Stack Tecnológico y Arquitectura (qs-core)
 
 ## Lenguaje y Plataforma Base
-*   **Backend:** PHP 8.1+ (plugin `qs-core`). Requiere PHP 8.1 por características como return types, enums nativos, readonly properties, fibers. Mejora dramática sobre 7.4 sin costo de migración alto.
+*   **Backend:** PHP 8.1+ (plugin `qs-core`). Requiere PHP 8.1 por características como return types, enums nativos y readonly properties. Mejora dramática sobre 7.4 sin costo de migración alto.
 *   **Plataforma:** WordPress 6.9.x (ya instalada).
 *   **Persistencia:** MySQL/MariaDB (ya disponible).
 
@@ -53,6 +53,12 @@
 *   **Plataforma:** GitHub Actions (gratis para repos privados).
 *   **Pipeline:** Lint → Static Analysis → Tests → Build Assets.
 *   **Deploy:** `git pull` + WP-CLI en el servidor (si hay SSH) o mediante plugin de deploy vía webhook (no se usará Docker en producción por el hosting compartido de QS).
+
+### Packaging y Deploy
+*   **Packaging local:** `php tools/package-plugin.php` o `composer run package`.
+*   **Salida:** `dist/qs-core/` y `dist/qs-core.zip`.
+*   **Deploy automático:** push a `main` luego de pasar `quality`, usando FTP hacia `public_html/wp-content/plugins/qs-core/`.
+*   **Secrets requeridos en GitHub:** `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`.
 
 ## Roles Operativos Iniciales (3 roles)
 *   `qs_admin`: Administrador global (ej. Víctor - acceso total).

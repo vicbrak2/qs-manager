@@ -11,7 +11,10 @@ use QS\Modules\Booking\Infrastructure\Wordpress\LatepointTableMap;
 
 final class WpdbLatepointRepository implements ReservationRepository
 {
+    private ?bool $tableExists = null;
+
     public function __construct(
+        private readonly \wpdb $wpdb,
         private readonly LatepointTableMap $tableMap,
         private readonly ReservationNormalizer $normalizer
     ) {
@@ -19,13 +22,11 @@ final class WpdbLatepointRepository implements ReservationRepository
 
     public function findAll(): array
     {
-        global $wpdb;
-
-        if (! isset($wpdb) || ! $this->bookingTableExists()) {
+        if (! $this->bookingTableExists()) {
             return [];
         }
 
-        $rows = $wpdb->get_results($this->baseSelect() . ' ORDER BY b.start_date DESC, b.start_time DESC', ARRAY_A);
+        $rows = $this->wpdb->get_results($this->baseSelect() . ' ORDER BY b.start_date DESC, b.start_time DESC', ARRAY_A);
 
         return $this->normalizeRows($rows);
     }
@@ -39,14 +40,14 @@ final class WpdbLatepointRepository implements ReservationRepository
 
     public function findById(int $id): ?Reservation
     {
-        global $wpdb;
-
-        if (! isset($wpdb) || ! $this->bookingTableExists()) {
+        if (! $this->bookingTableExists()) {
             return null;
         }
 
-        $rows = $wpdb->get_results(
-            $wpdb->prepare($this->baseSelect() . ' WHERE b.id = %d LIMIT 1', $id),
+        /** @var literal-string $query */
+        $query = $this->baseSelect() . ' WHERE b.id = %d LIMIT 1';
+        $rows = $this->wpdb->get_results(
+            $this->wpdb->prepare($query, $id),
             ARRAY_A
         );
         $normalized = $this->normalizeRows($rows);
@@ -56,15 +57,15 @@ final class WpdbLatepointRepository implements ReservationRepository
 
     public function findByStaffAndDate(int $staffId, string $date): array
     {
-        global $wpdb;
-
-        if (! isset($wpdb) || ! $this->bookingTableExists()) {
+        if (! $this->bookingTableExists()) {
             return [];
         }
 
-        $rows = $wpdb->get_results(
-            $wpdb->prepare(
-                $this->baseSelect() . ' WHERE b.agent_id = %d AND b.start_date = %s ORDER BY b.start_time ASC',
+        /** @var literal-string $query */
+        $query = $this->baseSelect() . ' WHERE b.agent_id = %d AND b.start_date = %s ORDER BY b.start_time ASC';
+        $rows = $this->wpdb->get_results(
+            $this->wpdb->prepare(
+                $query,
                 $staffId,
                 $date
             ),
@@ -79,15 +80,15 @@ final class WpdbLatepointRepository implements ReservationRepository
      */
     private function findByDate(string $date): array
     {
-        global $wpdb;
-
-        if (! isset($wpdb) || ! $this->bookingTableExists()) {
+        if (! $this->bookingTableExists()) {
             return [];
         }
 
-        $rows = $wpdb->get_results(
-            $wpdb->prepare(
-                $this->baseSelect() . ' WHERE b.start_date = %s ORDER BY b.start_time ASC',
+        /** @var literal-string $query */
+        $query = $this->baseSelect() . ' WHERE b.start_date = %s ORDER BY b.start_time ASC';
+        $rows = $this->wpdb->get_results(
+            $this->wpdb->prepare(
+                $query,
                 $date
             ),
             ARRAY_A
@@ -109,16 +110,17 @@ final class WpdbLatepointRepository implements ReservationRepository
 
     private function bookingTableExists(): bool
     {
-        global $wpdb;
-
-        if (! isset($wpdb)) {
-            return false;
+        if ($this->tableExists !== null) {
+            return $this->tableExists;
         }
 
         $table = $this->tableMap->bookings();
-        $result = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table));
+        $result = $this->wpdb->get_var(
+            $this->wpdb->prepare('SHOW TABLES LIKE %s', $table)
+        );
+        $this->tableExists = ($result === $table);
 
-        return $result === $table;
+        return $this->tableExists;
     }
 
     /**

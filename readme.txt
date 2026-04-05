@@ -17,7 +17,7 @@ QS Core es un plugin monolitico modular para operacion interna, integracion con 
 
 1. Instala dependencias con `composer install`.
 2. Copia el directorio completo a `wp-content/plugins/qs-core`.
-3. Activa el plugin desde WordPress usando `plugin/qs-core.php`.
+3. Activa el plugin desde WordPress usando `qs-core.php`.
 
 == Changelog ==
 

@@ -24,7 +24,21 @@ final class PluginBootstrapper
 
     public function boot(): void
     {
-        $container = $this->container();
+        try {
+            $container = $this->container();
+        } catch (\Throwable $exception) {
+            add_action(
+                'admin_notices',
+                static function () use ($exception): void {
+                    printf(
+                        '<div class="notice notice-error"><p><strong>QS Core:</strong> fallo al inicializar: %s</p></div>',
+                        esc_html($exception->getMessage())
+                    );
+                }
+            );
+
+            return;
+        }
 
         $container->get(ErrorHandler::class)->register();
         $container->get(ModuleRegistry::class);
@@ -41,6 +55,8 @@ final class PluginBootstrapper
         $container = $this->container();
 
         $container->get(MigrationRunner::class)->run();
+        $container->get(RoleRegistrar::class)->syncRoles();
+        $container->get(PostTypeRegistrar::class)->registerPostTypes();
         $container->get(Logger::class)->info('QS Core activated.');
     }
 

@@ -1,0 +1,20 @@
+{
+  "source": {
+    "directories": [
+      "app/Modules/Finance/Domain",
+      "app/Modules/Finance/Application"
+    ]
+  },
+  "phpUnit": {
+    "configDir": "../.."
+  },
+  "logs": {
+    "text": "../../tools/mutation/reports/infection-finance.log",
+    "summary": "../../tools/mutation/reports/infection-finance-summary.log"
+  },
+  "minMsi": 80,
+  "minCoveredMsi": 85,
+  "mutators": {
+    "@default": true
+  }
+}

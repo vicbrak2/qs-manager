@@ -9,8 +9,11 @@ use QS\Core\Contracts\HookableInterface;
 
 final class RoleRegistrar implements HookableInterface
 {
-    public function __construct(private readonly ConfigLoader $configLoader)
+    private ConfigLoader $configLoader;
+
+    public function __construct(ConfigLoader $configLoader)
     {
+        $this->configLoader = $configLoader;
     }
 
     public function register(): void
@@ -26,7 +29,9 @@ final class RoleRegistrar implements HookableInterface
             return;
         }
 
-        foreach ($this->configLoader->load('capabilities/roles.php') as $roleKey => $definition) {
+        $roles = $this->configLoader->load('capabilities/roles.php');
+
+        foreach ($roles as $roleKey => $definition) {
             if (! is_array($definition)) {
                 continue;
             }
@@ -51,5 +56,49 @@ final class RoleRegistrar implements HookableInterface
                 $role->remove_cap((string) $capability);
             }
         }
+
+        $this->syncAdministratorCapabilities($roles);
+    }
+
+    /**
+     * @param array<string, mixed> $roles
+     */
+    private function syncAdministratorCapabilities(array $roles): void
+    {
+        $administrator = get_role('administrator');
+
+        if ($administrator === null) {
+            return;
+        }
+
+        foreach ($this->administratorCapabilities($roles) as $capability => $grant) {
+            if ((bool) $grant) {
+                $administrator->add_cap((string) $capability);
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $roles
+     * @return array<string, bool>
+     */
+    private function administratorCapabilities(array $roles): array
+    {
+        $definition = $roles['qs_admin'] ?? null;
+
+        if (! is_array($definition)) {
+            return [];
+        }
+
+        $capabilities = $definition['capabilities'] ?? null;
+
+        if (! is_array($capabilities)) {
+            return [];
+        }
+
+        return array_map(
+            static fn (mixed $grant): bool => (bool) $grant,
+            $capabilities
+        );
     }
 }

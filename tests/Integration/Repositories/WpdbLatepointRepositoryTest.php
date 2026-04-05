@@ -15,7 +15,9 @@ final class WpdbLatepointRepositoryTest extends WpTestCase
     {
         $this->requireWordPressRuntime();
 
-        $repository = new WpdbLatepointRepository(new LatepointTableMap(), new ReservationNormalizer());
+        global $wpdb;
+
+        $repository = new WpdbLatepointRepository($wpdb, new LatepointTableMap($wpdb), new ReservationNormalizer());
 
         self::assertIsArray($repository->findAll());
     }

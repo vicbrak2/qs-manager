@@ -10,18 +10,43 @@ use QS\Shared\Testing\TestCase;
 
 final class MarginCalculatorTest extends TestCase
 {
-    public function testCalculatesMarginWhenCostIsDefined(): void
-    {
-        $calculator = new MarginCalculator();
+    private MarginCalculator $calculator;
 
-        self::assertSame(30000, $calculator->calculate(90000, 60000));
+    protected function setUp(): void
+    {
+        $this->calculator = new MarginCalculator();
     }
 
-    public function testThrowsWhenCostIsMissing(): void
+    public function testCalculatesPositiveMargin(): void
     {
-        $calculator = new MarginCalculator();
+        self::assertSame(30000, $this->calculator->calculate(90000, 60000));
+    }
 
+    public function testCalculatesZeroMarginWhenRevenueEqualsStaffCost(): void
+    {
+        self::assertSame(0, $this->calculator->calculate(60000, 60000));
+    }
+
+    public function testCalculatesNegativeMarginWhenCostExceedsRevenue(): void
+    {
+        self::assertSame(-10000, $this->calculator->calculate(50000, 60000));
+    }
+
+    public function testCalculatesMarginWithZeroRevenue(): void
+    {
+        self::assertSame(-40000, $this->calculator->calculate(0, 40000));
+    }
+
+    public function testCalculatesMarginWithZeroStaffCost(): void
+    {
+        self::assertSame(70000, $this->calculator->calculate(70000, 0));
+    }
+
+    public function testThrowsWhenStaffCostIsNull(): void
+    {
         $this->expectException(InvalidArgumentException::class);
-        $calculator->calculate(90000, null);
+        $this->expectExceptionMessage('A margin can not be calculated without staff cost.');
+
+        $this->calculator->calculate(90000, null);
     }
 }

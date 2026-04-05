@@ -15,7 +15,7 @@ vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-text
 
 ## Smoke tests WordPress
 
-1. Activar el plugin desde `plugin/qs-core.php`.
+1. Activar el plugin desde `qs-core.php`.
 2. Confirmar creacion/actualizacion de tablas `wp_qs_*`.
 3. Confirmar registro de roles `qs_admin`, `qs_coordinadora`, `qs_staff`.
 4. Probar `GET /wp-json/qs/v1/health`.

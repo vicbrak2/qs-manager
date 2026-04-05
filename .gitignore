@@ -1,7 +1,9 @@
 /vendor/
+/dist/
 /.php-cs-fixer.cache
 /var/cache/phpunit/
 /var/cache/phpstan/
 /var/logs/*.log
+/tools/mutation/reports/*.log
 /app/UI/Admin/Assets/node_modules/
 /.env

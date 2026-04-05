@@ -13,7 +13,9 @@ final class PaymentCptRepositoryTest extends WpTestCase
     {
         $this->requireWordPressRuntime();
 
-        $repository = new PaymentCptRepository();
+        global $wpdb;
+
+        $repository = new PaymentCptRepository($wpdb);
 
         self::assertIsArray($repository->findAll());
     }

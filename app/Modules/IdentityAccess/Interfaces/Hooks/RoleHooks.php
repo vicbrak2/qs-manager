@@ -9,6 +9,10 @@ use QS\Modules\IdentityAccess\Domain\ValueObject\QsRole;
 
 final class RoleHooks implements HookableInterface
 {
+    public function __construct(private readonly \wpdb $wpdb)
+    {
+    }
+
     public function register(): void
     {
         if (function_exists('add_action')) {
@@ -25,15 +29,9 @@ final class RoleHooks implements HookableInterface
             return;
         }
 
-        global $wpdb;
+        $table = $this->wpdb->prefix . 'qs_audit_log';
 
-        if (! isset($wpdb)) {
-            return;
-        }
-
-        $table = $wpdb->prefix . 'qs_audit_log';
-
-        $wpdb->insert(
+        $this->wpdb->insert(
             $table,
             [
                 'usuario_id' => get_current_user_id(),

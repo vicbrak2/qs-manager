@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QS\Core\Wordpress;
 
+use Closure;
 use Psr\Container\ContainerInterface;
 use QS\Core\Config\ConfigLoader;
 use QS\Core\Contracts\HookableInterface;
@@ -57,7 +58,11 @@ final class RestRouteRegistrar implements HookableInterface
         $permissionCallback = $route['permission_callback'] ?? '__return_true';
 
         if (is_string($permissionCallback) && method_exists($controller, $permissionCallback)) {
-            return [$controller, $permissionCallback];
+            $callback = [$controller, $permissionCallback];
+
+            if (is_callable($callback)) {
+                return Closure::fromCallable($callback);
+            }
         }
 
         if (is_callable($permissionCallback)) {

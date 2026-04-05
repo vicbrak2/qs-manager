@@ -13,57 +13,55 @@ use RuntimeException;
 
 final class WpdbStaffRepository implements StaffRepository
 {
-    private string $tableName;
+    private readonly string $tableName;
 
-    public function __construct()
+    public function __construct(private readonly \wpdb $wpdb)
     {
-        global $wpdb;
-
-        $this->tableName = isset($wpdb) ? $wpdb->prefix . 'qs_staff' : 'wp_qs_staff';
+        $this->tableName = $this->wpdb->prefix . 'qs_staff';
     }
 
     public function findAll(?Specialty $specialty = null, bool $activeOnly = true): array
     {
-        global $wpdb;
-
-        if (! isset($wpdb)) {
-            return [];
+        if ($specialty !== null && $activeOnly) {
+            /** @var literal-string $sql */
+            $sql = "SELECT * FROM {$this->tableName} WHERE especialidad = %s AND estado = 'activo' ORDER BY nombre ASC, apellido ASC";
+            $rows = $this->wpdb->get_results(
+                $this->wpdb->prepare($sql, $specialty->value)
+            );
+        } elseif ($specialty !== null) {
+            /** @var literal-string $sql */
+            $sql = "SELECT * FROM {$this->tableName} WHERE especialidad = %s ORDER BY nombre ASC, apellido ASC";
+            $rows = $this->wpdb->get_results(
+                $this->wpdb->prepare($sql, $specialty->value)
+            );
+        } elseif ($activeOnly) {
+            $rows = $this->wpdb->get_results(
+                "SELECT * FROM {$this->tableName} WHERE estado = 'activo' ORDER BY nombre ASC, apellido ASC"
+            );
+        } else {
+            $rows = $this->wpdb->get_results(
+                "SELECT * FROM {$this->tableName} ORDER BY nombre ASC, apellido ASC"
+            );
         }
-
-        $sql = "SELECT * FROM {$this->tableName} WHERE 1=1";
-        $arguments = [];
-
-        if ($specialty !== null) {
-            $sql .= ' AND especialidad = %s';
-            $arguments[] = $specialty->value;
-        }
-
-        if ($activeOnly) {
-            $sql .= " AND estado = 'activo'";
-        }
-
-        $sql .= ' ORDER BY nombre ASC, apellido ASC';
-
-        $prepared = count($arguments) > 0 ? $wpdb->prepare($sql, ...$arguments) : $sql;
-        $rows = $wpdb->get_results($prepared);
 
         if (! is_array($rows)) {
             return [];
         }
+
+        /** @var list<\stdClass> $rows */
+        $rows = array_values(
+            array_filter($rows, static fn (mixed $row): bool => $row instanceof \stdClass)
+        );
 
         return array_map([$this, 'hydrate'], $rows);
     }
 
     public function findById(int $id): ?StaffMember
     {
-        global $wpdb;
-
-        if (! isset($wpdb)) {
-            return null;
-        }
-
-        $row = $wpdb->get_row(
-            $wpdb->prepare("SELECT * FROM {$this->tableName} WHERE id = %d LIMIT 1", $id)
+        /** @var literal-string $sql */
+        $sql = "SELECT * FROM {$this->tableName} WHERE id = %d LIMIT 1";
+        $row = $this->wpdb->get_row(
+            $this->wpdb->prepare($sql, $id)
         );
 
         return $row instanceof \stdClass ? $this->hydrate($row) : null;
@@ -71,12 +69,6 @@ final class WpdbStaffRepository implements StaffRepository
 
     public function save(StaffMember $staffMember): StaffMember
     {
-        global $wpdb;
-
-        if (! isset($wpdb)) {
-            throw new RuntimeException('wpdb is not available.');
-        }
-
         $data = [
             'nombre' => $staffMember->nombre(),
             'apellido' => $staffMember->apellido(),
@@ -93,16 +85,16 @@ final class WpdbStaffRepository implements StaffRepository
         $exists = $this->findById($id);
 
         if ($exists === null) {
-            $inserted = $wpdb->insert($this->tableName, $data, $formats);
+            $inserted = $this->wpdb->insert($this->tableName, $data, $formats);
 
             if ($inserted === false) {
                 throw new RuntimeException('Could not insert staff member.');
             }
 
-            return $this->findById((int) $wpdb->insert_id) ?? $staffMember;
+            return $this->findById((int) $this->wpdb->insert_id) ?? $staffMember;
         }
 
-        $updated = $wpdb->update($this->tableName, $data, ['id' => $id], $formats, ['%d']);
+        $updated = $this->wpdb->update($this->tableName, $data, ['id' => $id], $formats, ['%d']);
 
         if ($updated === false) {
             throw new RuntimeException(sprintf('Could not update staff member %d.', $id));
@@ -111,7 +103,7 @@ final class WpdbStaffRepository implements StaffRepository
         return $this->findById($id) ?? $staffMember;
     }
 
-    private function hydrate(object $row): StaffMember
+    private function hydrate(\stdClass $row): StaffMember
     {
         $specialty = Specialty::fromNullable((string) $row->especialidad) ?? Specialty::Mua;
 

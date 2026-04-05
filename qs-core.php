@@ -20,7 +20,7 @@ if (! defined('ABSPATH')) {
 }
 
 if (! defined('QS_CORE_ROOT_DIR')) {
-    define('QS_CORE_ROOT_DIR', dirname(__DIR__));
+    define('QS_CORE_ROOT_DIR', __DIR__);
 }
 
 if (! defined('QS_CORE_PLUGIN_DIR')) {

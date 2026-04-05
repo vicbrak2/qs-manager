@@ -6,17 +6,13 @@ namespace QS\Core\Versioning;
 
 use QS\Core\Errors\QsException;
 use QS\Core\Logging\Logger;
-use QS\Core\Wordpress\PostTypeRegistrar;
-use QS\Modules\IdentityAccess\Infrastructure\Wordpress\RoleRegistrar;
 
 final class MigrationRunner
 {
     public function __construct(
         private readonly string $rootDir,
         private readonly PluginVersion $pluginVersion,
-        private readonly Logger $logger,
-        private readonly RoleRegistrar $roleRegistrar,
-        private readonly PostTypeRegistrar $postTypeRegistrar
+        private readonly Logger $logger
     ) {
     }
 
@@ -55,20 +51,7 @@ final class MigrationRunner
         }
 
         $this->ensureDefaultOptions();
-
-        update_option($this->pluginVersion->versionOptionKey(), $this->pluginVersion->current(), false);
-        update_option(
-            $this->pluginVersion->schemaOptionKey(),
-            $latestSchemaVersion === '0000' ? $this->pluginVersion->schemaVersion() : $latestSchemaVersion,
-            false
-        );
-
-        if (get_option($this->pluginVersion->installedAtOptionKey(), false) === false) {
-            add_option($this->pluginVersion->installedAtOptionKey(), gmdate('c'), '', false);
-        }
-
-        $this->roleRegistrar->syncRoles();
-        $this->postTypeRegistrar->registerPostTypes();
+        $this->updateVersionOptions($latestSchemaVersion);
 
         if (function_exists('flush_rewrite_rules')) {
             flush_rewrite_rules(false);
@@ -105,6 +88,26 @@ final class MigrationRunner
         sort($files);
 
         return array_values($files);
+    }
+
+    private function updateVersionOptions(string $latestSchemaVersion): void
+    {
+        update_option(
+            $this->pluginVersion->versionOptionKey(),
+            $this->pluginVersion->current(),
+            false
+        );
+        update_option(
+            $this->pluginVersion->schemaOptionKey(),
+            $latestSchemaVersion === '0000'
+                ? $this->pluginVersion->schemaVersion()
+                : $latestSchemaVersion,
+            false
+        );
+
+        if (get_option($this->pluginVersion->installedAtOptionKey(), false) === false) {
+            add_option($this->pluginVersion->installedAtOptionKey(), gmdate('c'), '', false);
+        }
     }
 
     private function ensureDefaultOptions(): void

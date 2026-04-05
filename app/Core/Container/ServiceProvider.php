@@ -87,6 +87,11 @@ final class ServiceProvider
     public static function definitions(string $rootDir): array
     {
         return [
+            \wpdb::class => factory(static function (): \wpdb {
+                global $wpdb;
+
+                return $wpdb;
+            }),
             'qs.root_dir' => $rootDir,
             EnvironmentDetector::class => autowire(),
             ConfigLoader::class => autowire()->constructor($rootDir, get(EnvironmentDetector::class)),
@@ -159,9 +164,7 @@ final class ServiceProvider
             MigrationRunner::class => autowire()->constructor(
                 $rootDir,
                 get(PluginVersion::class),
-                get(Logger::class),
-                get(RoleRegistrar::class),
-                get(PostTypeRegistrar::class)
+                get(Logger::class)
             ),
             SystemController::class => autowire(),
             BitacoraController::class => autowire(),

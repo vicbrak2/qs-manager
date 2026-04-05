@@ -1,0 +1,20 @@
+{
+  "source": {
+    "directories": [
+      "app/Modules/Booking/Domain",
+      "app/Modules/Booking/Application"
+    ]
+  },
+  "phpUnit": {
+    "configDir": "../.."
+  },
+  "logs": {
+    "text": "../../tools/mutation/reports/infection-booking.log",
+    "summary": "../../tools/mutation/reports/infection-booking-summary.log"
+  },
+  "minMsi": 80,
+  "minCoveredMsi": 85,
+  "mutators": {
+    "@default": true
+  }
+}

@@ -13,6 +13,10 @@ use RuntimeException;
 
 final class PaymentCptRepository implements PaymentRepository
 {
+    public function __construct(private readonly \wpdb $wpdb)
+    {
+    }
+
     public function findAll(): array
     {
         if (! function_exists('get_posts')) {
@@ -107,13 +111,7 @@ final class PaymentCptRepository implements PaymentRepository
 
     private function syncFinanceEntry(int $postId, Payment $payment, string $title): void
     {
-        global $wpdb;
-
-        if (! isset($wpdb)) {
-            return;
-        }
-
-        $table = $wpdb->prefix . 'qs_finance_entries';
+        $table = $this->wpdb->prefix . 'qs_finance_entries';
         $entryId = $this->intMeta($postId, 'qs_finance_entry_id');
         $data = [
             'tipo' => 'ingreso',
@@ -129,14 +127,14 @@ final class PaymentCptRepository implements PaymentRepository
         $formats = ['%s', '%s', '%d', '%s', '%d', '%d', '%s', '%s', '%s'];
 
         if ($entryId !== null) {
-            $wpdb->update($table, $data, ['id' => $entryId], $formats, ['%d']);
+            $this->wpdb->update($table, $data, ['id' => $entryId], $formats, ['%d']);
             return;
         }
 
-        $inserted = $wpdb->insert($table, $data, $formats);
+        $inserted = $this->wpdb->insert($table, $data, $formats);
 
         if ($inserted !== false) {
-            update_post_meta($postId, 'qs_finance_entry_id', (int) $wpdb->insert_id);
+            update_post_meta($postId, 'qs_finance_entry_id', (int) $this->wpdb->insert_id);
         }
     }
 

@@ -27,25 +27,25 @@ final class ReservationNormalizer
         }
 
         return new Reservation(
-            new ReservationId((int) $row['id']),
-            isset($row['order_id']) ? (int) $row['order_id'] : null,
-            isset($row['customer_id']) ? (int) $row['customer_id'] : null,
-            isset($row['agent_id']) ? (int) $row['agent_id'] : null,
-            isset($row['service_id']) ? (int) $row['service_id'] : null,
-            (string) ($row['service_name'] ?? 'Servicio sin nombre'),
-            isset($row['agent_name']) ? (string) $row['agent_name'] : null,
-            $clientName,
-            isset($row['email']) ? (string) $row['email'] : null,
-            isset($row['phone']) ? (string) $row['phone'] : null,
-            ReservationStatus::fromNullable(isset($row['status']) ? (string) $row['status'] : null),
-            isset($row['price']) ? (int) $row['price'] : null,
-            new ReservationTimeRange(
+            id: new ReservationId((int) $row['id']),
+            orderId: isset($row['order_id']) ? (int) $row['order_id'] : null,
+            customerId: isset($row['customer_id']) ? (int) $row['customer_id'] : null,
+            agentId: isset($row['agent_id']) ? (int) $row['agent_id'] : null,
+            serviceId: isset($row['service_id']) ? (int) $row['service_id'] : null,
+            serviceName: (string) ($row['service_name'] ?? 'Servicio sin nombre'),
+            agentName: isset($row['agent_name']) ? (string) $row['agent_name'] : null,
+            clientName: $clientName,
+            clientEmail: isset($row['email']) ? (string) $row['email'] : null,
+            clientPhone: isset($row['phone']) ? (string) $row['phone'] : null,
+            status: ReservationStatus::fromNullable(isset($row['status']) ? (string) $row['status'] : null),
+            priceClp: isset($row['price']) ? (int) $row['price'] : null,
+            timeRange: new ReservationTimeRange(
                 (string) ($row['start_date'] ?? gmdate('Y-m-d')),
                 (string) ($row['start_time'] ?? '00:00:00'),
                 (string) ($row['end_time'] ?? '00:00:00')
             ),
-            isset($row['payment_method']) ? (string) $row['payment_method'] : null,
-            isset($row['notes']) ? (string) $row['notes'] : null
+            paymentMethod: isset($row['payment_method']) ? (string) $row['payment_method'] : null,
+            notes: isset($row['notes']) ? (string) $row['notes'] : null
         );
     }
 }

@@ -14,7 +14,9 @@ final class WpdbStaffRepositoryTest extends WpTestCase
     {
         $this->requireWordPressRuntime();
 
-        $repository = new WpdbStaffRepository();
+        global $wpdb;
+
+        $repository = new WpdbStaffRepository($wpdb);
         $staff = $repository->findAll(Specialty::Mua, false);
 
         self::assertIsArray($staff);
