@@ -77,7 +77,7 @@ final class IngestGateway
             ];
         }
 
-        $statusCode = wp_remote_retrieve_response_code($response);
+        $statusCode = (int) wp_remote_retrieve_response_code($response);
         $responseBody = (string) wp_remote_retrieve_body($response);
         $ok = $statusCode === 200;
 
