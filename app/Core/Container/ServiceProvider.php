@@ -63,7 +63,10 @@ use QS\Modules\Finance\Infrastructure\Persistence\ExpenseCptRepository;
 use QS\Modules\Finance\Infrastructure\Persistence\PaymentCptRepository;
 use QS\Modules\Finance\Infrastructure\Persistence\WpServiceCostRepository;
 use QS\Modules\Finance\Interfaces\Rest\FinanceController;
+use QS\Modules\Agents\Application\CommandHandler\ReindexContentHandler;
 use QS\Modules\Agents\Infrastructure\N8n\ChatbotGateway;
+use QS\Modules\Agents\Infrastructure\N8n\IngestGateway;
+use QS\Modules\Agents\Infrastructure\Wordpress\ReindexAdminPage;
 use QS\Modules\Agents\Interfaces\Rest\ChatbotController;
 use QS\Modules\IdentityAccess\Application\CommandHandler\AssignQsRoleHandler;
 use QS\Modules\IdentityAccess\Application\QueryHandler\GetUserPermissionsHandler;
@@ -184,6 +187,9 @@ final class ServiceProvider
             ServicesController::class => autowire(),
             FinanceController::class => autowire(),
             ChatbotGateway::class => autowire(),
+            IngestGateway::class => autowire(),
+            ReindexContentHandler::class => autowire(),
+            ReindexAdminPage::class => autowire(),
             ChatbotController::class => autowire(),
         ];
     }
