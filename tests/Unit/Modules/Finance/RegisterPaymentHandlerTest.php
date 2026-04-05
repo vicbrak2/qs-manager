@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace QS\Tests\Unit\Modules\Finance;
 
-use PHPUnit\Framework\MockObject\MockObject;
 use InvalidArgumentException;
+use PHPUnit\Framework\MockObject\MockObject;
 use QS\Modules\Finance\Application\Command\RegisterPayment;
 use QS\Modules\Finance\Application\CommandHandler\RegisterPaymentHandler;
 use QS\Modules\Finance\Domain\Entity\Payment;
