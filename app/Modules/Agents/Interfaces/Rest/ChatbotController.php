@@ -13,7 +13,8 @@ final class ChatbotController
 {
     public function __construct(
         private readonly ChatbotGateway $gateway
-    ) {}
+    ) {
+    }
 
     public function chat(WP_REST_Request $request): WP_REST_Response|WP_Error
     {
