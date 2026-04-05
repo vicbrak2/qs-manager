@@ -62,11 +62,9 @@ final class ReindexAdminPage implements HookableInterface
         $settingsSaved = isset($_GET['qs_settings_updated']) && $_GET['qs_settings_updated'] === '1';
         $contextFeedback = $this->consumeContextFeedback();
         $contextDocuments = $this->contextDocuments();
-        $contextImportedCount = is_array($contextFeedback) && isset($contextFeedback['imported']) ? (int) $contextFeedback['imported'] : 0;
-        $contextFailedCount = is_array($contextFeedback) && isset($contextFeedback['failed']) ? (int) $contextFeedback['failed'] : 0;
-        $contextFailures = is_array($contextFeedback) && isset($contextFeedback['failures']) && is_array($contextFeedback['failures'])
-            ? $contextFeedback['failures']
-            : [];
+        $contextImportedCount = $contextFeedback !== null ? $contextFeedback['imported'] : 0;
+        $contextFailedCount = $contextFeedback !== null ? $contextFeedback['failed'] : 0;
+        $contextFailures = $contextFeedback !== null ? $contextFeedback['failures'] : [];
         ?>
         <div class="wrap">
             <h1>QS Chatbot — Re-indexar contenido en Qdrant</h1>
@@ -605,7 +603,21 @@ final class ReindexAdminPage implements HookableInterface
         $feedback = get_transient($this->feedbackTransientKey());
         delete_transient($this->feedbackTransientKey());
 
-        return is_array($feedback) ? $feedback : null;
+        if (
+            ! is_array($feedback) ||
+            ! isset($feedback['imported'], $feedback['failed'], $feedback['failures']) ||
+            ! is_int($feedback['imported']) ||
+            ! is_int($feedback['failed']) ||
+            ! is_array($feedback['failures'])
+        ) {
+            return null;
+        }
+
+        return [
+            'imported' => $feedback['imported'],
+            'failed' => $feedback['failed'],
+            'failures' => $feedback['failures'],
+        ];
     }
 
     private function feedbackTransientKey(): string
