@@ -340,7 +340,9 @@ final class ReindexAdminPage implements HookableInterface
         $this->storeOption(self::QDRANT_URL_OPTION, $qdrantUrl);
         $this->storeOption(self::WHATSAPP_URL_OPTION, $whatsappUrl);
 
-        $redirectUrl = add_query_arg('qs_settings_updated', '1', menu_page_url('qs-chatbot-reindex', false));
+        $redirectUrl = $this->pageUrl([
+            'qs_settings_updated' => '1',
+        ]);
 
         wp_safe_redirect($redirectUrl);
         exit;
@@ -403,7 +405,7 @@ final class ReindexAdminPage implements HookableInterface
         }
 
         set_transient($this->feedbackTransientKey(), $feedback, 120);
-        wp_safe_redirect(menu_page_url('qs-chatbot-reindex', false));
+        wp_safe_redirect($this->pageUrl());
         exit;
     }
 
@@ -433,6 +435,20 @@ final class ReindexAdminPage implements HookableInterface
         }
 
         update_option($key, $value, false);
+    }
+
+    /**
+     * @param array<string, scalar> $queryArgs
+     */
+    private function pageUrl(array $queryArgs = []): string
+    {
+        $url = admin_url('admin.php?page=qs-chatbot-reindex');
+
+        if ($queryArgs === []) {
+            return $url;
+        }
+
+        return add_query_arg($queryArgs, $url);
     }
 
     /**
