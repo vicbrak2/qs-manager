@@ -1,0 +1,21 @@
+### 1. Test Directo a n8n (El Cerebro)
+# Esto salta WordPress y le habla directo a n8n.
+# Úsalo para confirmar que las llaves de Groq y HuggingFace funcionan.
+POST http://localhost:5678/webhook/wp-chatbot-rag
+Content-Type: application/json
+Accept: application/json
+
+{
+    "message": "Hola, ¿de qué se trata tu sistema?",
+    "session_id": "test_curl_123"
+}
+
+### 2. Test Completo pasando por WordPress 
+# Cambia 'http://tu-dominio-local.test' por tu URL real de desarrollo de WP.
+POST http://tu-dominio-local.test/wp-json/qs/v1/agents/chat
+Content-Type: application/json
+Accept: application/json
+
+{
+    "message": "Hola, prueba desde WordPress"
+}

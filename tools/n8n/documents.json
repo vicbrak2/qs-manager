@@ -1,0 +1,32 @@
+[
+  {
+    "post_id": 1001,
+    "title": "Maquillaje Social",
+    "url": "https://qamilunastudio.com/servicios/maquillaje-social",
+    "content": "Servicio Maquillaje Social en Qamiluna Studio. Precio base 70000 CLP. Duracion del servicio 60 minutos y buffer previo de 15 minutos. Categoria maquillaje. Staff requerido: mua."
+  },
+  {
+    "post_id": 1002,
+    "title": "Combo Social M+P",
+    "url": "https://qamilunastudio.com/servicios/combo-social-mp",
+    "content": "Servicio Combo Social M+P en Qamiluna Studio. Precio base 90000 CLP. Duracion del servicio 90 minutos y buffer previo de 15 minutos. Categoria combo. Staff requerido: ambos, maquilladora y estilista."
+  },
+  {
+    "post_id": 1003,
+    "title": "Novia Civil M+P",
+    "url": "https://qamilunastudio.com/servicios/novia-civil-mp",
+    "content": "Servicio Novia Civil M+P en Qamiluna Studio. Precio base 180000 CLP. Duracion del servicio 120 minutos y buffer previo de 15 minutos. Categoria novia. Staff requerido: ambos, maquilladora y estilista."
+  },
+  {
+    "post_id": 1004,
+    "title": "Novia Fiesta M+P",
+    "url": "https://qamilunastudio.com/servicios/novia-fiesta-mp",
+    "content": "Servicio Novia Fiesta M+P en Qamiluna Studio. Precio base 180000 CLP. Duracion del servicio 120 minutos y buffer previo de 15 minutos. Categoria novia. Staff requerido: ambos, maquilladora y estilista."
+  },
+  {
+    "post_id": 1005,
+    "title": "Graduacion M+P",
+    "url": "https://qamilunastudio.com/servicios/graduacion-mp",
+    "content": "Servicio Graduacion M+P en Qamiluna Studio. Precio base 90000 CLP. Duracion del servicio 90 minutos y buffer previo de 15 minutos. Categoria combo. Staff requerido: ambos, maquilladora y estilista."
+  }
+]
