@@ -77,7 +77,11 @@ final class LatepointTableMap
 
         $servicesTable = $this->services();
         $nameColumn = $this->wpdb->get_var(
-            $this->wpdb->prepare('SHOW COLUMNS FROM ' . $servicesTable . ' LIKE %s', 'name')
+            $this->wpdb->prepare(
+                'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = %s LIMIT 1',
+                $servicesTable,
+                'name'
+            )
         );
 
         $this->resolvedColumns['services.name'] = $nameColumn === 'name' ? 'name' : 'title';
