@@ -29,6 +29,7 @@ final class ChatbotFallbackResponder
     {
         $whatsappUrl = $this->whatsappUrl();
         $message = 'En este momento el asistente automatico no esta disponible. Escribenos por WhatsApp y te ayudamos directamente.';
+        $reason = $error !== null ? (string) $error->get_error_code() : 'service_unavailable';
 
         if ($whatsappUrl !== '') {
             $message .= ' ' . $whatsappUrl;
@@ -40,7 +41,7 @@ final class ChatbotFallbackResponder
             'fallback' => true,
             'fallback_channel' => 'whatsapp',
             'whatsapp_url' => $whatsappUrl !== '' ? $whatsappUrl : null,
-            'fallback_reason' => $error?->get_error_code() ?? 'service_unavailable',
+            'fallback_reason' => $reason,
         ];
     }
 
