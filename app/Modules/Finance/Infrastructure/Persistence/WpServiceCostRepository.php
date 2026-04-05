@@ -25,7 +25,8 @@ final class WpServiceCostRepository implements ServiceCostRepository
 
         $rows = $this->wpdb->get_results(
             sprintf(
-                'SELECT s.title AS service_name, c.staff_cost_clp FROM %s s INNER JOIN %s c ON c.lp_service_id = s.id ORDER BY s.id ASC',
+                'SELECT %s AS service_name, c.staff_cost_clp FROM %s s INNER JOIN %s c ON c.lp_service_id = s.id ORDER BY s.id ASC',
+                $this->tableMap->serviceNameColumn(),
                 $this->tableMap->services(),
                 $this->costsTable()
             ),

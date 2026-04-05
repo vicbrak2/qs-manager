@@ -62,13 +62,7 @@
 *   **Estado remoto de sync FTP:** `.ftp-deploy-sync-state.json` en la raíz remota del usuario FTP.
 
 ### Scripts locales para probar la API
-Una sola vez por máquina:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File tools/http/Set-QsApiEnv.ps1 -Password 'TU_APPLICATION_PASSWORD'
-```
-
-Luego, en una terminal nueva:
+Si `QS_API_BASE`, `QS_API_USER` y `QS_API_PASS` existen en `.env`, los scripts los leen automáticamente:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools/http/Get-QsBookingsToday.ps1
@@ -78,6 +72,12 @@ O para cualquier endpoint:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools/http/Invoke-QsApi.ps1 -Path 'health'
+```
+
+Si quieres persistir esos valores como variables de entorno de usuario en Windows, el helper sigue disponible:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/http/Set-QsApiEnv.ps1
 ```
 
 ## Roles Operativos Iniciales (3 roles)

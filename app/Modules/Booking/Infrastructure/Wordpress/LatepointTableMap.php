@@ -6,27 +6,82 @@ namespace QS\Modules\Booking\Infrastructure\Wordpress;
 
 final class LatepointTableMap
 {
+    /** @var array<string, string> */
+    private array $resolvedTables = [];
+
+    /** @var array<string, string> */
+    private array $resolvedColumns = [];
+
     public function __construct(private readonly \wpdb $wpdb)
     {
     }
 
     public function bookings(): string
     {
-        return $this->wpdb->prefix . 'lp_bookings';
+        return $this->resolveTable('bookings');
     }
 
     public function customers(): string
     {
-        return $this->wpdb->prefix . 'lp_customers';
+        return $this->resolveTable('customers');
     }
 
     public function agents(): string
     {
-        return $this->wpdb->prefix . 'lp_agents';
+        return $this->resolveTable('agents');
     }
 
     public function services(): string
     {
-        return $this->wpdb->prefix . 'lp_services';
+        return $this->resolveTable('services');
+    }
+
+    public function serviceNameColumn(string $alias = 's'): string
+    {
+        return sprintf('%s.%s', $alias, $this->resolveServiceNameColumn());
+    }
+
+    private function resolveTable(string $suffix): string
+    {
+        if (isset($this->resolvedTables[$suffix])) {
+            return $this->resolvedTables[$suffix];
+        }
+
+        $candidates = [
+            $this->wpdb->prefix . 'latepoint_' . $suffix,
+            $this->wpdb->prefix . 'lp_' . $suffix,
+        ];
+
+        foreach ($candidates as $candidate) {
+            $result = $this->wpdb->get_var(
+                $this->wpdb->prepare('SHOW TABLES LIKE %s', $candidate)
+            );
+
+            if ($result === $candidate) {
+                $this->resolvedTables[$suffix] = $candidate;
+
+                return $candidate;
+            }
+        }
+
+        $this->resolvedTables[$suffix] = $candidates[1];
+
+        return $this->resolvedTables[$suffix];
+    }
+
+    private function resolveServiceNameColumn(): string
+    {
+        if (isset($this->resolvedColumns['services.name'])) {
+            return $this->resolvedColumns['services.name'];
+        }
+
+        $servicesTable = $this->services();
+        $nameColumn = $this->wpdb->get_var(
+            $this->wpdb->prepare('SHOW COLUMNS FROM ' . $servicesTable . ' LIKE %s', 'name')
+        );
+
+        $this->resolvedColumns['services.name'] = $nameColumn === 'name' ? 'name' : 'title';
+
+        return $this->resolvedColumns['services.name'];
     }
 }

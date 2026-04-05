@@ -5,23 +5,31 @@ param(
     [string] $Method = 'GET'
 )
 
-$apiBase = [Environment]::GetEnvironmentVariable('QS_API_BASE', 'Process')
-if ([string]::IsNullOrWhiteSpace($apiBase)) {
-    $apiBase = [Environment]::GetEnvironmentVariable('QS_API_BASE', 'User')
+$dotEnv = & "$PSScriptRoot/Import-DotEnv.ps1"
+
+function Resolve-Setting {
+    param(
+        [string] $Name
+    )
+
+    $processValue = [Environment]::GetEnvironmentVariable($Name, 'Process')
+    if (-not [string]::IsNullOrWhiteSpace($processValue)) {
+        return $processValue
+    }
+
+    if ($dotEnv.ContainsKey($Name) -and -not [string]::IsNullOrWhiteSpace($dotEnv[$Name])) {
+        return $dotEnv[$Name]
+    }
+
+    return [Environment]::GetEnvironmentVariable($Name, 'User')
 }
 
-$apiUser = [Environment]::GetEnvironmentVariable('QS_API_USER', 'Process')
-if ([string]::IsNullOrWhiteSpace($apiUser)) {
-    $apiUser = [Environment]::GetEnvironmentVariable('QS_API_USER', 'User')
-}
-
-$apiPass = [Environment]::GetEnvironmentVariable('QS_API_PASS', 'Process')
-if ([string]::IsNullOrWhiteSpace($apiPass)) {
-    $apiPass = [Environment]::GetEnvironmentVariable('QS_API_PASS', 'User')
-}
+$apiBase = Resolve-Setting 'QS_API_BASE'
+$apiUser = Resolve-Setting 'QS_API_USER'
+$apiPass = Resolve-Setting 'QS_API_PASS'
 
 if ([string]::IsNullOrWhiteSpace($apiBase) -or [string]::IsNullOrWhiteSpace($apiUser) -or [string]::IsNullOrWhiteSpace($apiPass)) {
-    throw 'Faltan variables QS_API_BASE, QS_API_USER o QS_API_PASS. Ejecuta tools/http/Set-QsApiEnv.ps1 primero.'
+    throw 'Faltan QS_API_BASE, QS_API_USER o QS_API_PASS. Definelas en .env, en la sesión actual o ejecuta tools/http/Set-QsApiEnv.ps1.'
 }
 
 $uri = if ($Path.StartsWith('http')) {

@@ -100,7 +100,8 @@ final class WpdbLatepointRepository implements ReservationRepository
     private function baseSelect(): string
     {
         return sprintf(
-            'SELECT b.id, b.order_id, b.customer_id, b.agent_id, b.service_id, b.start_date, b.start_time, b.end_time, b.status, b.price, b.payment_method, b.notes, c.first_name AS customer_first_name, c.last_name AS customer_last_name, c.email, c.phone, s.title AS service_name, CONCAT(a.first_name, " ", a.last_name) AS agent_name FROM %s b LEFT JOIN %s c ON b.customer_id = c.id LEFT JOIN %s s ON b.service_id = s.id LEFT JOIN %s a ON b.agent_id = a.id',
+            'SELECT b.id, b.order_id, b.customer_id, b.agent_id, b.service_id, b.start_date, b.start_time, b.end_time, b.status, b.price, b.payment_method, b.notes, c.first_name AS customer_first_name, c.last_name AS customer_last_name, c.email, c.phone, %s AS service_name, CONCAT(a.first_name, " ", a.last_name) AS agent_name FROM %s b LEFT JOIN %s c ON b.customer_id = c.id LEFT JOIN %s s ON b.service_id = s.id LEFT JOIN %s a ON b.agent_id = a.id',
+            $this->tableMap->serviceNameColumn(),
             $this->tableMap->bookings(),
             $this->tableMap->customers(),
             $this->tableMap->services(),
