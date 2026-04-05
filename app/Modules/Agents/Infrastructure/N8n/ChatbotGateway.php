@@ -23,11 +23,21 @@ final class ChatbotGateway
      */
     public function ask(string $message, string $sessionId): string|WP_Error
     {
+        $body = wp_json_encode([
+            'message'    => $message,
+            'session_id' => $sessionId,
+        ]);
+
+        if (! is_string($body)) {
+            return new WP_Error(
+                'n8n_encoding_error',
+                'No se pudo serializar la solicitud al agente.',
+                ['status' => 500]
+            );
+        }
+
         $response = wp_remote_post($this->webhookUrl, [
-            'body'    => json_encode([
-                'message'    => $message,
-                'session_id' => $sessionId,
-            ]),
+            'body'    => $body,
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Accept'       => 'application/json',

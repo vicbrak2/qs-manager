@@ -21,13 +21,19 @@ final class IngestGateway
      */
     public function ingest(int $postId, string $title, string $url, string $content): bool
     {
+        $body = wp_json_encode([
+            'post_id' => $postId,
+            'title'   => $title,
+            'url'     => $url,
+            'content' => $content,
+        ]);
+
+        if (! is_string($body)) {
+            return false;
+        }
+
         $response = wp_remote_post($this->webhookUrl, [
-            'body'    => json_encode([
-                'post_id' => $postId,
-                'title'   => $title,
-                'url'     => $url,
-                'content' => $content,
-            ]),
+            'body'    => $body,
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Accept'       => 'application/json',

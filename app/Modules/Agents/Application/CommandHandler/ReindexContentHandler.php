@@ -31,9 +31,11 @@ final class ReindexContentHandler
             'fields'         => 'ids',
         ]);
 
-        foreach ($query->posts as $postId) {
-            $postId  = (int) $postId;
-            $post    = get_post($postId);
+        foreach ($query->posts as $postReference) {
+            $postId = $postReference instanceof \WP_Post
+                ? (int) $postReference->ID
+                : $postReference;
+            $post = get_post($postId);
 
             if (! $post instanceof \WP_Post) {
                 continue;
