@@ -9,6 +9,7 @@ use QS\Modules\Agents\Application\CommandHandler\ReindexContentHandler;
 use QS\Modules\Agents\Infrastructure\N8n\ChatbotGateway;
 use QS\Modules\Agents\Infrastructure\N8n\IngestGateway;
 use QS\Modules\Agents\Infrastructure\Persistence\WpdbChatLogRepository;
+use QS\Modules\Agents\Infrastructure\Qdrant\QdrantGateway;
 
 final class ReindexAdminPage implements HookableInterface
 {
@@ -25,7 +26,8 @@ final class ReindexAdminPage implements HookableInterface
         private readonly IngestGateway $ingestGateway,
         private readonly ChatbotGateway $chatbotGateway,
         private readonly ChatbotFallbackResponder $fallbackResponder,
-        private readonly WpdbChatLogRepository $chatLogRepository
+        private readonly WpdbChatLogRepository $chatLogRepository,
+        private readonly QdrantGateway $qdrantGateway
     ) {
     }
 
@@ -42,6 +44,7 @@ final class ReindexAdminPage implements HookableInterface
         add_action('admin_post_qs_upload_context_document', [$this, 'handleContextUpload']);
         add_action('admin_post_qs_delete_context_documents', [$this, 'handleContextDelete']);
         add_action('admin_post_qs_delete_context_source', [$this, 'handleContextDeleteSource']);
+        add_action('admin_post_qs_purge_qdrant_context', [$this, 'handleQdrantPurge']);
     }
 
     public function registerPage(): void
@@ -336,6 +339,17 @@ final class ReindexAdminPage implements HookableInterface
                 Este proceso envía todos los posts y páginas publicados al pipeline RAG (n8n → Qdrant).<br>
                 Úsalo cuando hayas cambiado contenido masivamente o al inicializar el sistema por primera vez.
             </p>
+
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin:16px 0;max-width:960px;">
+                <?php wp_nonce_field('qs_purge_qdrant_context'); ?>
+                <input type="hidden" name="action" value="qs_purge_qdrant_context">
+                <button type="submit" class="button button-secondary" onclick="return confirm('Se eliminaran todos los vectores de la coleccion wordpress_context en Qdrant. Luego debes reindexar. ¿Continuar?');">
+                    Purgar vectores de Qdrant
+                </button>
+                <p class="description" style="margin-top:8px;">
+                    Úsalo una vez para limpiar vectores viejos o contaminados. Después ejecuta <strong>Iniciar re-indexación</strong>.
+                </p>
+            </form>
 
             <button id="qs-reindex-btn" class="button button-primary button-large">
                 Iniciar re-indexación
@@ -638,17 +652,32 @@ final class ReindexAdminPage implements HookableInterface
         }
 
         $deleted = 0;
+        $vectorResult = [
+            'ok' => true,
+            'deleted_points' => 0,
+            'error' => null,
+        ];
 
         if ($ids !== []) {
+            $documentsToDelete = $this->matchingContextDocuments(
+                static fn (array $document): bool => in_array($document['id'], $ids, true)
+            );
             $deleted = $this->deleteContextDocuments(
                 static fn (array $document): bool => in_array($document['id'], $ids, true)
             );
+
+            if ($deleted > 0) {
+                $vectorResult = $this->qdrantGateway->deleteByPostIds($this->syntheticPostIdsForDocuments($documentsToDelete));
+            }
         }
 
         $this->storeContextActionFeedback([
             'mode' => 'selected',
             'deleted' => $deleted,
             'source_name' => '',
+            'vector_ok' => (bool) ($vectorResult['ok'] ?? false),
+            'vector_error' => is_string($vectorResult['error'] ?? null) ? $vectorResult['error'] : '',
+            'deleted_points' => (int) ($vectorResult['deleted_points'] ?? 0),
         ]);
 
         wp_safe_redirect($this->pageUrl());
@@ -666,17 +695,55 @@ final class ReindexAdminPage implements HookableInterface
         $sourceName = isset($_POST['source_name']) ? wp_unslash($_POST['source_name']) : '';
         $sourceName = is_string($sourceName) ? trim(sanitize_text_field($sourceName)) : '';
         $deleted = 0;
+        $vectorResult = [
+            'ok' => true,
+            'deleted_points' => 0,
+            'error' => null,
+        ];
 
         if ($sourceName !== '') {
+            $documentsToDelete = $this->matchingContextDocuments(
+                static fn (array $document): bool => $document['source_name'] === $sourceName
+            );
             $deleted = $this->deleteContextDocuments(
                 static fn (array $document): bool => $document['source_name'] === $sourceName
             );
+
+            if ($deleted > 0) {
+                $vectorResult = $this->qdrantGateway->deleteByPostIds($this->syntheticPostIdsForDocuments($documentsToDelete));
+            }
         }
 
         $this->storeContextActionFeedback([
             'mode' => 'source',
             'deleted' => $deleted,
             'source_name' => $sourceName,
+            'vector_ok' => (bool) ($vectorResult['ok'] ?? false),
+            'vector_error' => is_string($vectorResult['error'] ?? null) ? $vectorResult['error'] : '',
+            'deleted_points' => (int) ($vectorResult['deleted_points'] ?? 0),
+        ]);
+
+        wp_safe_redirect($this->pageUrl());
+        exit;
+    }
+
+    public function handleQdrantPurge(): void
+    {
+        if (! current_user_can('manage_options')) {
+            wp_die('Permisos insuficientes.');
+        }
+
+        check_admin_referer('qs_purge_qdrant_context');
+
+        $result = $this->qdrantGateway->purgeCollection();
+
+        $this->storeContextActionFeedback([
+            'mode' => 'purge',
+            'deleted' => 0,
+            'source_name' => '',
+            'vector_ok' => (bool) ($result['ok'] ?? false),
+            'vector_error' => is_string($result['error'] ?? null) ? $result['error'] : '',
+            'deleted_points' => (int) ($result['deleted_points'] ?? 0),
         ]);
 
         wp_safe_redirect($this->pageUrl());
@@ -1231,7 +1298,7 @@ final class ReindexAdminPage implements HookableInterface
     }
 
     /**
-     * @param array{mode: string, deleted: int, source_name: string} $feedback
+     * @param array{mode: string, deleted: int, source_name: string, vector_ok: bool, vector_error: string, deleted_points: int} $feedback
      */
     private function storeContextActionFeedback(array $feedback): void
     {
@@ -1239,7 +1306,7 @@ final class ReindexAdminPage implements HookableInterface
     }
 
     /**
-     * @return array{mode: string, deleted: int, source_name: string}|null
+     * @return array{mode: string, deleted: int, source_name: string, vector_ok: bool, vector_error: string, deleted_points: int}|null
      */
     private function consumeContextActionFeedback(): ?array
     {
@@ -1248,10 +1315,13 @@ final class ReindexAdminPage implements HookableInterface
 
         if (
             ! is_array($feedback) ||
-            ! isset($feedback['mode'], $feedback['deleted'], $feedback['source_name']) ||
+            ! isset($feedback['mode'], $feedback['deleted'], $feedback['source_name'], $feedback['vector_ok'], $feedback['vector_error'], $feedback['deleted_points']) ||
             ! is_string($feedback['mode']) ||
             ! is_int($feedback['deleted']) ||
-            ! is_string($feedback['source_name'])
+            ! is_string($feedback['source_name']) ||
+            ! is_bool($feedback['vector_ok']) ||
+            ! is_string($feedback['vector_error']) ||
+            ! is_int($feedback['deleted_points'])
         ) {
             return null;
         }
@@ -1270,11 +1340,20 @@ final class ReindexAdminPage implements HookableInterface
     }
 
     /**
-     * @param array{mode: string, deleted: int, source_name: string} $feedback
+     * @param array{mode: string, deleted: int, source_name: string, vector_ok: bool, vector_error: string, deleted_points: int} $feedback
      */
     private function renderContextActionFeedback(array $feedback): string
     {
         $deleted = $feedback['deleted'];
+        $vectorTail = $this->contextActionVectorTail($feedback);
+
+        if ($feedback['mode'] === 'purge') {
+            if (! $feedback['vector_ok']) {
+                return 'La purga de Qdrant fallo: ' . $feedback['vector_error'];
+            }
+
+            return 'Se purgaron ' . $feedback['deleted_points'] . ' vectores de Qdrant. Ahora vuelve a ejecutar la re-indexación.';
+        }
 
         if ($feedback['mode'] === 'source') {
             if ($deleted <= 0) {
@@ -1283,14 +1362,26 @@ final class ReindexAdminPage implements HookableInterface
                     : 'No se selecciono ningun origen para eliminar.';
             }
 
-            return 'Se eliminaron ' . $deleted . ' documentos del origen ' . $feedback['source_name'] . '.';
+            return 'Se eliminaron ' . $deleted . ' documentos del origen ' . $feedback['source_name'] . '.' . $vectorTail;
         }
 
         if ($deleted <= 0) {
             return 'No se seleccionaron documentos para eliminar.';
         }
 
-        return 'Se eliminaron ' . $deleted . ' documentos seleccionados.';
+        return 'Se eliminaron ' . $deleted . ' documentos seleccionados.' . $vectorTail;
+    }
+
+    /**
+     * @param array{mode: string, deleted: int, source_name: string, vector_ok: bool, vector_error: string, deleted_points: int} $feedback
+     */
+    private function contextActionVectorTail(array $feedback): string
+    {
+        if (! $feedback['vector_ok']) {
+            return ' WordPress se limpió, pero Qdrant no: ' . $feedback['vector_error'];
+        }
+
+        return ' En Qdrant se eliminaron ' . $feedback['deleted_points'] . ' vectores asociados.';
     }
 
     /**
@@ -1337,6 +1428,37 @@ final class ReindexAdminPage implements HookableInterface
         update_option(self::CONTEXT_DOCUMENTS_OPTION, $remaining, false);
 
         return $deleted;
+    }
+
+    /**
+     * @param callable(array{id: string, title: string, url: string, content: string, source_name: string, updated_at: string}): bool $matches
+     * @return array<int, array{id: string, title: string, url: string, content: string, source_name: string, updated_at: string}>
+     */
+    private function matchingContextDocuments(callable $matches): array
+    {
+        $matching = [];
+
+        foreach ($this->contextDocuments() as $document) {
+            if (! $matches($document)) {
+                continue;
+            }
+
+            $matching[] = $document;
+        }
+
+        return $matching;
+    }
+
+    /**
+     * @param array<int, array{id: string, title: string, url: string, content: string, source_name: string, updated_at: string}> $documents
+     * @return array<int, int>
+     */
+    private function syntheticPostIdsForDocuments(array $documents): array
+    {
+        return array_map(
+            fn (array $document): int => $this->syntheticPostId($document['id']),
+            $documents
+        );
     }
 
     /**

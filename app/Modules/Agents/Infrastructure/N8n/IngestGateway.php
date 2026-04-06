@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QS\Modules\Agents\Infrastructure\N8n;
 
 use QS\Core\Logging\Logger;
+use QS\Modules\Agents\Infrastructure\Qdrant\QdrantGateway;
 
 final class IngestGateway
 {
@@ -14,7 +15,8 @@ final class IngestGateway
     private string $webhookUrl;
 
     public function __construct(
-        private readonly Logger $logger
+        private readonly Logger $logger,
+        private readonly QdrantGateway $qdrantGateway
     ) {
         $this->webhookUrl = $this->resolveWebhookUrl();
     }
@@ -46,6 +48,18 @@ final class IngestGateway
      */
     private function dispatch(int $postId, string $title, string $url, string $content): array
     {
+        $deleteResult = $this->qdrantGateway->deleteByPostIds([$postId]);
+
+        if (! $deleteResult['ok']) {
+            $this->logger->warning(
+                sprintf(
+                    'QS vector delete failed before ingest for post %d: %s',
+                    $postId,
+                    $deleteResult['error'] ?? 'sin detalle'
+                )
+            );
+        }
+
         $body = wp_json_encode([
             'post_id' => $postId,
             'title'   => $title,

@@ -47,7 +47,24 @@
     },
     {
       "parameters": {
-        "options": {},
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "post_id",
+                "value": "={{ String($('WP Data Receiver').first().json.body.post_id) }}"
+              },
+              {
+                "name": "title",
+                "value": "={{ $('WP Data Receiver').first().json.body.title }}"
+              },
+              {
+                "name": "url",
+                "value": "={{ $('WP Data Receiver').first().json.body.url }}"
+              }
+            ]
+          }
+        },
         "dataType": "json",
         "jsonMode": "expressionData",
         "jsonData": "={{ $json.body.content }}"
