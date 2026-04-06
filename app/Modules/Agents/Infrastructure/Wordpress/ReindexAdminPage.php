@@ -902,7 +902,19 @@ final class ReindexAdminPage implements HookableInterface
         foreach ($failures as $failure) {
             $title = isset($failure['title']) && is_scalar($failure['title']) ? (string) $failure['title'] : 'documento';
             $error = isset($failure['error']) && is_scalar($failure['error']) ? (string) $failure['error'] : 'sin detalle';
-            $lines[] = $title . ': ' . $error;
+            $statusCode = isset($failure['status_code']) && is_scalar($failure['status_code']) ? (string) $failure['status_code'] : '';
+            $body = isset($failure['response_body']) && is_scalar($failure['response_body']) ? trim((string) $failure['response_body']) : '';
+            $line = $title . ': ' . $error;
+
+            if ($statusCode !== '') {
+                $line .= ' (HTTP ' . $statusCode . ')';
+            }
+
+            if ($body !== '') {
+                $line .= "\nBody: " . $this->truncateResponseBody($body, 300);
+            }
+
+            $lines[] = $line;
         }
 
         return implode("\n", $lines);

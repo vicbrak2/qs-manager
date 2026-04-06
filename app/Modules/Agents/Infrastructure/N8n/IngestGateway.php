@@ -9,6 +9,7 @@ use QS\Core\Logging\Logger;
 final class IngestGateway
 {
     private const OPTION_NAME = 'qs_n8n_ingest_url';
+    private const MAX_ATTEMPTS = 5;
 
     private string $webhookUrl;
 
@@ -62,45 +63,73 @@ final class IngestGateway
             ];
         }
 
-        $response = wp_remote_post($this->webhookUrl, [
-            'body'    => $body,
-            'headers' => [
-                'Content-Type' => 'application/json',
-                'Accept'       => 'application/json',
-            ],
-            'timeout' => 30,
-        ]);
+        $lastResult = [
+            'ok' => false,
+            'status_code' => null,
+            'error' => 'No se pudo ejecutar la ingesta.',
+            'response_body' => '',
+            'webhook_url' => $this->webhookUrl,
+        ];
 
-        if (is_wp_error($response)) {
-            $error = $response->get_error_message();
-            $this->logger->warning(sprintf('QS ingest failed for post %d: %s', $postId, $error));
+        for ($attempt = 1; $attempt <= self::MAX_ATTEMPTS; $attempt++) {
+            $response = wp_remote_post($this->webhookUrl, [
+                'body'    => $body,
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Accept'       => 'application/json',
+                ],
+                'timeout' => 30,
+            ]);
 
-            return [
-                'ok' => false,
-                'status_code' => null,
-                'error' => $error,
-                'response_body' => '',
+            if (is_wp_error($response)) {
+                $error = $response->get_error_message();
+                $lastResult = [
+                    'ok' => false,
+                    'status_code' => null,
+                    'error' => $error,
+                    'response_body' => '',
+                    'webhook_url' => $this->webhookUrl,
+                ];
+
+                $this->logger->warning(sprintf('QS ingest failed for post %d: %s', $postId, $error));
+
+                if ($attempt < self::MAX_ATTEMPTS) {
+                    $this->pauseBeforeRetry($attempt);
+                    continue;
+                }
+
+                return $lastResult;
+            }
+
+            $statusCode = (int) wp_remote_retrieve_response_code($response);
+            $responseBody = (string) wp_remote_retrieve_body($response);
+            $ok = $statusCode === 200;
+
+            $lastResult = [
+                'ok' => $ok,
+                'status_code' => $statusCode,
+                'error' => $ok ? null : 'HTTP ' . $statusCode,
+                'response_body' => $responseBody,
                 'webhook_url' => $this->webhookUrl,
             ];
-        }
 
-        $statusCode = (int) wp_remote_retrieve_response_code($response);
-        $responseBody = (string) wp_remote_retrieve_body($response);
-        $ok = $statusCode === 200;
+            if ($ok) {
+                return $lastResult;
+            }
 
-        if (! $ok) {
             $this->logger->warning(
                 sprintf('QS ingest failed for post %d with HTTP %d. Body: %s', $postId, $statusCode, $responseBody)
             );
+
+            if ($attempt < self::MAX_ATTEMPTS && $this->shouldRetry($statusCode, $responseBody)) {
+                $this->pauseBeforeRetry($attempt);
+                continue;
+            }
+
+            return $lastResult;
         }
 
-        return [
-            'ok' => $ok,
-            'status_code' => $statusCode,
-            'error' => $ok ? null : 'HTTP ' . $statusCode,
-            'response_body' => $responseBody,
-            'webhook_url' => $this->webhookUrl,
-        ];
+        return $lastResult;
     }
 
     private function resolveWebhookUrl(): string
@@ -122,5 +151,27 @@ final class IngestGateway
         }
 
         return 'http://localhost:5678/webhook/wp-ingest-rag';
+    }
+
+    private function shouldRetry(int $statusCode, string $responseBody): bool
+    {
+        if ($statusCode === 408 || $statusCode === 409 || $statusCode === 425 || $statusCode === 429) {
+            return true;
+        }
+
+        if ($statusCode >= 500) {
+            return true;
+        }
+
+        if ($statusCode === 422 && str_contains($responseBody, 'ERR_NGROK_3803')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function pauseBeforeRetry(int $attempt): void
+    {
+        usleep($attempt * 300000);
     }
 }
