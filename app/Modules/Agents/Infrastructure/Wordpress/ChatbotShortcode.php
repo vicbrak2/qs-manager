@@ -16,10 +16,6 @@ final class ChatbotShortcode implements HookableInterface
 
     public function enqueueAssets(): void
     {
-        if (! $this->isShortcodeActive()) {
-            return;
-        }
-
         $pluginUrl = plugin_dir_url($this->pluginFile());
         $version   = defined('QS_CORE_VERSION') ? QS_CORE_VERSION : '1.0.0';
 
@@ -95,17 +91,6 @@ final class ChatbotShortcode implements HookableInterface
         </div>
         <?php
         return (string) ob_get_clean();
-    }
-
-    private function isShortcodeActive(): bool
-    {
-        global $post;
-
-        if (! is_a($post, \WP_Post::class)) {
-            return false;
-        }
-
-        return has_shortcode($post->post_content, 'qs_chatbot');
     }
 
     private function pluginFile(): string
