@@ -7,7 +7,7 @@ return [
     'display_name' => 'QS Core',
     'text_domain' => 'qs-core',
     'version' => '1.0.0',
-    'schema_version' => '0008',
+    'schema_version' => '0009',
     'rest' => [
         'namespace' => 'qs/v1',
     ],

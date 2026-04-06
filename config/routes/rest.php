@@ -219,4 +219,12 @@ return [
         'action' => 'chat',
         'permission_callback' => '__return_true', // Abierto por ahora para pruebas
     ],
+    [
+        'namespace' => 'qs/v1',
+        'route' => '/agents/feedback',
+        'methods' => 'POST',
+        'controller' => \QS\Modules\Agents\Interfaces\Rest\ChatbotController::class,
+        'action' => 'feedback',
+        'permission_callback' => '__return_true',
+    ],
 ];

@@ -23,6 +23,12 @@ final class ChatbotGateway
      */
     public function ask(string $message, string $sessionId): string|WP_Error
     {
+        $greetingReply = $this->greetingReply($message);
+
+        if ($greetingReply !== null) {
+            return $greetingReply;
+        }
+
         $body = wp_json_encode([
             'message'    => $message,
             'session_id' => $sessionId,
@@ -93,5 +99,22 @@ final class ChatbotGateway
         }
 
         return 'http://localhost:5678/webhook/wp-chatbot-rag';
+    }
+
+    private function greetingReply(string $message): ?string
+    {
+        $normalized = function_exists('mb_strtolower')
+            ? mb_strtolower(trim($message))
+            : strtolower(trim($message));
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        if (! preg_match('/^(hola|hi|buenas|buenos dias|buenas tardes|buenas noches|hey|saludos)[[:space:]!,.?]*$/u', $normalized)) {
+            return null;
+        }
+
+        return 'Hola! Soy el asistente de Qamiluna Studio. Puedo ayudarte con informacion sobre servicios, precios y reservas. Que necesitas saber?';
     }
 }

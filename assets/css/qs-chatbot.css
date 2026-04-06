@@ -88,6 +88,7 @@
 /* Message bubbles */
 .qs-chatbot-msg {
     display: flex;
+    flex-direction: column;
     max-width: 80%;
 }
 
@@ -123,6 +124,59 @@
     background: #fee2e2;
     color: #dc2626;
     border-bottom-left-radius: 4px;
+}
+
+.qs-chatbot-feedback {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding-left: 4px;
+    color: var(--qs-text-light);
+    font-size: 12px;
+}
+
+.qs-chatbot-feedback__label {
+    white-space: nowrap;
+}
+
+.qs-chatbot-feedback__buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.qs-chatbot-feedback__btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: var(--qs-text);
+    cursor: pointer;
+    transition: border-color .2s, background .2s, transform .15s;
+    padding: 0;
+    line-height: 1;
+}
+
+.qs-chatbot-feedback__btn:hover {
+    border-color: var(--qs-primary);
+    background: #f8f4ec;
+}
+
+.qs-chatbot-feedback__btn:disabled {
+    cursor: wait;
+    opacity: .7;
+}
+
+.qs-chatbot-feedback__btn.is-active {
+    background: var(--qs-primary);
+    border-color: var(--qs-primary);
+    color: #fff;
+}
+
+.qs-chatbot-feedback__status {
+    color: var(--qs-text-light);
 }
 
 /* Typing indicator */

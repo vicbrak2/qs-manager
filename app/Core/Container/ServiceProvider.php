@@ -31,6 +31,7 @@ use QS\Interfaces\Rest\SystemController;
 use QS\Modules\Agents\Application\CommandHandler\ReindexContentHandler;
 use QS\Modules\Agents\Infrastructure\N8n\ChatbotGateway;
 use QS\Modules\Agents\Infrastructure\N8n\IngestGateway;
+use QS\Modules\Agents\Infrastructure\Persistence\WpdbChatLogRepository;
 use QS\Modules\Agents\Infrastructure\Wordpress\ChatbotFallbackResponder;
 use QS\Modules\Agents\Infrastructure\Wordpress\ChatbotShortcode;
 use QS\Modules\Agents\Infrastructure\Wordpress\ReindexAdminPage;
@@ -206,6 +207,7 @@ final class ServiceProvider
             FinanceController::class => autowire(),
             ChatbotGateway::class => autowire(),
             IngestGateway::class => autowire(),
+            WpdbChatLogRepository::class => autowire(),
             ChatbotFallbackResponder::class => autowire(),
             ReindexContentHandler::class => autowire(),
             ReindexAdminPage::class => autowire(),

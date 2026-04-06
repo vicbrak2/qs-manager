@@ -8,6 +8,7 @@ use QS\Core\Contracts\HookableInterface;
 use QS\Modules\Agents\Application\CommandHandler\ReindexContentHandler;
 use QS\Modules\Agents\Infrastructure\N8n\ChatbotGateway;
 use QS\Modules\Agents\Infrastructure\N8n\IngestGateway;
+use QS\Modules\Agents\Infrastructure\Persistence\WpdbChatLogRepository;
 
 final class ReindexAdminPage implements HookableInterface
 {
@@ -22,7 +23,8 @@ final class ReindexAdminPage implements HookableInterface
         private readonly ReindexContentHandler $handler,
         private readonly IngestGateway $ingestGateway,
         private readonly ChatbotGateway $chatbotGateway,
-        private readonly ChatbotFallbackResponder $fallbackResponder
+        private readonly ChatbotFallbackResponder $fallbackResponder,
+        private readonly WpdbChatLogRepository $chatLogRepository
     ) {
     }
 
@@ -70,6 +72,7 @@ final class ReindexAdminPage implements HookableInterface
         $contextImportedCount = $contextFeedback !== null ? $contextFeedback['imported'] : 0;
         $contextFailedCount = $contextFeedback !== null ? $contextFeedback['failed'] : 0;
         $contextFailures = $contextFeedback !== null ? $contextFeedback['failures'] : [];
+        $currentTab = $this->currentTab();
         ?>
         <div class="wrap">
             <h1>QS Chatbot — Re-indexar contenido en Qdrant</h1>
@@ -77,6 +80,28 @@ final class ReindexAdminPage implements HookableInterface
             <?php if ($settingsSaved) : ?>
                 <div class="notice notice-success is-dismissible"><p>Configuracion del chatbot guardada.</p></div>
             <?php endif; ?>
+
+            <nav class="nav-tab-wrapper" style="margin-bottom:16px;">
+                <a
+                    href="<?php echo esc_url($this->pageUrl(['tab' => 'contexto'])); ?>"
+                    class="nav-tab <?php echo $currentTab === 'contexto' ? 'nav-tab-active' : ''; ?>"
+                >
+                    Configuracion y contexto
+                </a>
+                <a
+                    href="<?php echo esc_url($this->pageUrl(['tab' => 'conversaciones'])); ?>"
+                    class="nav-tab <?php echo $currentTab === 'conversaciones' ? 'nav-tab-active' : ''; ?>"
+                >
+                    Conversaciones
+                </a>
+            </nav>
+
+            <?php if ($currentTab === 'conversaciones') : ?>
+                <?php $this->renderConversationsTab(); ?>
+            </div>
+                <?php
+                return;
+            endif; ?>
 
             <h2>Configuracion de Webhooks</h2>
             <p>
@@ -551,6 +576,126 @@ final class ReindexAdminPage implements HookableInterface
         }
 
         update_option($key, $value, false);
+    }
+
+    private function currentTab(): string
+    {
+        $tab = isset($_GET['tab']) ? wp_unslash($_GET['tab']) : 'contexto';
+
+        if (! is_string($tab)) {
+            return 'contexto';
+        }
+
+        return in_array($tab, ['contexto', 'conversaciones'], true) ? $tab : 'contexto';
+    }
+
+    private function feedbackFilter(): ?string
+    {
+        $rating = isset($_GET['feedback']) ? wp_unslash($_GET['feedback']) : '';
+
+        if (! is_string($rating)) {
+            return null;
+        }
+
+        return in_array($rating, ['good', 'bad'], true) ? $rating : null;
+    }
+
+    private function renderConversationsTab(): void
+    {
+        $feedbackFilter = $this->feedbackFilter();
+        $turns = $this->chatLogRepository->recentTurns(50, $feedbackFilter);
+        ?>
+        <p style="max-width:960px;">
+            Ultimos turnos registrados por el endpoint del chatbot. Usa el filtro para revisar respuestas con feedback negativo
+            y detectar huecos de contenido o comportamiento.
+        </p>
+
+        <p style="margin:16px 0;">
+            <a
+                href="<?php echo esc_url($this->pageUrl(['tab' => 'conversaciones'])); ?>"
+                class="button <?php echo $feedbackFilter === null ? 'button-primary' : 'button-secondary'; ?>"
+            >
+                Todos
+            </a>
+            <a
+                href="<?php echo esc_url($this->pageUrl(['tab' => 'conversaciones', 'feedback' => 'bad'])); ?>"
+                class="button <?php echo $feedbackFilter === 'bad' ? 'button-primary' : 'button-secondary'; ?>"
+            >
+                Solo negativos
+            </a>
+            <a
+                href="<?php echo esc_url($this->pageUrl(['tab' => 'conversaciones', 'feedback' => 'good'])); ?>"
+                class="button <?php echo $feedbackFilter === 'good' ? 'button-primary' : 'button-secondary'; ?>"
+            >
+                Solo positivos
+            </a>
+        </p>
+
+        <?php if ($turns === []) : ?>
+            <p>Aun no hay conversaciones registradas.</p>
+            <?php
+            return;
+        endif; ?>
+
+        <table class="widefat striped" style="max-width:100%;table-layout:fixed;">
+            <thead>
+                <tr>
+                    <th style="width:140px;">Fecha</th>
+                    <th style="width:180px;">Session</th>
+                    <th style="width:80px;">Turno</th>
+                    <th>Mensaje</th>
+                    <th>Respuesta</th>
+                    <th style="width:110px;">Feedback</th>
+                    <th style="width:120px;">Fallback</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($turns as $turn) : ?>
+                    <?php
+                    $feedback = is_string($turn['feedback_rating'] ?? null) && trim((string) $turn['feedback_rating']) !== ''
+                        ? (string) $turn['feedback_rating']
+                        : 'sin feedback';
+                    $fallbackReason = is_string($turn['fallback_reason'] ?? null) ? trim((string) $turn['fallback_reason']) : '';
+                    $fallback = ((int) ($turn['is_fallback'] ?? 0)) === 1
+                        ? ($fallbackReason !== '' ? 'si: ' . $fallbackReason : 'si')
+                        : 'no';
+                    ?>
+                    <tr>
+                        <td><?php echo esc_html((string) ($turn['created_at'] ?? '')); ?></td>
+                        <td><code><?php echo esc_html((string) ($turn['session_id'] ?? '')); ?></code></td>
+                        <td><?php echo esc_html((string) ($turn['turn_index'] ?? '')); ?></td>
+                        <td style="white-space:pre-wrap;word-break:break-word;"><?php echo esc_html($this->shortText((string) ($turn['user_message'] ?? ''))); ?></td>
+                        <td style="white-space:pre-wrap;word-break:break-word;"><?php echo esc_html($this->shortText((string) ($turn['bot_response'] ?? ''))); ?></td>
+                        <td><?php echo esc_html($feedback); ?></td>
+                        <td><?php echo esc_html($fallback); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+        <?php
+    }
+
+    private function shortText(string $text, int $limit = 220): string
+    {
+        $text = trim(preg_replace('/\s+/', ' ', $text) ?? $text);
+
+        if ($text === '') {
+            return '';
+        }
+
+        if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+            if (mb_strlen($text) <= $limit) {
+                return $text;
+            }
+
+            return mb_substr($text, 0, $limit) . '...';
+        }
+
+        if (strlen($text) <= $limit) {
+            return $text;
+        }
+
+        return substr($text, 0, $limit) . '...';
     }
 
     /**

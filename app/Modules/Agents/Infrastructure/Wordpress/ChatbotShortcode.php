@@ -16,30 +16,39 @@ final class ChatbotShortcode implements HookableInterface
 
     public function enqueueAssets(): void
     {
-        $pluginUrl = plugin_dir_url($this->pluginFile());
+        $pluginFile = $this->pluginFile();
+        $pluginUrl = plugin_dir_url($pluginFile);
+        $pluginDir = dirname($pluginFile);
         $version   = defined('QS_CORE_VERSION') ? QS_CORE_VERSION : '1.0.0';
+        $stylePath = $pluginDir . '/assets/css/qs-chatbot.css';
+        $scriptPath = $pluginDir . '/assets/js/qs-chatbot.js';
+        $styleVersion = file_exists($stylePath) ? (string) filemtime($stylePath) : $version;
+        $scriptVersion = file_exists($scriptPath) ? (string) filemtime($scriptPath) : $version;
 
         wp_enqueue_style(
             'qs-chatbot',
             $pluginUrl . 'assets/css/qs-chatbot.css',
             [],
-            $version
+            $styleVersion
         );
 
         wp_enqueue_script(
             'qs-chatbot',
             $pluginUrl . 'assets/js/qs-chatbot.js',
             [],
-            $version,
+            $scriptVersion,
             true
         );
 
         wp_localize_script('qs-chatbot', 'QsChatbot', [
             'apiUrl'      => esc_url(rest_url('qs/v1/agents/chat')),
+            'feedbackApiUrl' => esc_url(rest_url('qs/v1/agents/feedback')),
             'nonce'       => wp_create_nonce('wp_rest'),
             'placeholder' => __('Escribe tu mensaje...', 'qs-core'),
             'botName'     => 'Qamiluna Studio',
             'errorMsg'    => __('Lo siento, hubo un problema. Intenta de nuevo.', 'qs-core'),
+            'feedbackThanks' => __('Gracias por tu feedback.', 'qs-core'),
+            'feedbackError' => __('No se pudo guardar tu feedback.', 'qs-core'),
         ]);
     }
 

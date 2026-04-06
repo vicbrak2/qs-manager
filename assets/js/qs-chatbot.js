@@ -22,15 +22,118 @@
         return id;
     })();
 
-    function appendMessage(text, role) {
+    function appendMessage(text, role, meta) {
         const div = document.createElement('div');
         div.className = 'qs-chatbot-msg qs-chatbot-msg--' + role;
         const p = document.createElement('p');
         p.textContent = text;
         div.appendChild(p);
+
+        if (role === 'bot' && meta && Number.isInteger(meta.turnIndex) && meta.turnIndex > 0) {
+            div.appendChild(buildFeedback(meta.turnIndex));
+        }
+
         messages.appendChild(div);
         messages.scrollTop = messages.scrollHeight;
         return div;
+    }
+
+    function buildFeedback(turnIndex) {
+        const wrap = document.createElement('div');
+        wrap.className = 'qs-chatbot-feedback';
+        wrap.dataset.turnIndex = String(turnIndex);
+
+        const label = document.createElement('span');
+        label.className = 'qs-chatbot-feedback__label';
+        label.textContent = '¿Te sirvio esta respuesta?';
+        wrap.appendChild(label);
+
+        const buttons = document.createElement('div');
+        buttons.className = 'qs-chatbot-feedback__buttons';
+
+        const goodBtn = feedbackButton('good', '👍');
+        const badBtn = feedbackButton('bad', '👎');
+
+        goodBtn.addEventListener('click', function () {
+            submitFeedback(wrap, turnIndex, 'good', goodBtn, badBtn);
+        });
+
+        badBtn.addEventListener('click', function () {
+            submitFeedback(wrap, turnIndex, 'bad', goodBtn, badBtn);
+        });
+
+        buttons.appendChild(goodBtn);
+        buttons.appendChild(badBtn);
+        wrap.appendChild(buttons);
+
+        const status = document.createElement('span');
+        status.className = 'qs-chatbot-feedback__status';
+        wrap.appendChild(status);
+
+        return wrap;
+    }
+
+    function feedbackButton(rating, text) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'qs-chatbot-feedback__btn';
+        button.dataset.rating = rating;
+        button.textContent = text;
+        button.setAttribute('aria-label', rating === 'good' ? 'Respuesta util' : 'Respuesta no util');
+        return button;
+    }
+
+    async function submitFeedback(wrap, turnIndex, rating, goodBtn, badBtn) {
+        if (!cfg.feedbackApiUrl || wrap.dataset.submitted === 'true') return;
+
+        const status = wrap.querySelector('.qs-chatbot-feedback__status');
+        const buttons = [goodBtn, badBtn];
+
+        buttons.forEach(function (button) {
+            button.disabled = true;
+        });
+
+        if (status) {
+            status.textContent = 'Guardando...';
+        }
+
+        try {
+            const res = await fetch(cfg.feedbackApiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': cfg.nonce || '',
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    turn_index: turnIndex,
+                    rating: rating,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || 'Feedback request failed.');
+            }
+
+            wrap.dataset.submitted = 'true';
+            buttons.forEach(function (button) {
+                button.classList.toggle('is-active', button.dataset.rating === rating);
+            });
+
+            if (status) {
+                status.textContent = cfg.feedbackThanks || 'Gracias por tu feedback.';
+            }
+        } catch (err) {
+            buttons.forEach(function (button) {
+                button.disabled = false;
+            });
+
+            if (status) {
+                status.textContent = cfg.feedbackError || 'No se pudo guardar tu feedback.';
+            }
+        }
     }
 
     function setTyping(visible) {
@@ -72,7 +175,9 @@
                 const errText = data.message || cfg.errorMsg || 'Error al conectar.';
                 appendMessage(errText, 'error');
             } else {
-                appendMessage(data.response || '...', 'bot');
+                appendMessage(data.response || '...', 'bot', {
+                    turnIndex: Number.parseInt(data.turn_index, 10),
+                });
             }
         } catch (err) {
             setTyping(false);
