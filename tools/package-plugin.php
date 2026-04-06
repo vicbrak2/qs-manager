@@ -9,6 +9,7 @@ $zipPath = $distRoot . '/qs-core.zip';
 
 $directories = [
     'app',
+    'assets',
     'config',
     'database',
     'vendor',
