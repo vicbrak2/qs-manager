@@ -7,8 +7,10 @@
 /var/logs/*.log
 /var/tmp/*.log
 /var/tmp/*.php
+/var/tmp/*.ps1
 /var/tmp/n8n/*
 !/var/tmp/n8n/.gitkeep
+/infrastructure/n8n/workflows_backup.json
 /tools/mutation/reports/*.log
 /app/UI/Admin/Assets/node_modules/
 /.env
