@@ -223,7 +223,7 @@ final class ReindexAdminPage implements HookableInterface
             <?php endif; ?>
 
             <?php if ($contextActionFeedback !== null) : ?>
-                <div class="notice <?php echo ($contextActionFeedback['deleted'] ?? 0) > 0 ? 'notice-success' : 'notice-warning'; ?> is-dismissible">
+                <div class="notice <?php echo $contextActionFeedback['deleted'] > 0 ? 'notice-success' : 'notice-warning'; ?> is-dismissible">
                     <p><?php echo esc_html($this->renderContextActionFeedback($contextActionFeedback)); ?></p>
                 </div>
             <?php endif; ?>
@@ -656,6 +656,8 @@ final class ReindexAdminPage implements HookableInterface
             'ok' => true,
             'deleted_points' => 0,
             'error' => null,
+            'status_code' => null,
+            'response_body' => '',
         ];
 
         if ($ids !== []) {
@@ -675,9 +677,9 @@ final class ReindexAdminPage implements HookableInterface
             'mode' => 'selected',
             'deleted' => $deleted,
             'source_name' => '',
-            'vector_ok' => (bool) ($vectorResult['ok'] ?? false),
-            'vector_error' => is_string($vectorResult['error'] ?? null) ? $vectorResult['error'] : '',
-            'deleted_points' => (int) ($vectorResult['deleted_points'] ?? 0),
+            'vector_ok' => $vectorResult['ok'],
+            'vector_error' => $vectorResult['error'] ?? '',
+            'deleted_points' => $vectorResult['deleted_points'],
         ]);
 
         wp_safe_redirect($this->pageUrl());
@@ -699,6 +701,8 @@ final class ReindexAdminPage implements HookableInterface
             'ok' => true,
             'deleted_points' => 0,
             'error' => null,
+            'status_code' => null,
+            'response_body' => '',
         ];
 
         if ($sourceName !== '') {
@@ -718,9 +722,9 @@ final class ReindexAdminPage implements HookableInterface
             'mode' => 'source',
             'deleted' => $deleted,
             'source_name' => $sourceName,
-            'vector_ok' => (bool) ($vectorResult['ok'] ?? false),
-            'vector_error' => is_string($vectorResult['error'] ?? null) ? $vectorResult['error'] : '',
-            'deleted_points' => (int) ($vectorResult['deleted_points'] ?? 0),
+            'vector_ok' => $vectorResult['ok'],
+            'vector_error' => $vectorResult['error'] ?? '',
+            'deleted_points' => $vectorResult['deleted_points'],
         ]);
 
         wp_safe_redirect($this->pageUrl());
@@ -741,9 +745,9 @@ final class ReindexAdminPage implements HookableInterface
             'mode' => 'purge',
             'deleted' => 0,
             'source_name' => '',
-            'vector_ok' => (bool) ($result['ok'] ?? false),
-            'vector_error' => is_string($result['error'] ?? null) ? $result['error'] : '',
-            'deleted_points' => (int) ($result['deleted_points'] ?? 0),
+            'vector_ok' => $result['ok'],
+            'vector_error' => $result['error'] ?? '',
+            'deleted_points' => $result['deleted_points'],
         ]);
 
         wp_safe_redirect($this->pageUrl());
