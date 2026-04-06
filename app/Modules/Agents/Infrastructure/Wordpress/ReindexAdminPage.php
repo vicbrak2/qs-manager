@@ -369,6 +369,7 @@ final class ReindexAdminPage implements HookableInterface
                     'URL: ' + (item.url || '-') + '\n' +
                     'Metodo: ' + (item.method || '-') + '\n' +
                     (item.status_code ? 'HTTP: ' + item.status_code + '\n' : '') +
+                    (item.note ? 'Nota: ' + item.note + '\n' : '') +
                     (item.error ? 'Error: ' + item.error + '\n' : '') +
                     (item.response_body ? 'Body: ' + item.response_body + '\n' : '')
                 ).join('\n');
@@ -635,15 +636,17 @@ final class ReindexAdminPage implements HookableInterface
 
         $statusCode = (int) wp_remote_retrieve_response_code($response);
         $responseBody = $this->truncateResponseBody((string) wp_remote_retrieve_body($response));
+        $reachableWithAuth = $service === 'qdrant' && $statusCode === 403;
 
         return [
             'service' => $service,
             'url' => $url,
             'method' => $method,
-            'ok' => $statusCode >= 200 && $statusCode < 300,
+            'ok' => ($statusCode >= 200 && $statusCode < 300) || $reachableWithAuth,
             'status_code' => $statusCode,
             'latency_ms' => $latencyMs,
-            'error' => $statusCode >= 200 && $statusCode < 300 ? null : 'HTTP ' . $statusCode,
+            'note' => $reachableWithAuth ? 'Endpoint accesible, pero protegido por API key.' : null,
+            'error' => ($statusCode >= 200 && $statusCode < 300) || $reachableWithAuth ? null : 'HTTP ' . $statusCode,
             'response_body' => $responseBody,
         ];
     }
