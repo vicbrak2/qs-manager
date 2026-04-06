@@ -23,14 +23,17 @@ final class ChatbotGateway
      */
     public function ask(string $message, string $sessionId): string|WP_Error
     {
+        $message = trim($message);
         $greetingReply = $this->greetingReply($message);
 
         if ($greetingReply !== null) {
             return $greetingReply;
         }
 
+        $rewrittenMessage = $this->rewriteMessageForContext($message);
+
         $body = wp_json_encode([
-            'message'    => $message,
+            'message'    => $rewrittenMessage,
             'session_id' => $sessionId,
         ]);
 
@@ -103,9 +106,7 @@ final class ChatbotGateway
 
     private function greetingReply(string $message): ?string
     {
-        $normalized = function_exists('mb_strtolower')
-            ? mb_strtolower(trim($message))
-            : strtolower(trim($message));
+        $normalized = $this->normalizeText($message);
 
         if ($normalized === '') {
             return null;
@@ -115,6 +116,43 @@ final class ChatbotGateway
             return null;
         }
 
-        return 'Hola! Soy el asistente de Qamiluna Studio. Puedo ayudarte con informacion sobre servicios, precios y reservas. Que necesitas saber?';
+        return 'Cuentame, te interesa ver servicios, precios o reservas?';
+    }
+
+    private function rewriteMessageForContext(string $message): string
+    {
+        $message = trim(preg_replace('/\s+/', ' ', $message) ?? $message);
+
+        if ($message === '') {
+            return $message;
+        }
+
+        $normalized = $this->normalizeText($message);
+
+        // Normaliza alias frecuentes para no perder contexto por variaciones de escritura.
+        $normalized = preg_replace('/\b(cami\s*luna|qami\s*luna|camiluna)\b/u', 'qamiluna studio', $normalized) ?? $normalized;
+
+        return match (true) {
+            preg_match('/^(reserva|reservas|agendar|agenda|disponibilidad)$/u', $normalized) === 1
+                => 'Quiero informacion sobre reservas, disponibilidad, abono y como agendar en Qamiluna Studio.',
+            preg_match('/^(precio|precios|valor|valores|cuanto sale|cuanto cuesta)$/u', $normalized) === 1
+                => 'Quiero informacion sobre precios referenciales y como cotizar en Qamiluna Studio.',
+            preg_match('/^(novia|novias|novia civil|novia fiesta)$/u', $normalized) === 1
+                => 'Quiero informacion sobre servicios para novia civil y novia fiesta en Qamiluna Studio.',
+            preg_match('/^(qamiluna|qamiluna studio|cami luna|qami luna|estudio)$/u', $normalized) === 1
+                => 'Quiero una descripcion breve de Qamiluna Studio y sus servicios principales.',
+            preg_match('/^(que es qamiluna studio|que es qamiluna|que es cami luna|hablame sobre el estudio|hablame del estudio|pasame informacion|informacion|info)$/u', $normalized) === 1
+                => 'Quiero una descripcion breve de Qamiluna Studio, sus servicios principales y como funciona la atencion.',
+            default => preg_replace('/\b(cami\s*luna|qami\s*luna|camiluna)\b/ui', 'Qamiluna Studio', $message) ?? $message,
+        };
+    }
+
+    private function normalizeText(string $message): string
+    {
+        $normalized = function_exists('mb_strtolower')
+            ? mb_strtolower(trim($message))
+            : strtolower(trim($message));
+
+        return trim((string) preg_replace('/\s+/', ' ', $normalized));
     }
 }

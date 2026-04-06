@@ -21,7 +21,7 @@
         "promptType": "define",
         "text": "={{ $json.body.message }}",
         "options": {
-          "systemMessage": "Eres un asistente virtual amigable. Responde a las consultas del usuario basandote unicamente en la informacion obtenida a traves de tus herramientas de contexto. Responde en espanol."
+          "systemMessage": "Eres el asistente de atencion y reservas de Qamiluna Studio. Habla en espanol natural de Chile, con tono cercano, claro y resolutivo. Responde normalmente en 2 a 4 frases, sin encabezados ni listas salvo que la clienta lo pida. Usa solo informacion obtenida desde knowledge_base y no inventes precios, promociones ni disponibilidad. Interpreta que Qamiluna, Qami Luna y Cami Luna se refieren a Qamiluna Studio. Si la consulta es sobre novia, interpretala como un servicio para novia, no como vida personal. Si falta contexto suficiente, dilo breve y pide solo el siguiente dato util. No menciones QS Manager."
         },
         "agent": "toolsAgent"
       },
@@ -37,7 +37,7 @@
       "parameters": {
         "sessionIdType": "customKey",
         "sessionKey": "={{ $('Webhook (WP REST API)').item.json.body.session_id }}",
-        "contextWindowLength": 10
+        "contextWindowLength": 6
       },
       "name": "Window Buffer Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
@@ -55,8 +55,8 @@
         "collection": "wordpress_context",
         "mode": "retrieve-as-tool",
         "toolName": "knowledge_base",
-        "toolDescription": "Busca informacion sobre servicios, precios, horarios y profesionales disponibles en QS Manager",
-        "topK": 4,
+        "toolDescription": "Busca informacion publica y operativa de Qamiluna Studio sobre servicios, novia civil y fiesta, maquillaje social, precios referenciales, reservas, abono, traslados y tono de atencion.",
+        "topK": 6,
         "includeDocumentMetadata": true
       },
       "name": "Qdrant Vector Store Tool",
