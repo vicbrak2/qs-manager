@@ -16,6 +16,7 @@ final class ReindexAdminPage implements HookableInterface
     private const CHATBOT_URL_OPTION = 'qs_n8n_chatbot_url';
     private const INGEST_URL_OPTION = 'qs_n8n_ingest_url';
     private const QDRANT_URL_OPTION = 'qs_qdrant_url';
+    private const QDRANT_API_KEY_OPTION = 'qs_qdrant_api_key';
     private const WHATSAPP_URL_OPTION = 'qs_chatbot_fallback_whatsapp_url';
     private const CONTEXT_DOCUMENTS_OPTION = 'qs_chatbot_context_documents';
     private const CONTEXT_FEEDBACK_TRANSIENT_PREFIX = 'qs_chatbot_context_feedback_';
@@ -71,6 +72,7 @@ final class ReindexAdminPage implements HookableInterface
         $chatbotUrl = $this->option(self::CHATBOT_URL_OPTION);
         $ingestUrl = $this->option(self::INGEST_URL_OPTION);
         $qdrantUrl = $this->option(self::QDRANT_URL_OPTION);
+        $qdrantApiKeySaved = $this->option(self::QDRANT_API_KEY_OPTION) !== '';
         $whatsappUrl = $this->option(self::WHATSAPP_URL_OPTION);
         $settingsSaved = isset($_GET['qs_settings_updated']) && $_GET['qs_settings_updated'] === '1';
         $contextFeedback = $this->consumeContextFeedback();
@@ -163,6 +165,29 @@ final class ReindexAdminPage implements HookableInterface
                                     placeholder="https://tu-cluster.qdrant.io"
                                 >
                                 <p class="description">Usada por el chequeo <code>/agents/status</code> para validar conectividad desde WordPress.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="qs_qdrant_api_key">Qdrant API key</label></th>
+                            <td>
+                                <input
+                                    id="qs_qdrant_api_key"
+                                    name="qs_qdrant_api_key"
+                                    type="password"
+                                    class="regular-text code"
+                                    value=""
+                                    autocomplete="new-password"
+                                    placeholder="<?php echo esc_attr($qdrantApiKeySaved ? 'Guardada, deja en blanco para mantenerla' : 'Pega tu API key de Qdrant'); ?>"
+                                >
+                                <p class="description">
+                                    Se usa para purgar y borrar vectores directamente desde WordPress. Si este WordPress no carga tu <code>.env</code>, debes guardarla aquí.<br>
+                                    Estado efectivo actual:
+                                    <code><?php echo esc_html($this->qdrantGateway->hasApiKeyConfigured() ? 'configurada' : 'sin configurar'); ?></code>
+                                </p>
+                                <label for="qs_qdrant_api_key_clear">
+                                    <input id="qs_qdrant_api_key_clear" name="qs_qdrant_api_key_clear" type="checkbox" value="1">
+                                    Borrar API key guardada en WordPress
+                                </label>
                             </td>
                         </tr>
                         <tr>
@@ -548,11 +573,18 @@ final class ReindexAdminPage implements HookableInterface
         $chatbotUrl = $this->postedUrl('qs_n8n_chatbot_url');
         $ingestUrl = $this->postedUrl('qs_n8n_ingest_url');
         $qdrantUrl = $this->postedUrl('qs_qdrant_url');
+        $qdrantApiKey = $this->postedText('qs_qdrant_api_key');
+        $clearQdrantApiKey = $this->postedCheckbox('qs_qdrant_api_key_clear');
         $whatsappUrl = $this->postedUrl('qs_chatbot_fallback_whatsapp_url');
 
         $this->storeOption(self::CHATBOT_URL_OPTION, $chatbotUrl);
         $this->storeOption(self::INGEST_URL_OPTION, $ingestUrl);
         $this->storeOption(self::QDRANT_URL_OPTION, $qdrantUrl);
+        if ($clearQdrantApiKey) {
+            delete_option(self::QDRANT_API_KEY_OPTION);
+        } elseif ($qdrantApiKey !== '') {
+            update_option(self::QDRANT_API_KEY_OPTION, $qdrantApiKey, false);
+        }
         $this->storeOption(self::WHATSAPP_URL_OPTION, $whatsappUrl);
 
         $redirectUrl = $this->pageUrl([
@@ -770,6 +802,28 @@ final class ReindexAdminPage implements HookableInterface
         $value = wp_unslash($_POST[$key]);
 
         return is_string($value) ? trim(esc_url_raw($value)) : '';
+    }
+
+    private function postedText(string $key): string
+    {
+        if (! isset($_POST[$key])) {
+            return '';
+        }
+
+        $value = wp_unslash($_POST[$key]);
+
+        return is_string($value) ? trim($value) : '';
+    }
+
+    private function postedCheckbox(string $key): bool
+    {
+        if (! isset($_POST[$key])) {
+            return false;
+        }
+
+        $value = wp_unslash($_POST[$key]);
+
+        return is_string($value) && $value === '1';
     }
 
     private function postedTestUrl(string $key, string $fallback): string

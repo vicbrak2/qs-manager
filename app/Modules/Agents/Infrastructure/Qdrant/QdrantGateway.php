@@ -9,6 +9,7 @@ use QS\Core\Logging\Logger;
 final class QdrantGateway
 {
     private const QDRANT_URL_OPTION = 'qs_qdrant_url';
+    private const QDRANT_API_KEY_OPTION = 'qs_qdrant_api_key';
     private const COLLECTION_NAME = 'wordpress_context';
 
     public function __construct(
@@ -169,6 +170,11 @@ final class QdrantGateway
             'status_code' => $deleteResult['status_code'],
             'response_body' => $deleteResult['response_body'],
         ];
+    }
+
+    public function hasApiKeyConfigured(): bool
+    {
+        return $this->apiKey() !== '';
     }
 
     /**
@@ -364,6 +370,12 @@ final class QdrantGateway
             if (is_string($value) && trim($value) !== '') {
                 return trim($value);
             }
+        }
+
+        $optionValue = get_option(self::QDRANT_API_KEY_OPTION, '');
+
+        if (is_string($optionValue) && trim($optionValue) !== '') {
+            return trim($optionValue);
         }
 
         return '';
