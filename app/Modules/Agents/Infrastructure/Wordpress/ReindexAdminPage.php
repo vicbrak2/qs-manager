@@ -18,6 +18,7 @@ final class ReindexAdminPage implements HookableInterface
     private const WHATSAPP_URL_OPTION = 'qs_chatbot_fallback_whatsapp_url';
     private const CONTEXT_DOCUMENTS_OPTION = 'qs_chatbot_context_documents';
     private const CONTEXT_FEEDBACK_TRANSIENT_PREFIX = 'qs_chatbot_context_feedback_';
+    private const CONTEXT_ACTION_FEEDBACK_TRANSIENT_PREFIX = 'qs_chatbot_context_action_feedback_';
 
     public function __construct(
         private readonly ReindexContentHandler $handler,
@@ -39,6 +40,8 @@ final class ReindexAdminPage implements HookableInterface
         add_action('wp_ajax_qs_test_connectivity', [$this, 'handleConnectivityTest']);
         add_action('admin_post_qs_save_chatbot_settings', [$this, 'handleSettingsSave']);
         add_action('admin_post_qs_upload_context_document', [$this, 'handleContextUpload']);
+        add_action('admin_post_qs_delete_context_documents', [$this, 'handleContextDelete']);
+        add_action('admin_post_qs_delete_context_source', [$this, 'handleContextDeleteSource']);
     }
 
     public function registerPage(): void
@@ -68,7 +71,9 @@ final class ReindexAdminPage implements HookableInterface
         $whatsappUrl = $this->option(self::WHATSAPP_URL_OPTION);
         $settingsSaved = isset($_GET['qs_settings_updated']) && $_GET['qs_settings_updated'] === '1';
         $contextFeedback = $this->consumeContextFeedback();
+        $contextActionFeedback = $this->consumeContextActionFeedback();
         $contextDocuments = $this->contextDocuments();
+        $contextSources = $this->contextSources($contextDocuments);
         $contextImportedCount = $contextFeedback !== null ? $contextFeedback['imported'] : 0;
         $contextFailedCount = $contextFeedback !== null ? $contextFeedback['failed'] : 0;
         $contextFailures = $contextFeedback !== null ? $contextFeedback['failures'] : [];
@@ -214,6 +219,12 @@ final class ReindexAdminPage implements HookableInterface
                 </div>
             <?php endif; ?>
 
+            <?php if ($contextActionFeedback !== null) : ?>
+                <div class="notice <?php echo ($contextActionFeedback['deleted'] ?? 0) > 0 ? 'notice-success' : 'notice-warning'; ?> is-dismissible">
+                    <p><?php echo esc_html($this->renderContextActionFeedback($contextActionFeedback)); ?></p>
+                </div>
+            <?php endif; ?>
+
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data" style="margin-top:16px;max-width:960px;">
                 <?php wp_nonce_field('qs_upload_context_document'); ?>
                 <input type="hidden" name="action" value="qs_upload_context_document">
@@ -250,24 +261,71 @@ final class ReindexAdminPage implements HookableInterface
 
             <p><strong>Documentos guardados:</strong> <?php echo esc_html((string) count($contextDocuments)); ?></p>
             <?php if ($contextDocuments !== []) : ?>
-                <table class="widefat striped" style="max-width:960px;">
-                    <thead>
-                        <tr>
-                            <th>Titulo</th>
-                            <th>Origen</th>
-                            <th>Actualizado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($contextDocuments as $document) : ?>
+                <div style="max-width:960px;margin-bottom:12px;padding:12px;background:#f6f7f7;border:1px solid #dcdcde;">
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+                        <?php wp_nonce_field('qs_delete_context_source'); ?>
+                        <input type="hidden" name="action" value="qs_delete_context_source">
+                        <label for="qs_context_source" style="display:flex;flex-direction:column;gap:4px;">
+                            <span><strong>Borrar por origen</strong></span>
+                            <select id="qs_context_source" name="source_name" required>
+                                <option value="">Selecciona un origen</option>
+                                <?php foreach ($contextSources as $sourceName => $count) : ?>
+                                    <option value="<?php echo esc_attr($sourceName); ?>">
+                                        <?php echo esc_html($sourceName . ' (' . $count . ')'); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <button type="submit" class="button button-secondary" onclick="return confirm('Se eliminaran todos los documentos de ese origen en WordPress. ¿Continuar?');">
+                            Eliminar origen completo
+                        </button>
+                    </form>
+                    <p class="description" style="margin:8px 0 0;">
+                        Atajo util para limpiar orígenes completos como <code>qs-rag-atencion.json</code> o <code>manual</code>.
+                    </p>
+                </div>
+
+                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="max-width:960px;">
+                    <?php wp_nonce_field('qs_delete_context_documents'); ?>
+                    <input type="hidden" name="action" value="qs_delete_context_documents">
+
+                    <p style="margin:0 0 8px;">
+                        <button type="submit" class="button button-secondary" onclick="return confirm('Se eliminaran los documentos seleccionados en WordPress. ¿Continuar?');">
+                            Eliminar seleccionados
+                        </button>
+                    </p>
+
+                    <table class="widefat striped">
+                        <thead>
                             <tr>
-                                <td><?php echo esc_html($document['title']); ?></td>
-                                <td><code><?php echo esc_html($document['source_name']); ?></code></td>
-                                <td><?php echo esc_html($document['updated_at']); ?></td>
+                                <th style="width:36px;">
+                                    <input type="checkbox" id="qs-context-select-all" aria-label="Seleccionar todos">
+                                </th>
+                                <th>Titulo</th>
+                                <th>Origen</th>
+                                <th>Actualizado</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($contextDocuments as $document) : ?>
+                                <tr>
+                                    <td>
+                                        <input
+                                            type="checkbox"
+                                            class="qs-context-row"
+                                            name="document_ids[]"
+                                            value="<?php echo esc_attr($document['id']); ?>"
+                                            aria-label="<?php echo esc_attr('Seleccionar ' . $document['title']); ?>"
+                                        >
+                                    </td>
+                                    <td><?php echo esc_html($document['title']); ?></td>
+                                    <td><code><?php echo esc_html($document['source_name']); ?></code></td>
+                                    <td><?php echo esc_html($document['updated_at']); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </form>
             <?php else : ?>
                 <p>Aun no hay documentos de contexto cargados.</p>
             <?php endif; ?>
@@ -408,6 +466,15 @@ final class ReindexAdminPage implements HookableInterface
                 btn.textContent = 'Probar conectividad';
             });
         });
+
+        const selectAll = document.getElementById('qs-context-select-all');
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                document.querySelectorAll('.qs-context-row').forEach(function (checkbox) {
+                    checkbox.checked = selectAll.checked;
+                });
+            });
+        }
         </script>
         <?php
     }
@@ -539,6 +606,79 @@ final class ReindexAdminPage implements HookableInterface
         }
 
         set_transient($this->feedbackTransientKey(), $feedback, 120);
+        wp_safe_redirect($this->pageUrl());
+        exit;
+    }
+
+    public function handleContextDelete(): void
+    {
+        if (! current_user_can('manage_options')) {
+            wp_die('Permisos insuficientes.');
+        }
+
+        check_admin_referer('qs_delete_context_documents');
+
+        $selectedIds = isset($_POST['document_ids']) ? wp_unslash($_POST['document_ids']) : [];
+        $ids = [];
+
+        if (is_array($selectedIds)) {
+            foreach ($selectedIds as $selectedId) {
+                if (! is_string($selectedId)) {
+                    continue;
+                }
+
+                $normalizedId = trim(sanitize_text_field($selectedId));
+
+                if ($normalizedId === '') {
+                    continue;
+                }
+
+                $ids[] = $normalizedId;
+            }
+        }
+
+        $deleted = 0;
+
+        if ($ids !== []) {
+            $deleted = $this->deleteContextDocuments(
+                static fn (array $document): bool => in_array($document['id'], $ids, true)
+            );
+        }
+
+        $this->storeContextActionFeedback([
+            'mode' => 'selected',
+            'deleted' => $deleted,
+            'source_name' => '',
+        ]);
+
+        wp_safe_redirect($this->pageUrl());
+        exit;
+    }
+
+    public function handleContextDeleteSource(): void
+    {
+        if (! current_user_can('manage_options')) {
+            wp_die('Permisos insuficientes.');
+        }
+
+        check_admin_referer('qs_delete_context_source');
+
+        $sourceName = isset($_POST['source_name']) ? wp_unslash($_POST['source_name']) : '';
+        $sourceName = is_string($sourceName) ? trim(sanitize_text_field($sourceName)) : '';
+        $deleted = 0;
+
+        if ($sourceName !== '') {
+            $deleted = $this->deleteContextDocuments(
+                static fn (array $document): bool => $document['source_name'] === $sourceName
+            );
+        }
+
+        $this->storeContextActionFeedback([
+            'mode' => 'source',
+            'deleted' => $deleted,
+            'source_name' => $sourceName,
+        ]);
+
         wp_safe_redirect($this->pageUrl());
         exit;
     }
@@ -1090,9 +1230,113 @@ final class ReindexAdminPage implements HookableInterface
         ];
     }
 
+    /**
+     * @param array{mode: string, deleted: int, source_name: string} $feedback
+     */
+    private function storeContextActionFeedback(array $feedback): void
+    {
+        set_transient($this->contextActionFeedbackTransientKey(), $feedback, 120);
+    }
+
+    /**
+     * @return array{mode: string, deleted: int, source_name: string}|null
+     */
+    private function consumeContextActionFeedback(): ?array
+    {
+        $feedback = get_transient($this->contextActionFeedbackTransientKey());
+        delete_transient($this->contextActionFeedbackTransientKey());
+
+        if (
+            ! is_array($feedback) ||
+            ! isset($feedback['mode'], $feedback['deleted'], $feedback['source_name']) ||
+            ! is_string($feedback['mode']) ||
+            ! is_int($feedback['deleted']) ||
+            ! is_string($feedback['source_name'])
+        ) {
+            return null;
+        }
+
+        return $feedback;
+    }
+
     private function feedbackTransientKey(): string
     {
         return self::CONTEXT_FEEDBACK_TRANSIENT_PREFIX . get_current_user_id();
+    }
+
+    private function contextActionFeedbackTransientKey(): string
+    {
+        return self::CONTEXT_ACTION_FEEDBACK_TRANSIENT_PREFIX . get_current_user_id();
+    }
+
+    /**
+     * @param array{mode: string, deleted: int, source_name: string} $feedback
+     */
+    private function renderContextActionFeedback(array $feedback): string
+    {
+        $deleted = $feedback['deleted'];
+
+        if ($feedback['mode'] === 'source') {
+            if ($deleted <= 0) {
+                return $feedback['source_name'] !== ''
+                    ? 'No se eliminaron documentos del origen ' . $feedback['source_name'] . '.'
+                    : 'No se selecciono ningun origen para eliminar.';
+            }
+
+            return 'Se eliminaron ' . $deleted . ' documentos del origen ' . $feedback['source_name'] . '.';
+        }
+
+        if ($deleted <= 0) {
+            return 'No se seleccionaron documentos para eliminar.';
+        }
+
+        return 'Se eliminaron ' . $deleted . ' documentos seleccionados.';
+    }
+
+    /**
+     * @param array<int, array{id: string, title: string, url: string, content: string, source_name: string, updated_at: string}> $documents
+     * @return array<string, int>
+     */
+    private function contextSources(array $documents): array
+    {
+        $sources = [];
+
+        foreach ($documents as $document) {
+            $sourceName = $document['source_name'] !== '' ? $document['source_name'] : 'manual';
+            $sources[$sourceName] = ($sources[$sourceName] ?? 0) + 1;
+        }
+
+        ksort($sources);
+
+        return $sources;
+    }
+
+    /**
+     * @param callable(array{id: string, title: string, url: string, content: string, source_name: string, updated_at: string}): bool $shouldDelete
+     */
+    private function deleteContextDocuments(callable $shouldDelete): int
+    {
+        $existing = $this->contextDocuments();
+
+        if ($existing === []) {
+            return 0;
+        }
+
+        $remaining = [];
+        $deleted = 0;
+
+        foreach ($existing as $document) {
+            if ($shouldDelete($document)) {
+                $deleted++;
+                continue;
+            }
+
+            $remaining[] = $document;
+        }
+
+        update_option(self::CONTEXT_DOCUMENTS_OPTION, $remaining, false);
+
+        return $deleted;
     }
 
     /**
