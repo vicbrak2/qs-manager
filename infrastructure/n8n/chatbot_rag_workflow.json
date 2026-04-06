@@ -83,7 +83,7 @@
     {
       "parameters": {
         "options": {},
-        "model": "sentence-transformers/all-MiniLM-L6-v2"
+        "model": "sentence-transformers/distilbert-base-nli-mean-tokens"
       },
       "name": "Embeddings HuggingFace Inference",
       "type": "@n8n/n8n-nodes-langchain.embeddingsHuggingFaceInference",
