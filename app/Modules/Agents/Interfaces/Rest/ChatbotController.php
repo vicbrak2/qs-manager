@@ -37,15 +37,19 @@ final class ChatbotController
         if (is_wp_error($reply)) {
             if ($this->shouldUseFallback($reply)) {
                 $payload = $this->fallbackResponder->unavailableResponse($reply);
+                $response = (string) $payload['response'];
                 $turnMeta = $this->logTurn(
                     $sessionId,
                     $message,
-                    (string) $payload['response'],
+                    $response,
                     true,
                     (string) $payload['fallback_reason']
                 );
 
-                return new WP_REST_Response(array_merge($payload, $turnMeta), 200);
+                return new WP_REST_Response(array_merge($payload, [
+                    'response_blocks' => $this->buildResponseBlocks($response),
+                    'response_format' => 'blocks',
+                ], $turnMeta), 200);
             }
 
             return $reply;
@@ -56,6 +60,8 @@ final class ChatbotController
         return new WP_REST_Response([
             'success'  => true,
             'response' => $reply,
+            'response_blocks' => $this->buildResponseBlocks($reply),
+            'response_format' => 'blocks',
             'session_id' => $sessionId,
             'turn_index' => $turnMeta['turn_index'],
         ], 200);
@@ -171,5 +177,88 @@ final class ChatbotController
         }
 
         return substr($sessionId, 0, 120);
+    }
+
+    /**
+     * @return list<array{type: 'paragraph'|'list'|'question', text?: string, items?: list<string>}>
+     */
+    private function buildResponseBlocks(string $response): array
+    {
+        $normalized = trim(preg_replace("/\r\n|\r/u", "\n", $response) ?? $response);
+
+        if ($normalized === '') {
+            return [];
+        }
+
+        $lines = preg_split("/\n/u", $normalized) ?: [];
+        $blocks = [];
+        $paragraphLines = [];
+        $listItems = [];
+
+        $flushParagraph = static function () use (&$paragraphLines, &$blocks): void {
+            if ($paragraphLines === []) {
+                return;
+            }
+
+            $text = trim(implode(' ', $paragraphLines));
+            $paragraphLines = [];
+
+            if ($text === '') {
+                return;
+            }
+
+            $blocks[] = [
+                'type' => preg_match('/\?\s*$/u', $text) === 1 ? 'question' : 'paragraph',
+                'text' => $text,
+            ];
+        };
+
+        $flushList = static function () use (&$listItems, &$blocks): void {
+            if ($listItems === []) {
+                return;
+            }
+
+            $items = array_values(
+                array_filter(
+                    array_map(static fn (string $item): string => trim($item), $listItems),
+                    static fn (string $item): bool => $item !== ''
+                )
+            );
+
+            $listItems = [];
+
+            if ($items === []) {
+                return;
+            }
+
+            $blocks[] = [
+                'type' => 'list',
+                'items' => $items,
+            ];
+        };
+
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+
+            if ($trimmed === '') {
+                $flushParagraph();
+                $flushList();
+                continue;
+            }
+
+            if (preg_match('/^(?:[-*•]|\d+[.)])\s+(.+)$/u', $trimmed, $matches) === 1) {
+                $flushParagraph();
+                $listItems[] = trim($matches[1]);
+                continue;
+            }
+
+            $flushList();
+            $paragraphLines[] = $trimmed;
+        }
+
+        $flushParagraph();
+        $flushList();
+
+        return $blocks;
     }
 }

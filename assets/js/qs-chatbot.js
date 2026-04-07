@@ -22,12 +22,19 @@
         return id;
     })();
 
-    function appendMessage(text, role, meta) {
+    function appendMessage(content, role, meta) {
         const div = document.createElement('div');
         div.className = 'qs-chatbot-msg qs-chatbot-msg--' + role;
-        const p = document.createElement('p');
-        p.textContent = text;
-        div.appendChild(p);
+        const bubble = document.createElement('div');
+        bubble.className = 'qs-chatbot-bubble';
+
+        if (role === 'bot' && meta && Array.isArray(meta.blocks) && meta.blocks.length > 0) {
+            renderStructuredMessage(bubble, meta.blocks);
+        } else {
+            bubble.appendChild(buildParagraphBlock(typeof content === 'string' ? content : String(content || '')));
+        }
+
+        div.appendChild(bubble);
 
         if (role === 'bot' && meta && Number.isInteger(meta.turnIndex) && meta.turnIndex > 0) {
             div.appendChild(buildFeedback(meta.turnIndex));
@@ -36,6 +43,62 @@
         messages.appendChild(div);
         messages.scrollTop = messages.scrollHeight;
         return div;
+    }
+
+    function renderStructuredMessage(container, blocks) {
+        blocks.forEach(function (block) {
+            if (!block || typeof block !== 'object') return;
+
+            if (block.type === 'list' && Array.isArray(block.items) && block.items.length > 0) {
+                container.appendChild(buildListBlock(block.items));
+                return;
+            }
+
+            if ((block.type === 'paragraph' || block.type === 'question') && typeof block.text === 'string' && block.text.trim() !== '') {
+                container.appendChild(buildParagraphBlock(block.text, block.type));
+            }
+        });
+    }
+
+    function buildParagraphBlock(text, type) {
+        const p = document.createElement('p');
+        p.className = 'qs-chatbot-block qs-chatbot-block--' + (type || 'paragraph');
+        appendRichText(p, text);
+        return p;
+    }
+
+    function buildListBlock(items) {
+        const ul = document.createElement('ul');
+        ul.className = 'qs-chatbot-block qs-chatbot-block--list';
+
+        items.forEach(function (item) {
+            if (typeof item !== 'string' || item.trim() === '') return;
+            const li = document.createElement('li');
+            appendRichText(li, item);
+            ul.appendChild(li);
+        });
+
+        return ul;
+    }
+
+    function appendRichText(element, text) {
+        const parts = String(text || '').split(/(https?:\/\/[^\s]+)/g);
+
+        parts.forEach(function (part) {
+            if (!part) return;
+
+            if (/^https?:\/\/[^\s]+$/i.test(part)) {
+                const link = document.createElement('a');
+                link.href = part;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = part;
+                element.appendChild(link);
+                return;
+            }
+
+            element.appendChild(document.createTextNode(part));
+        });
     }
 
     function buildFeedback(turnIndex) {
@@ -176,6 +239,7 @@
                 appendMessage(errText, 'error');
             } else {
                 appendMessage(data.response || '...', 'bot', {
+                    blocks: Array.isArray(data.response_blocks) ? data.response_blocks : [],
                     turnIndex: Number.parseInt(data.turn_index, 10),
                 });
             }

@@ -73,7 +73,9 @@ final class ChatbotShortcode implements HookableInterface
 
             <div class="qs-chatbot-messages" id="qs-chatbot-messages" role="log" aria-live="polite">
                 <div class="qs-chatbot-msg qs-chatbot-msg--bot">
-                    <p>¡Hola! Soy el asistente de Qamiluna Studio. ¿En qué puedo ayudarte hoy? 💄</p>
+                    <div class="qs-chatbot-bubble">
+                        <p class="qs-chatbot-block qs-chatbot-block--paragraph">¡Hola! Soy el asistente de Qamiluna Studio. ¿En qué puedo ayudarte hoy? 💄</p>
+                    </div>
                 </div>
             </div>
 
