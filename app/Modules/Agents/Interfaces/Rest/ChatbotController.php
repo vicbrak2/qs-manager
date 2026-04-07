@@ -195,70 +195,80 @@ final class ChatbotController
         $paragraphLines = [];
         $listItems = [];
 
-        $flushParagraph = static function () use (&$paragraphLines, &$blocks): void {
-            if ($paragraphLines === []) {
-                return;
-            }
-
-            $text = trim(implode(' ', $paragraphLines));
-            $paragraphLines = [];
-
-            if ($text === '') {
-                return;
-            }
-
-            $blocks[] = [
-                'type' => preg_match('/\?\s*$/u', $text) === 1 ? 'question' : 'paragraph',
-                'text' => $text,
-            ];
-        };
-
-        $flushList = static function () use (&$listItems, &$blocks): void {
-            if ($listItems === []) {
-                return;
-            }
-
-            $items = array_values(
-                array_filter(
-                    array_map(static fn (string $item): string => trim($item), $listItems),
-                    static fn (string $item): bool => $item !== ''
-                )
-            );
-
-            $listItems = [];
-
-            if ($items === []) {
-                return;
-            }
-
-            $blocks[] = [
-                'type' => 'list',
-                'items' => $items,
-            ];
-        };
-
         foreach ($lines as $line) {
             $trimmed = trim($line);
 
             if ($trimmed === '') {
-                $flushParagraph();
-                $flushList();
+                $this->appendParagraphBlock($blocks, $paragraphLines);
+                $this->appendListBlock($blocks, $listItems);
                 continue;
             }
 
             if (preg_match('/^(?:[-*•]|\d+[.)])\s+(.+)$/u', $trimmed, $matches) === 1) {
-                $flushParagraph();
+                $this->appendParagraphBlock($blocks, $paragraphLines);
                 $listItems[] = trim($matches[1]);
                 continue;
             }
 
-            $flushList();
+            $this->appendListBlock($blocks, $listItems);
             $paragraphLines[] = $trimmed;
         }
 
-        $flushParagraph();
-        $flushList();
+        $this->appendParagraphBlock($blocks, $paragraphLines);
+        $this->appendListBlock($blocks, $listItems);
 
         return $blocks;
+    }
+
+    /**
+     * @param list<array{type: 'paragraph'|'list'|'question', text?: string, items?: list<string>}> $blocks
+     * @param list<string> $paragraphLines
+     */
+    private function appendParagraphBlock(array &$blocks, array &$paragraphLines): void
+    {
+        if ($paragraphLines === []) {
+            return;
+        }
+
+        $text = trim(implode(' ', $paragraphLines));
+        $paragraphLines = [];
+
+        if ($text === '') {
+            return;
+        }
+
+        $blocks[] = [
+            'type' => preg_match('/\?\s*$/u', $text) === 1 ? 'question' : 'paragraph',
+            'text' => $text,
+        ];
+    }
+
+    /**
+     * @param list<array{type: 'paragraph'|'list'|'question', text?: string, items?: list<string>}> $blocks
+     * @param list<string> $listItems
+     */
+    private function appendListBlock(array &$blocks, array &$listItems): void
+    {
+        if ($listItems === []) {
+            return;
+        }
+
+        $items = array_values(
+            array_filter(
+                array_map(static fn (string $item): string => trim($item), $listItems),
+                static fn (string $item): bool => $item !== ''
+            )
+        );
+
+        $listItems = [];
+
+        if ($items === []) {
+            return;
+        }
+
+        $blocks[] = [
+            'type' => 'list',
+            'items' => $items,
+        ];
     }
 }
