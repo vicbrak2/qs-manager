@@ -72,10 +72,10 @@
         "options": {
           "temperature": 0.1
         },
-        "model": "llama-3.1-8b-instant"
+        "model": "nvidia/nemotron-3-super-120b-a12b:free"
       },
-      "name": "Groq Chat Model1",
-      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "name": "OpenRouter Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
         128,
@@ -104,10 +104,10 @@
         "options": {
           "temperature": 0.2
         },
-        "model": "llama-3.1-8b-instant"
+        "model": "nvidia/nemotron-3-super-120b-a12b:free"
       },
-      "name": "Groq Chat Model Formatter",
-      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "name": "OpenRouter Chat Model Formatter",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
         672,
@@ -196,7 +196,7 @@
         ]
       ]
     },
-    "Groq Chat Model1": {
+    "OpenRouter Chat Model1": {
       "ai_languageModel": [
         [
           {
@@ -207,7 +207,7 @@
         ]
       ]
     },
-    "Groq Chat Model Formatter": {
+    "OpenRouter Chat Model Formatter": {
       "ai_languageModel": [
         [
           {
