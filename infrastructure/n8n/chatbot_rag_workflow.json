@@ -37,7 +37,7 @@
       "parameters": {
         "sessionIdType": "customKey",
         "sessionKey": "={{ $('Webhook (WP REST API)').item.json.body.session_id }}",
-        "contextWindowLength": 6
+        "contextWindowLength": 4
       },
       "name": "Window Buffer Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
@@ -56,7 +56,7 @@
         "mode": "retrieve-as-tool",
         "toolName": "knowledge_base",
         "toolDescription": "Busca informacion publica y operativa de Qamiluna Studio sobre servicios, novia civil y fiesta, maquillaje social, precios referenciales, reservas, abono, traslados y tono de atencion.",
-        "topK": 6,
+        "topK": 2,
         "includeDocumentMetadata": true
       },
       "name": "Qdrant Vector Store Tool",
@@ -69,8 +69,10 @@
     },
     {
       "parameters": {
-        "options": {},
-        "model": "llama-3.3-70b-versatile"
+        "options": {
+          "temperature": 0.1
+        },
+        "model": "llama-3.1-8b-instant"
       },
       "name": "Groq Chat Model1",
       "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
@@ -78,6 +80,50 @@
       "position": [
         128,
         576
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ 'Texto base del asistente. Solo reformatealo y devuelvelo mejor presentado, sin cambiar el significado ni responder desde cero:\\n\\n' + $json.output }}",
+        "options": {
+          "systemMessage": "Recibes una respuesta base del asistente de Qamiluna Studio y tu unica tarea es mejorar su formato final para chat. No cambies el significado ni agregues informacion nueva. Mantén todos los datos, precios, condiciones, URLs y preguntas tal como vienen. No respondas desde cero. No digas que falta contexto, no pidas el texto base y no hables de instrucciones. Puedes mejorar legibilidad con saltos de linea, subpuntos simples y entre 0 y 3 emojis bien usados. Si la respuesta enumera servicios, requisitos o pasos, usa una lista corta con bullets. Si es una respuesta breve o una pregunta de seguimiento, mantenla natural y concisa. Si el texto base ya trae una pregunta final, conservála. No uses titulos markdown, no uses tablas y no exageres el formato. Devuelve solo el mensaje final listo para enviar a la clienta."
+        },
+        "agent": "conversationalAgent"
+      },
+      "name": "AI Formatter",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.4,
+      "position": [
+        800,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.2
+        },
+        "model": "llama-3.1-8b-instant"
+      },
+      "name": "Groq Chat Model Formatter",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        672,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const source = $json.output ?? $json;\nlet text = '';\n\nif (typeof source === 'string') {\n  text = source;\n} else if (source && typeof source === 'object') {\n  if (typeof source.text === 'string') {\n    text = source.text;\n  } else if (typeof source.texto === 'string') {\n    text = source.texto;\n  } else if (typeof source.output === 'string') {\n    text = source.output;\n  } else if (typeof source.content === 'string') {\n    text = source.content;\n  }\n}\n\nif (text === '' && typeof $json.text === 'string') {\n  text = $json.text;\n}\n\nif (text === '') {\n  text = JSON.stringify(source);\n}\n\nreturn [{ json: { output: text.trim() } }];"
+      },
+      "name": "Normalize Chat Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
       ]
     },
     {
@@ -100,6 +146,28 @@
         [
           {
             "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "AI Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Formatter": {
+      "main": [
+        [
+          {
+            "node": "Normalize Chat Output",
             "type": "main",
             "index": 0
           }
@@ -133,6 +201,17 @@
         [
           {
             "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model Formatter": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Formatter",
             "type": "ai_languageModel",
             "index": 0
           }

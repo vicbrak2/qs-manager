@@ -74,8 +74,7 @@ final class ChatbotGateway
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
 
-        // El workflow activo puede devolver 'reply' (Respond to Webhook) u 'output' (lastNode del AI Agent)
-        return (string) ($body['reply'] ?? $body['output'] ?? $body['response'] ?? '');
+        return is_array($body) ? $this->extractReply($body) : '';
     }
 
     public function webhookUrl(): string
@@ -137,6 +136,8 @@ final class ChatbotGateway
                 => 'Quiero informacion sobre reservas, disponibilidad, abono y como agendar en Qamiluna Studio.',
             preg_match('/^(precio|precios|valor|valores|cuanto sale|cuanto cuesta)$/u', $normalized) === 1
                 => 'Quiero informacion sobre precios referenciales y como cotizar en Qamiluna Studio.',
+            preg_match('/^(servicios|que servicios tienen|que servicios ofrecen|listalos|listalas|lista los servicios|lista las opciones|enumera los servicios|cuales son los servicios|cu[aá]les son los servicios)$/u', $normalized) === 1
+                => 'Quiero una lista clara de los servicios principales de Qamiluna Studio.',
             preg_match('/^(novia|novias|novia civil|novia fiesta)$/u', $normalized) === 1
                 => 'Quiero informacion sobre servicios para novia civil y novia fiesta en Qamiluna Studio.',
             preg_match('/^(qamiluna|qamiluna studio|cami luna|qami luna|estudio)$/u', $normalized) === 1
@@ -154,5 +155,50 @@ final class ChatbotGateway
             : strtolower(trim($message));
 
         return trim((string) preg_replace('/\s+/', ' ', $normalized));
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     */
+    private function extractReply(array $body): string
+    {
+        foreach (['reply', 'output', 'response'] as $key) {
+            if (! array_key_exists($key, $body)) {
+                continue;
+            }
+
+            $text = $this->extractTextValue($body[$key]);
+
+            if ($text !== '') {
+                return $text;
+            }
+        }
+
+        return '';
+    }
+
+    private function extractTextValue(mixed $value): string
+    {
+        if (is_string($value)) {
+            return trim($value);
+        }
+
+        if (! is_array($value)) {
+            return '';
+        }
+
+        foreach (['texto', 'text', 'output', 'content'] as $key) {
+            if (! array_key_exists($key, $value)) {
+                continue;
+            }
+
+            $nested = $this->extractTextValue($value[$key]);
+
+            if ($nested !== '') {
+                return $nested;
+            }
+        }
+
+        return '';
     }
 }
