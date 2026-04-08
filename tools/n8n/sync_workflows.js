@@ -12,18 +12,31 @@ const CREDENTIAL_REQUIREMENTS = {
     qdrantApi: {
         envName: 'N8N_QDRANT_CREDENTIAL_NAME',
         defaultNames: ['Qdrant account', 'Qdrant local'],
+        bootstrapFields: {
+            qdrantUrl: ['QDRANT_URL', 'QDRANT_CLUSTER_ENDPOINT'],
+            apiKey: ['QDRANT_API_KEY', 'QGRANT_KEY'],
+        },
     },
     huggingFaceApi: {
         envName: 'N8N_HUGGING_FACE_CREDENTIAL_NAME',
         defaultNames: ['Hugging Face direct', 'Hugging Face account'],
+        bootstrapFields: {
+            apiKey: ['HUGGING_FACE_API_KEY'],
+        },
     },
     openRouterApi: {
         envName: 'N8N_OPENROUTER_CREDENTIAL_NAME',
         defaultNames: ['OpenRouter account'],
+        bootstrapFields: {
+            apiKey: ['OPENROUTER_API_KEY'],
+        },
     },
     groqApi: {
         envName: 'N8N_GROQ_CREDENTIAL_NAME',
         defaultNames: ['Groq account'],
+        bootstrapFields: {
+            apiKey: ['GROQ_N8N_API_KEY'],
+        },
     },
 };
 
@@ -44,12 +57,14 @@ const env = {
 
 const config = {
     baseUrl: (env.N8N_BASE_URL || 'https://n8n.qamilunastudio.com').trim().replace(/\/+$/, ''),
-    apiKey: (env.N8N_API_KEY || env.N8N_CHATBOT_TOKEN || '').trim(),
+    apiKey: (env.N8N_API_KEY || env.N8N_QAMILUNA_INSTANCE || env.N8N_CHATBOT_TOKEN || '').trim(),
     dryRun: /^(1|true|yes)$/i.test(String(env.N8N_DRY_RUN || '')),
 };
 
 if (config.apiKey === '') {
-    throw new Error('Missing N8N_API_KEY. Set it in the environment or GitHub Actions secret.');
+    throw new Error(
+        'Missing n8n API key. Set N8N_API_KEY, N8N_QAMILUNA_INSTANCE, or N8N_CHATBOT_TOKEN in the environment.',
+    );
 }
 
 main().catch((error) => {
@@ -58,11 +73,12 @@ main().catch((error) => {
 });
 
 async function main() {
+    console.log(`Syncing n8n workflows against ${config.baseUrl}`);
     const credentialsResponse = await apiRequest('GET', '/credentials');
     const workflowsResponse = await apiRequest('GET', '/workflows');
     const credentials = credentialsResponse.data || [];
     const workflows = workflowsResponse.data || [];
-    const credentialMap = resolveCredentialMap(credentials);
+    const credentialMap = await resolveCredentialMap(credentials);
 
     for (const relativeFile of WORKFLOW_FILES) {
         const absoluteFile = path.join(rootDir, relativeFile);
@@ -118,18 +134,25 @@ function pickExistingWorkflow(workflows, workflowName) {
     return candidates[0] || null;
 }
 
-function resolveCredentialMap(credentials) {
+async function resolveCredentialMap(credentials) {
     const requiredTypes = new Set(Object.values(NODE_CREDENTIAL_MAP));
     const resolved = {};
+    const availableCredentials = [...credentials];
 
     for (const type of requiredTypes) {
-        resolved[type] = resolveCredential(credentials, type);
+        const credential = await resolveCredential(availableCredentials, type);
+        resolved[type] = credential;
+        availableCredentials.push({
+            id: credential.id,
+            name: credential.name,
+            type,
+        });
     }
 
     return resolved;
 }
 
-function resolveCredential(credentials, type) {
+async function resolveCredential(credentials, type) {
     const requirement = CREDENTIAL_REQUIREMENTS[type];
 
     if (!requirement) {
@@ -139,6 +162,12 @@ function resolveCredential(credentials, type) {
     const matches = credentials.filter((credential) => credential.type === type);
 
     if (matches.length === 0) {
+        const created = await bootstrapCredential(type);
+
+        if (created) {
+            return created;
+        }
+
         throw new Error(`No n8n credential found for type "${type}"`);
     }
 
@@ -163,6 +192,73 @@ function resolveCredential(credentials, type) {
 
     const availableNames = matches.map((credential) => credential.name).join(', ');
     throw new Error(`Multiple "${type}" credentials found. Set ${requirement.envName}. Available: ${availableNames}`);
+}
+
+async function bootstrapCredential(type) {
+    const requirement = CREDENTIAL_REQUIREMENTS[type];
+    const payload = buildBootstrapPayload(type, requirement);
+
+    if (!payload) {
+        return null;
+    }
+
+    if (config.dryRun) {
+        console.log(`DRY RUN: would create credential "${payload.name}" (${type})`);
+        return {
+            id: `dry-run-${type}`,
+            name: payload.name,
+        };
+    }
+
+    console.log(`Creating missing credential "${payload.name}" (${type})`);
+    const created = await apiRequest('POST', '/credentials', payload);
+    const credentialId = created.id || (created.data && created.data.id);
+
+    if (!credentialId) {
+        throw new Error(`n8n did not return a credential id when creating "${payload.name}"`);
+    }
+
+    return {
+        id: credentialId,
+        name: payload.name,
+    };
+}
+
+function buildBootstrapPayload(type, requirement) {
+    const fieldMap = requirement.bootstrapFields || {};
+    const data = {};
+
+    for (const [fieldName, envNames] of Object.entries(fieldMap)) {
+        const value = firstEnvValue(envNames);
+
+        if (!value) {
+            return null;
+        }
+
+        data[fieldName] = value;
+    }
+
+    if (Object.keys(data).length === 0) {
+        return null;
+    }
+
+    return {
+        name: env[requirement.envName] || requirement.defaultNames[0],
+        type,
+        data,
+    };
+}
+
+function firstEnvValue(names) {
+    for (const name of names) {
+        const value = (env[name] || '').trim();
+
+        if (value !== '') {
+            return value;
+        }
+    }
+
+    return '';
 }
 
 function normalizeWorkflow(workflow) {

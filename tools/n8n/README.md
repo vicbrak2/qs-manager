@@ -23,6 +23,20 @@ Scripts operativos para inspeccionar, probar y ajustar la integración local con
 
 Varios de estos scripts leen `N8N_CHATBOT_TOKEN` desde `.env` y asumen n8n local en `http://localhost:5678`.
 
+Para sincronizar contra la instancia remota de Qamiluna desde tu máquina, `sync_workflows.js` acepta:
+
+- `N8N_API_KEY`: API key preferida para CI o uso manual.
+- `N8N_QAMILUNA_INSTANCE`: alias local para el API key de `https://n8n.qamilunastudio.com`.
+- `N8N_BASE_URL`: opcional si quieres apuntar a otra instancia distinta.
+
+Si la instancia remota aún no tiene credenciales, el sync puede crearlas automáticamente cuando `.env` incluya:
+
+- `QDRANT_URL` o `QDRANT_CLUSTER_ENDPOINT`
+- `QDRANT_API_KEY` o `QGRANT_KEY`
+- `HUGGING_FACE_API_KEY`
+- `OPENROUTER_API_KEY`
+- `GROQ_N8N_API_KEY`
+
 ## Deploy continuo
 
 El workflow de GitHub Actions despliega el plugin por FTP y, en `push` a `main`, sincroniza estos archivos en la instancia remota de `n8n`:
