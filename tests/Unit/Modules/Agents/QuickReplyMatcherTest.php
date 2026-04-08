@@ -30,6 +30,17 @@ final class QuickReplyMatcherTest extends TestCase
         self::assertStringContainsString('servicio, fecha, comuna y horario aproximado', $reply);
     }
 
+    public function testMatchesBridalRuleForLongQuestion(): void
+    {
+        $matcher = new QuickReplyMatcher();
+
+        $reply = $matcher->match('Cual es la diferencia entre novia civil y novia fiesta si quiero maquillarme con ustedes en Santiago?');
+
+        self::assertNotNull($reply);
+        self::assertStringContainsString('novia civil como novia fiesta', $reply);
+        self::assertStringContainsString('fecha, comuna, horario aproximado', $reply);
+    }
+
     public function testConfiguredRulesCanOverrideDefaults(): void
     {
         $json = (string) json_encode([

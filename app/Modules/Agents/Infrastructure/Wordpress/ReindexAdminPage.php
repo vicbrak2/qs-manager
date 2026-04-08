@@ -1107,7 +1107,7 @@ final class ReindexAdminPage implements HookableInterface
         $startedAt = microtime(true);
         $response = wp_remote_request($url, array_merge($args, [
             'method' => $method,
-            'timeout' => 20,
+            'timeout' => 45,
         ]));
         $latencyMs = (int) round((microtime(true) - $startedAt) * 1000);
 

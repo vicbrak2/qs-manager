@@ -22,7 +22,7 @@
         "promptType": "define",
         "text": "={{ $json.body.message }}",
         "options": {
-          "systemMessage": "Eres el asistente de atencion y reservas de Qamiluna Studio. Habla en espanol natural de Chile, con tono cercano, claro y resolutivo. Responde normalmente en 2 a 4 frases, sin encabezados ni listas salvo que la clienta lo pida. Usa solo informacion obtenida desde knowledge_base y no inventes precios, promociones ni disponibilidad. Interpreta que Qamiluna, Qami Luna y Cami Luna se refieren a Qamiluna Studio. Si la consulta es sobre novia, interpretala como un servicio para novia, no como vida personal. Si falta contexto suficiente, dilo breve y pide solo el siguiente dato util. No menciones QS Manager."
+          "systemMessage": "Eres el asistente de atencion y reservas de Qamiluna Studio. Habla en espanol natural de Chile, con tono cercano, claro y resolutivo. Responde normalmente en 2 a 4 frases cortas, listas para enviar por chat. Usa parrafos breves y solo usa bullets si enumeras opciones, pasos o requisitos. Usa solo informacion obtenida desde knowledge_base y no inventes precios, promociones ni disponibilidad. Interpreta que Qamiluna, Qami Luna y Cami Luna se refieren a Qamiluna Studio. Si la consulta es sobre novia, interpretala como un servicio para novia, no como vida personal. Si falta contexto suficiente, dilo breve y pide solo el siguiente dato util. Si ya tienes contexto suficiente, responde sin rodeos. Si usas knowledge_base, hazlo una sola vez por turno. No menciones QS Manager."
         }
       },
       "name": "AI Agent",
@@ -95,38 +95,6 @@
     },
     {
       "parameters": {
-        "options": {
-          "temperature": 0.2
-        },
-        "model": "nvidia/nemotron-3-super-120b-a12b:free"
-      },
-      "name": "OpenRouter Chat Model Formatter",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
-      "typeVersion": 1,
-      "position": [
-        672,
-        576
-      ]
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "={{ 'Texto base del asistente. Solo reformatealo y devuelvelo mejor presentado, sin cambiar el significado ni responder desde cero:\\n\\n' + $json.output }}",
-        "options": {
-          "systemMessage": "Recibes una respuesta base del asistente de Qamiluna Studio y tu unica tarea es mejorar su formato final para chat. No cambies el significado ni agregues informacion nueva. Mantén todos los datos, precios, condiciones, URLs y preguntas tal como vienen. No respondas desde cero. No digas que falta contexto, no pidas el texto base y no hables de instrucciones. Devuelve texto claro para renderizado visual: usa un parrafo inicial breve, luego una lista con bullets si enumeras servicios, pasos o requisitos, y termina con un cierre o pregunta final en un parrafo separado. Deja una linea en blanco entre secciones. Usa entre 0 y 2 emojis bien puestos. Si el texto base ya trae una pregunta final, conservála. No uses titulos markdown, no uses tablas y no exageres el formato. Devuelve solo el mensaje final listo para enviar a la clienta."
-        },
-        "agent": "conversationalAgent"
-      },
-      "name": "AI Formatter",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.4,
-      "position": [
-        800,
-        0
-      ]
-    },
-    {
-      "parameters": {
         "jsCode": "const source = $json.output ?? $json;\nlet text = '';\n\nif (typeof source === 'string') {\n  text = source;\n} else if (source && typeof source === 'object') {\n  if (typeof source.text === 'string') {\n    text = source.text;\n  } else if (typeof source.texto === 'string') {\n    text = source.texto;\n  } else if (typeof source.output === 'string') {\n    text = source.output;\n  } else if (typeof source.content === 'string') {\n    text = source.content;\n  }\n}\n\nif (text === '' && typeof $json.text === 'string') {\n  text = $json.text;\n}\n\nif (text === '') {\n  text = JSON.stringify(source);\n}\n\nreturn [{ json: { output: text.trim() } }];"
       },
       "name": "Normalize Chat Output",
@@ -195,28 +163,6 @@
       ]
     },
     "AI Agent": {
-      "main": [
-        [
-          {
-            "node": "AI Formatter",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenRouter Chat Model Formatter": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "AI Formatter",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "AI Formatter": {
       "main": [
         [
           {

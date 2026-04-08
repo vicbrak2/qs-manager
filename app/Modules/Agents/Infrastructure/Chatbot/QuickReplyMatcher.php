@@ -384,6 +384,19 @@ final class QuickReplyMatcher
                 'min_score' => null,
             ],
             [
+                'id' => 'bridal_services',
+                'response' => 'Si, trabajamos tanto novia civil como novia fiesta con servicio integral. Para orientarte bien y revisar la opcion que mas te conviene, enviame fecha, comuna, horario aproximado y cuantas personas serian.',
+                'examples' => [
+                    'novia civil',
+                    'novia fiesta',
+                    'novia civil y novia fiesta',
+                    'diferencia entre novia civil y novia fiesta',
+                    'quiero maquillaje de novia',
+                    'servicio para novia',
+                ],
+                'min_score' => 0.85,
+            ],
+            [
                 'id' => 'prices',
                 'response' => 'Los valores dependen del servicio, la comuna, el horario y si es para una o mas personas. Si quieres cotizar rapido, enviame en un solo mensaje servicio, fecha y comuna.',
                 'examples' => [

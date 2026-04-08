@@ -59,7 +59,7 @@ final class ChatbotGateway
                 'Content-Type' => 'application/json',
                 'Accept'       => 'application/json',
             ],
-            'timeout' => 45,
+            'timeout' => 90,
         ]);
 
         if (is_wp_error($response)) {
