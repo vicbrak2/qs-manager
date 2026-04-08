@@ -46,7 +46,7 @@ El workflow de GitHub Actions despliega el plugin por FTP y, en `push` a `main`,
 
 Secretos y variables esperados en GitHub:
 
-- `N8N_API_KEY` en `Settings -> Secrets and variables -> Actions -> Secrets`
+- `N8N_API_KEY` o `N8N_QAMILUNA_INSTANCE` en `Settings -> Secrets and variables -> Actions -> Secrets`
 - `N8N_BASE_URL` opcional en `Variables`
 - `N8N_QDRANT_CREDENTIAL_NAME` opcional en `Variables`
 - `N8N_HUGGING_FACE_CREDENTIAL_NAME` opcional en `Variables`
