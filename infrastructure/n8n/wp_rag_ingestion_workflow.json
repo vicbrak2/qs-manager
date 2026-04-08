@@ -35,7 +35,8 @@
     {
       "parameters": {
         "options": {},
-        "model": "sentence-transformers/distilbert-base-nli-mean-tokens"
+        "model": "sentence-transformers/distilbert-base-nli-mean-tokens",
+        "modelName": "sentence-transformers/distilbert-base-nli-mean-tokens"
       },
       "name": "Hugging Face Embeddings",
       "type": "@n8n/n8n-nodes-langchain.embeddingsHuggingFaceInference",
@@ -137,5 +138,10 @@
       ]
     }
   },
-  "settings": {}
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
 }

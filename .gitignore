@@ -1,16 +1,64 @@
-/vendor/
-/dist/
-/.php-cs-fixer.cache
-/.claude/
-/var/cache/phpunit/
-/var/cache/phpstan/
-/var/logs/*.log
-/var/tmp/*.log
-/var/tmp/*.php
-/var/tmp/*.ps1
-/var/tmp/n8n/*
-!/var/tmp/n8n/.gitkeep
-/infrastructure/n8n/workflows_backup.json
-/tools/mutation/reports/*.log
-/app/UI/Admin/Assets/node_modules/
-/.env
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.railway
+.env.production
+.env.development
+
+# Secrets
+*.key
+*.pem
+*.crt
+*.p12
+private_key
+secret_key
+
+# API Keys y tokens (ANY file that might contain credentials)
+secrets.json
+config.json
+credentials.json
+.credentials
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+.idea/
+
+# Node/npm
+node_modules/
+package-lock.json
+yarn.lock
+.pnpm-lock.yaml
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log
+logs/
+
+# Temporal
+tmp/
+temp/
+.cache/
+dist/
+vendor/
+var/cache/
+.claude/
+.php-cs-fixer.cache
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+*.sublime-project
+*.sublime-workspace

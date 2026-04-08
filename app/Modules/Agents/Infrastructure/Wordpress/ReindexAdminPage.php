@@ -6,6 +6,7 @@ namespace QS\Modules\Agents\Infrastructure\Wordpress;
 
 use QS\Core\Contracts\HookableInterface;
 use QS\Modules\Agents\Application\CommandHandler\ReindexContentHandler;
+use QS\Modules\Agents\Infrastructure\Chatbot\QuickReplyMatcher;
 use QS\Modules\Agents\Infrastructure\N8n\ChatbotGateway;
 use QS\Modules\Agents\Infrastructure\N8n\IngestGateway;
 use QS\Modules\Agents\Infrastructure\Persistence\WpdbChatLogRepository;
@@ -74,6 +75,8 @@ final class ReindexAdminPage implements HookableInterface
         $qdrantUrl = $this->option(self::QDRANT_URL_OPTION);
         $qdrantApiKeySaved = $this->option(self::QDRANT_API_KEY_OPTION) !== '';
         $whatsappUrl = $this->option(self::WHATSAPP_URL_OPTION);
+        $quickRepliesJson = $this->option(QuickReplyMatcher::OPTION_NAME);
+        $quickReplyThreshold = $this->option(QuickReplyMatcher::THRESHOLD_OPTION_NAME);
         $settingsSaved = isset($_GET['qs_settings_updated']) && $_GET['qs_settings_updated'] === '1';
         $contextFeedback = $this->consumeContextFeedback();
         $contextActionFeedback = $this->consumeContextActionFeedback();
@@ -206,6 +209,43 @@ final class ReindexAdminPage implements HookableInterface
                                     Valor efectivo actual:
                                     <code><?php echo esc_html($this->fallbackResponder->whatsappUrl() !== '' ? $this->fallbackResponder->whatsappUrl() : 'sin configurar'); ?></code>
                                 </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="qs_chatbot_quick_reply_threshold">Umbral quick replies</label></th>
+                            <td>
+                                <input
+                                    id="qs_chatbot_quick_reply_threshold"
+                                    name="qs_chatbot_quick_reply_threshold"
+                                    type="number"
+                                    class="small-text code"
+                                    min="0.50"
+                                    max="1"
+                                    step="0.05"
+                                    value="<?php echo esc_attr($quickReplyThreshold); ?>"
+                                    placeholder="0.80"
+                                >
+                                <p class="description">
+                                    Si la consulta coincide con un ejemplo en al menos este porcentaje, WordPress responde localmente sin llamar a n8n.<br>
+                                    Dejalo vacio para usar el valor por defecto <code>0.80</code>.
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="qs_chatbot_quick_replies_json">Patrones quick replies</label></th>
+                            <td>
+                                <textarea
+                                    id="qs_chatbot_quick_replies_json"
+                                    name="qs_chatbot_quick_replies_json"
+                                    class="large-text code"
+                                    rows="12"
+                                    placeholder="<?php echo esc_attr(QuickReplyMatcher::sampleRulesJson()); ?>"
+                                ><?php echo esc_textarea($quickRepliesJson); ?></textarea>
+                                <p class="description">
+                                    Reglas adicionales u overrides para responder FAQs sin IA. Formato: <code>[{id,response,examples[],min_score?}]</code>.<br>
+                                    Estas reglas se evalúan antes del webhook n8n. Las reglas base de saludo, servicios, precios y reservas ya vienen incluidas en código.
+                                </p>
+                                <pre style="white-space:pre-wrap;max-width:960px;background:#f6f7f7;padding:12px;border:1px solid #dcdcde;"><?php echo esc_html(QuickReplyMatcher::sampleRulesJson()); ?></pre>
                             </td>
                         </tr>
                     </tbody>
@@ -576,6 +616,8 @@ final class ReindexAdminPage implements HookableInterface
         $qdrantApiKey = $this->postedText('qs_qdrant_api_key');
         $clearQdrantApiKey = $this->postedCheckbox('qs_qdrant_api_key_clear');
         $whatsappUrl = $this->postedUrl('qs_chatbot_fallback_whatsapp_url');
+        $quickReplyThreshold = $this->sanitizeQuickReplyThreshold($this->postedText('qs_chatbot_quick_reply_threshold'));
+        $quickRepliesJson = $this->sanitizeQuickRepliesJson($this->postedText('qs_chatbot_quick_replies_json'));
 
         $this->storeOption(self::CHATBOT_URL_OPTION, $chatbotUrl);
         $this->storeOption(self::INGEST_URL_OPTION, $ingestUrl);
@@ -586,6 +628,8 @@ final class ReindexAdminPage implements HookableInterface
             update_option(self::QDRANT_API_KEY_OPTION, $qdrantApiKey, false);
         }
         $this->storeOption(self::WHATSAPP_URL_OPTION, $whatsappUrl);
+        $this->storeOption(QuickReplyMatcher::THRESHOLD_OPTION_NAME, $quickReplyThreshold);
+        $this->storeOption(QuickReplyMatcher::OPTION_NAME, $quickRepliesJson);
 
         $redirectUrl = $this->pageUrl([
             'qs_settings_updated' => '1',
@@ -841,6 +885,42 @@ final class ReindexAdminPage implements HookableInterface
         }
 
         update_option($key, $value, false);
+    }
+
+    private function sanitizeQuickReplyThreshold(string $value): string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (! is_numeric($value)) {
+            wp_die('El umbral de quick replies debe ser un numero entre 0.50 y 1.00.');
+        }
+
+        $threshold = (float) $value;
+
+        if ($threshold < 0.50 || $threshold > 1.00) {
+            wp_die('El umbral de quick replies debe estar entre 0.50 y 1.00.');
+        }
+
+        return number_format($threshold, 2, '.', '');
+    }
+
+    private function sanitizeQuickRepliesJson(string $value): string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        try {
+            return QuickReplyMatcher::sanitizeRulesJson($value);
+        } catch (\InvalidArgumentException $exception) {
+            wp_die('El JSON de quick replies no es valido: ' . $exception->getMessage());
+        }
     }
 
     private function currentTab(): string

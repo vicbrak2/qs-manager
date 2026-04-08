@@ -97,3 +97,27 @@ jobs:
           local-dir: dist/qs-core/
           server-dir: /
           state-name: .ftp-deploy-sync-state.json
+
+  deploy_n8n:
+    runs-on: ubuntu-latest
+    needs: package
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Sync n8n workflows
+        env:
+          N8N_BASE_URL: ${{ vars.N8N_BASE_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+          N8N_QDRANT_CREDENTIAL_NAME: ${{ vars.N8N_QDRANT_CREDENTIAL_NAME }}
+          N8N_HUGGING_FACE_CREDENTIAL_NAME: ${{ vars.N8N_HUGGING_FACE_CREDENTIAL_NAME }}
+          N8N_OPENROUTER_CREDENTIAL_NAME: ${{ vars.N8N_OPENROUTER_CREDENTIAL_NAME }}
+          N8N_GROQ_CREDENTIAL_NAME: ${{ vars.N8N_GROQ_CREDENTIAL_NAME }}
+        run: node tools/n8n/sync_workflows.js

@@ -29,6 +29,7 @@ use QS\Core\Wordpress\PostTypeRegistrar;
 use QS\Core\Wordpress\RestRouteRegistrar;
 use QS\Interfaces\Rest\SystemController;
 use QS\Modules\Agents\Application\CommandHandler\ReindexContentHandler;
+use QS\Modules\Agents\Infrastructure\Chatbot\QuickReplyMatcher;
 use QS\Modules\Agents\Infrastructure\N8n\ChatbotGateway;
 use QS\Modules\Agents\Infrastructure\N8n\IngestGateway;
 use QS\Modules\Agents\Infrastructure\Persistence\WpdbChatLogRepository;
@@ -206,6 +207,7 @@ final class ServiceProvider
             MuaAgendaController::class => autowire(),
             ServicesController::class => autowire(),
             FinanceController::class => autowire(),
+            QuickReplyMatcher::class => autowire(),
             ChatbotGateway::class => autowire(),
             IngestGateway::class => autowire(),
             WpdbChatLogRepository::class => autowire(),

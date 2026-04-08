@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QS\Modules\Agents\Infrastructure\N8n;
 
+use QS\Modules\Agents\Infrastructure\Chatbot\QuickReplyMatcher;
 use WP_Error;
 
 final class ChatbotGateway
@@ -12,8 +13,9 @@ final class ChatbotGateway
 
     private string $webhookUrl;
 
-    public function __construct()
-    {
+    public function __construct(
+        private readonly QuickReplyMatcher $quickReplyMatcher
+    ) {
         $this->webhookUrl = $this->resolveWebhookUrl();
     }
 
@@ -28,6 +30,12 @@ final class ChatbotGateway
 
         if ($greetingReply !== null) {
             return $greetingReply;
+        }
+
+        $quickReply = $this->quickReplyMatcher->match($message);
+
+        if ($quickReply !== null) {
+            return $quickReply;
         }
 
         $rewrittenMessage = $this->rewriteMessageForContext($message);
