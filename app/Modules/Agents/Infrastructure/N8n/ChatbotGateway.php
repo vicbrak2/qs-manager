@@ -9,7 +9,9 @@ use WP_Error;
 
 final class ChatbotGateway
 {
-    private const OPTION_NAME = 'qs_n8n_chatbot_url';
+    private const OPTION_NAME    = 'qs_n8n_chatbot_url';
+    private const REPLY_CACHE_TTL = 1800; // 30 minutes
+    private const MAX_INPUT_CHARS = 800;
 
     private string $webhookUrl;
 
@@ -25,7 +27,8 @@ final class ChatbotGateway
      */
     public function ask(string $message, string $sessionId): string|WP_Error
     {
-        $message = trim($message);
+        $message = mb_substr(trim($message), 0, self::MAX_INPUT_CHARS);
+
         $greetingReply = $this->greetingReply($message);
 
         if ($greetingReply !== null) {
@@ -39,6 +42,13 @@ final class ChatbotGateway
         }
 
         $rewrittenMessage = $this->rewriteMessageForContext($message);
+
+        $cacheKey = 'qs_n8n_reply_' . md5($rewrittenMessage);
+        $cached   = get_transient($cacheKey);
+
+        if (is_string($cached) && $cached !== '') {
+            return $cached;
+        }
 
         $body = wp_json_encode([
             'message'    => $rewrittenMessage,
@@ -80,9 +90,14 @@ final class ChatbotGateway
             );
         }
 
-        $body = json_decode(wp_remote_retrieve_body($response), true);
+        $body  = json_decode(wp_remote_retrieve_body($response), true);
+        $reply = is_array($body) ? $this->extractReply($body) : '';
 
-        return is_array($body) ? $this->extractReply($body) : '';
+        if ($reply !== '') {
+            set_transient($cacheKey, $reply, self::REPLY_CACHE_TTL);
+        }
+
+        return $reply;
     }
 
     public function webhookUrl(): string
