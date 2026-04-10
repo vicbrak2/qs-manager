@@ -1,0 +1,10 @@
+#!/bin/sh
+# Hook para corregir la configuración de worktrees que rompe Antigravity
+# Este hook se ejecuta después de cada checkout.
+
+# Quitar la configuración que causa el error "MCP Error" en Antigravity
+git config --unset extensions.worktreeConfig 2>/dev/null
+
+if [ $? -eq 0 ]; then
+    echo "¡Configuración extensions.worktreeConfig detectada y eliminada para mantener Antigravity estable!"
+fi

@@ -1,48 +1,124 @@
-/* QS Chatbot — v1.0 */
+/* QS Chatbot — v1.1 */
 (function () {
     'use strict';
 
     const cfg = window.QsChatbot || {};
+    const roots = document.querySelectorAll('[data-qs-chatbot]');
+    let sharedSessionId = null;
 
-    const form     = document.getElementById('qs-chatbot-form');
-    const input    = document.getElementById('qs-chatbot-input');
-    const messages = document.getElementById('qs-chatbot-messages');
-    const typing   = document.getElementById('qs-chatbot-typing');
+    if (!roots.length) return;
 
-    if (!form || !input || !messages) return;
+    roots.forEach(initChatbot);
 
-    // Session ID — persiste en sessionStorage para memoria por tab
-    const sessionId = (function () {
-        const key = 'qs_chat_session';
-        let id = sessionStorage.getItem(key);
-        if (!id) {
-            id = 'anon_' + Math.random().toString(36).slice(2) + '_' + Date.now();
-            sessionStorage.setItem(key, id);
+    function initChatbot(root) {
+        const form = root.querySelector('[data-qs-chatbot-form]');
+        const input = root.querySelector('[data-qs-chatbot-input]');
+        const messages = root.querySelector('[data-qs-chatbot-messages]');
+        const typing = root.querySelector('[data-qs-chatbot-typing]');
+        const sendButton = form ? form.querySelector('.qs-chatbot-send') : null;
+        const sessionId = getOrCreateSessionId();
+
+        if (!form || !input || !messages || !sendButton) return;
+
+        function appendMessage(content, role, meta) {
+            const div = document.createElement('div');
+            div.className = 'qs-chatbot-msg qs-chatbot-msg--' + role;
+
+            const bubble = document.createElement('div');
+            bubble.className = 'qs-chatbot-bubble';
+
+            if (role === 'bot' && meta && Array.isArray(meta.blocks) && meta.blocks.length > 0) {
+                renderStructuredMessage(bubble, meta.blocks);
+            } else {
+                bubble.appendChild(buildParagraphBlock(typeof content === 'string' ? content : String(content || '')));
+            }
+
+            div.appendChild(bubble);
+
+            if (role === 'bot' && meta && Number.isInteger(meta.turnIndex) && meta.turnIndex > 0) {
+                div.appendChild(buildFeedback(meta.turnIndex, sessionId));
+            }
+
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+
+            return div;
         }
-        return id;
-    })();
 
-    function appendMessage(content, role, meta) {
-        const div = document.createElement('div');
-        div.className = 'qs-chatbot-msg qs-chatbot-msg--' + role;
-        const bubble = document.createElement('div');
-        bubble.className = 'qs-chatbot-bubble';
+        function setTyping(visible) {
+            if (!typing) return;
 
-        if (role === 'bot' && meta && Array.isArray(meta.blocks) && meta.blocks.length > 0) {
-            renderStructuredMessage(bubble, meta.blocks);
-        } else {
-            bubble.appendChild(buildParagraphBlock(typeof content === 'string' ? content : String(content || '')));
+            typing.style.display = visible ? 'flex' : 'none';
+
+            if (visible) {
+                messages.scrollTop = messages.scrollHeight;
+            }
         }
 
-        div.appendChild(bubble);
-
-        if (role === 'bot' && meta && Number.isInteger(meta.turnIndex) && meta.turnIndex > 0) {
-            div.appendChild(buildFeedback(meta.turnIndex));
+        function setDisabled(disabled) {
+            input.disabled = disabled;
+            sendButton.disabled = disabled;
         }
 
-        messages.appendChild(div);
-        messages.scrollTop = messages.scrollHeight;
-        return div;
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const text = input.value.trim();
+
+            if (!text) return;
+
+            appendMessage(text, 'user');
+            input.value = '';
+            setDisabled(true);
+            setTyping(true);
+
+            try {
+                const res = await fetch(cfg.apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': cfg.nonce || '',
+                    },
+                    body: JSON.stringify({
+                        message: text,
+                        session_id: sessionId,
+                    }),
+                });
+
+                const data = await res.json();
+
+                setTyping(false);
+
+                if (!res.ok || !data.success) {
+                    appendMessage(data.message || cfg.errorMsg || 'Error al conectar.', 'error');
+                    return;
+                }
+
+                appendMessage(data.response || '...', 'bot', {
+                    blocks: Array.isArray(data.response_blocks) ? data.response_blocks : [],
+                    turnIndex: Number.parseInt(data.turn_index, 10),
+                });
+            } catch (err) {
+                setTyping(false);
+                appendMessage(cfg.errorMsg || 'Error de conexión. Intenta de nuevo.', 'error');
+            } finally {
+                setDisabled(false);
+                input.focus();
+            }
+        });
+
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+
+                if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit();
+                    return;
+                }
+
+                form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            }
+        });
     }
 
     function renderStructuredMessage(container, blocks) {
@@ -73,6 +149,7 @@
 
         items.forEach(function (item) {
             if (typeof item !== 'string' || item.trim() === '') return;
+
             const li = document.createElement('li');
             appendRichText(li, item);
             ul.appendChild(li);
@@ -101,7 +178,7 @@
         });
     }
 
-    function buildFeedback(turnIndex) {
+    function buildFeedback(turnIndex, sessionId) {
         const wrap = document.createElement('div');
         wrap.className = 'qs-chatbot-feedback';
         wrap.dataset.turnIndex = String(turnIndex);
@@ -118,11 +195,11 @@
         const badBtn = feedbackButton('bad', '👎');
 
         goodBtn.addEventListener('click', function () {
-            submitFeedback(wrap, turnIndex, 'good', goodBtn, badBtn);
+            submitFeedback(wrap, turnIndex, 'good', goodBtn, badBtn, sessionId);
         });
 
         badBtn.addEventListener('click', function () {
-            submitFeedback(wrap, turnIndex, 'bad', goodBtn, badBtn);
+            submitFeedback(wrap, turnIndex, 'bad', goodBtn, badBtn, sessionId);
         });
 
         buttons.appendChild(goodBtn);
@@ -146,7 +223,7 @@
         return button;
     }
 
-    async function submitFeedback(wrap, turnIndex, rating, goodBtn, badBtn) {
+    async function submitFeedback(wrap, turnIndex, rating, goodBtn, badBtn, sessionId) {
         if (!cfg.feedbackApiUrl || wrap.dataset.submitted === 'true') return;
 
         const status = wrap.querySelector('.qs-chatbot-feedback__status');
@@ -181,6 +258,7 @@
             }
 
             wrap.dataset.submitted = 'true';
+
             buttons.forEach(function (button) {
                 button.classList.toggle('is-active', button.dataset.rating === rating);
             });
@@ -199,64 +277,30 @@
         }
     }
 
-    function setTyping(visible) {
-        typing.style.display = visible ? 'flex' : 'none';
-        if (visible) messages.scrollTop = messages.scrollHeight;
-    }
+    function getOrCreateSessionId() {
+        if (sharedSessionId) {
+            return sharedSessionId;
+        }
 
-    function setDisabled(disabled) {
-        input.disabled = disabled;
-        form.querySelector('.qs-chatbot-send').disabled = disabled;
-    }
-
-    form.addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        const text = input.value.trim();
-        if (!text) return;
-
-        appendMessage(text, 'user');
-        input.value = '';
-        setDisabled(true);
-        setTyping(true);
+        const key = 'qs_chat_session';
 
         try {
-            const res = await fetch(cfg.apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-WP-Nonce': cfg.nonce || '',
-                },
-                body: JSON.stringify({ message: text, session_id: sessionId }),
-            });
+            let id = window.sessionStorage.getItem(key);
 
-            const data = await res.json();
-
-            setTyping(false);
-
-            if (!res.ok || !data.success) {
-                const errText = data.message || cfg.errorMsg || 'Error al conectar.';
-                appendMessage(errText, 'error');
-            } else {
-                appendMessage(data.response || '...', 'bot', {
-                    blocks: Array.isArray(data.response_blocks) ? data.response_blocks : [],
-                    turnIndex: Number.parseInt(data.turn_index, 10),
-                });
+            if (!id) {
+                id = createSessionId();
+                window.sessionStorage.setItem(key, id);
             }
-        } catch (err) {
-            setTyping(false);
-            appendMessage(cfg.errorMsg || 'Error de conexión. Intenta de nuevo.', 'error');
-        } finally {
-            setDisabled(false);
-            input.focus();
-        }
-    });
 
-    // Enter = submit, Shift+Enter = nueva línea (solo por si se cambia a textarea)
-    input.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            sharedSessionId = id;
+            return sharedSessionId;
+        } catch (err) {
+            sharedSessionId = createSessionId();
+            return sharedSessionId;
         }
-    });
+    }
+
+    function createSessionId() {
+        return 'anon_' + Math.random().toString(36).slice(2) + '_' + Date.now();
+    }
 })();

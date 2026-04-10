@@ -62,7 +62,7 @@ final class ChatbotShortcode implements HookableInterface
 
         ob_start();
         ?>
-        <div class="qs-chatbot-wrap" style="--qs-chat-height: <?php echo esc_attr((string) $atts['height']); ?>">
+        <div class="qs-chatbot-wrap" data-qs-chatbot style="--qs-chat-height: <?php echo esc_attr((string) $atts['height']); ?>">
             <div class="qs-chatbot-header">
                 <span class="qs-chatbot-avatar">💬</span>
                 <div class="qs-chatbot-header-info">
@@ -71,7 +71,7 @@ final class ChatbotShortcode implements HookableInterface
                 </div>
             </div>
 
-            <div class="qs-chatbot-messages" id="qs-chatbot-messages" role="log" aria-live="polite">
+            <div class="qs-chatbot-messages" data-qs-chatbot-messages role="log" aria-live="polite">
                 <div class="qs-chatbot-msg qs-chatbot-msg--bot">
                     <div class="qs-chatbot-bubble">
                         <p class="qs-chatbot-block qs-chatbot-block--paragraph">¡Hola! Soy el asistente de Qamiluna Studio. ¿En qué puedo ayudarte hoy? 💄</p>
@@ -79,14 +79,14 @@ final class ChatbotShortcode implements HookableInterface
                 </div>
             </div>
 
-            <div class="qs-chatbot-typing" id="qs-chatbot-typing" style="display:none" aria-hidden="true">
+            <div class="qs-chatbot-typing" data-qs-chatbot-typing style="display:none" aria-hidden="true">
                 <span></span><span></span><span></span>
             </div>
 
-            <form class="qs-chatbot-form" id="qs-chatbot-form" autocomplete="off">
+            <form class="qs-chatbot-form" data-qs-chatbot-form autocomplete="off">
                 <input
                     type="text"
-                    id="qs-chatbot-input"
+                    data-qs-chatbot-input
                     class="qs-chatbot-input"
                     placeholder="<?php echo esc_attr((string) $atts['placeholder']); ?>"
                     maxlength="500"

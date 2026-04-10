@@ -1,1 +1,23 @@
-{}
+{
+  "files.exclude": {
+    "**/.claude": true
+  },
+  "search.exclude": {
+    "**/.claude/**": true
+  },
+  "files.watcherExclude": {
+    "**/.claude/**": true,
+    "**/dist/**": true,
+    "**/vendor/**": true
+  },
+  "git.detectWorktrees": false,
+  "git.ignoredRepositories": [
+    ".claude/worktrees/epic-curie",
+    ".claude/worktrees/jolly-feistel",
+    ".claude/worktrees/zen-driscoll"
+  ],
+  "git.repositoryScanIgnoredFolders": [
+    "node_modules",
+    ".claude"
+  ]
+}
