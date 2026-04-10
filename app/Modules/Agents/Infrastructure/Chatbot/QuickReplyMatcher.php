@@ -437,6 +437,22 @@ final class QuickReplyMatcher
                 ],
                 'min_score' => 0.90,
             ],
+            [
+                'id' => 'workshops',
+                'response' => 'Para fechas disponibles y precios de nuestros talleres, por favor escríbenos directo a WhatsApp: https://wa.me/56912345678',
+                'examples' => [
+                    'taller',
+                    'talleres',
+                    'precio taller',
+                    'precio del taller',
+                    'valor taller',
+                    'cuanto cuesta el taller',
+                    'fecha taller',
+                    'fechas de talleres',
+                    'proximo taller',
+                ],
+                'min_score' => 0.85,
+            ],
         ];
     }
 }
