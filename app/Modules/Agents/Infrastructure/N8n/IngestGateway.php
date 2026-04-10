@@ -96,6 +96,7 @@ final class IngestGateway
             ]);
 
             if (is_wp_error($response)) {
+                /** @var \WP_Error $response */
                 $error = $response->get_error_message();
                 $lastResult = [
                     'ok' => false,
@@ -115,6 +116,7 @@ final class IngestGateway
                 return $lastResult;
             }
 
+            /** @var array<string, mixed> $response */
             $statusCode = (int) wp_remote_retrieve_response_code($response);
             $responseBody = (string) wp_remote_retrieve_body($response);
             $ok = $statusCode === 200;

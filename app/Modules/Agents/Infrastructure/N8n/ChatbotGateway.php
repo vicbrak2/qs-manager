@@ -80,6 +80,7 @@ final class ChatbotGateway
             );
         }
 
+        /** @var array<string, mixed> $response */
         $code = wp_remote_retrieve_response_code($response);
 
         if ($code !== 200) {
