@@ -32,6 +32,7 @@ use QS\Modules\Agents\Application\CommandHandler\ReindexContentHandler;
 use QS\Modules\Agents\Infrastructure\Chatbot\QuickReplyMatcher;
 use QS\Modules\Agents\Infrastructure\N8n\ChatbotGateway;
 use QS\Modules\Agents\Infrastructure\N8n\IngestGateway;
+use QS\Modules\Agents\Infrastructure\N8n\WhatsAppGateway;
 use QS\Modules\Agents\Infrastructure\Persistence\WpdbChatLogRepository;
 use QS\Modules\Agents\Infrastructure\Qdrant\QdrantGateway;
 use QS\Modules\Agents\Infrastructure\Wordpress\ChatbotFallbackResponder;
@@ -215,6 +216,7 @@ final class ServiceProvider
             QuickReplyMatcher::class => autowire(),
             ChatbotGateway::class => autowire(),
             IngestGateway::class => autowire(),
+            WhatsAppGateway::class => autowire(),
             WpdbChatLogRepository::class => autowire(),
             QdrantGateway::class => autowire(),
             ChatbotFallbackResponder::class => autowire(),

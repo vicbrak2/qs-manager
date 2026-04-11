@@ -138,13 +138,13 @@
                   {
                       "parameters":  {
                                          "method":  "POST",
-                                         "url":  "https://qsevolve.loca.lt/message/sendText/qmiluna-test",
+                                         "url":  "https://qsmanager26.loca.lt/message/sendText/qamiluna-test",
                                          "sendHeaders":  true,
                                          "headerParameters":  {
                                                                   "parameters":  [
                                                                                      {
                                                                                          "name":  "apikey",
-                                                                                         "value":  "7fecd4e92df97a3c5e7a00d44f2149049e4561745fe57e3bf0f84247c49e0ba2"
+                                                                                         "value":  "MI_CLAVE_SECRETA_123"
                                                                                      }
                                                                                  ]
                                                               },

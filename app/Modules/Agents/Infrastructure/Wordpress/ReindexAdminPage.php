@@ -9,6 +9,7 @@ use QS\Modules\Agents\Application\CommandHandler\ReindexContentHandler;
 use QS\Modules\Agents\Infrastructure\Chatbot\QuickReplyMatcher;
 use QS\Modules\Agents\Infrastructure\N8n\ChatbotGateway;
 use QS\Modules\Agents\Infrastructure\N8n\IngestGateway;
+use QS\Modules\Agents\Infrastructure\N8n\WhatsAppGateway;
 use QS\Modules\Agents\Infrastructure\Persistence\WpdbChatLogRepository;
 use QS\Modules\Agents\Infrastructure\Qdrant\QdrantGateway;
 
@@ -19,6 +20,7 @@ final class ReindexAdminPage implements HookableInterface
     private const QDRANT_URL_OPTION = 'qs_qdrant_url';
     private const QDRANT_API_KEY_OPTION = 'qs_qdrant_api_key';
     private const WHATSAPP_URL_OPTION = 'qs_chatbot_fallback_whatsapp_url';
+    private const WHATSAPP_WEBHOOK_URL_OPTION = 'qs_n8n_whatsapp_url';
     private const CONTEXT_DOCUMENTS_OPTION = 'qs_chatbot_context_documents';
     private const CONTEXT_FEEDBACK_TRANSIENT_PREFIX = 'qs_chatbot_context_feedback_';
     private const CONTEXT_ACTION_FEEDBACK_TRANSIENT_PREFIX = 'qs_chatbot_context_action_feedback_';
@@ -27,6 +29,7 @@ final class ReindexAdminPage implements HookableInterface
         private readonly ReindexContentHandler $handler,
         private readonly IngestGateway $ingestGateway,
         private readonly ChatbotGateway $chatbotGateway,
+        private readonly WhatsAppGateway $whatsAppGateway,
         private readonly ChatbotFallbackResponder $fallbackResponder,
         private readonly WpdbChatLogRepository $chatLogRepository,
         private readonly QdrantGateway $qdrantGateway
@@ -75,6 +78,7 @@ final class ReindexAdminPage implements HookableInterface
         $qdrantUrl = $this->option(self::QDRANT_URL_OPTION);
         $qdrantApiKeySaved = $this->option(self::QDRANT_API_KEY_OPTION) !== '';
         $whatsappUrl = $this->option(self::WHATSAPP_URL_OPTION);
+        $whatsappWebhookUrl = $this->option(self::WHATSAPP_WEBHOOK_URL_OPTION);
         $quickRepliesJson = $this->option(QuickReplyMatcher::OPTION_NAME);
         $quickReplyThreshold = $this->option(QuickReplyMatcher::THRESHOLD_OPTION_NAME);
         $settingsSaved = isset($_GET['qs_settings_updated']) && $_GET['qs_settings_updated'] === '1';
@@ -208,6 +212,23 @@ final class ReindexAdminPage implements HookableInterface
                                     Se usa como respuesta por defecto cuando el chatbot no puede conectarse con n8n o Docker.<br>
                                     Valor efectivo actual:
                                     <code><?php echo esc_html($this->fallbackResponder->whatsappUrl() !== '' ? $this->fallbackResponder->whatsappUrl() : 'sin configurar'); ?></code>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="qs_n8n_whatsapp_url">URL webhook WhatsApp</label></th>
+                            <td>
+                                <input
+                                    id="qs_n8n_whatsapp_url"
+                                    name="qs_n8n_whatsapp_url"
+                                    type="url"
+                                    class="regular-text code"
+                                    value="<?php echo esc_attr($whatsappWebhookUrl); ?>"
+                                    placeholder="https://tu-n8n/webhook/hybrid-whatsapp"
+                                >
+                                <p class="description">
+                                    Webhook de n8n que enruta mensajes por Evolution API (no criticos) o Meta API (criticos).<br>
+                                    Valor efectivo actual: <code><?php echo esc_html($this->whatsAppGateway->webhookUrl()); ?></code>
                                 </p>
                             </td>
                         </tr>
@@ -616,6 +637,7 @@ final class ReindexAdminPage implements HookableInterface
         $qdrantApiKey = $this->postedText('qs_qdrant_api_key');
         $clearQdrantApiKey = $this->postedCheckbox('qs_qdrant_api_key_clear');
         $whatsappUrl = $this->postedUrl('qs_chatbot_fallback_whatsapp_url');
+        $whatsappWebhookUrl = $this->postedUrl('qs_n8n_whatsapp_url');
         $quickReplyThreshold = $this->sanitizeQuickReplyThreshold($this->postedText('qs_chatbot_quick_reply_threshold'));
         $quickRepliesJson = $this->sanitizeQuickRepliesJson($this->postedText('qs_chatbot_quick_replies_json'));
 
@@ -628,6 +650,7 @@ final class ReindexAdminPage implements HookableInterface
             update_option(self::QDRANT_API_KEY_OPTION, $qdrantApiKey, false);
         }
         $this->storeOption(self::WHATSAPP_URL_OPTION, $whatsappUrl);
+        $this->storeOption(self::WHATSAPP_WEBHOOK_URL_OPTION, $whatsappWebhookUrl);
         $this->storeOption(QuickReplyMatcher::THRESHOLD_OPTION_NAME, $quickReplyThreshold);
         $this->storeOption(QuickReplyMatcher::OPTION_NAME, $quickRepliesJson);
 
