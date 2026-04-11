@@ -12,6 +12,8 @@ final class ChatbotGateway
     private const OPTION_NAME = 'qs_n8n_chatbot_url';
     private const REPLY_CACHE_TTL = 1800; // 30 minutes
     private const MAX_INPUT_CHARS = 800;
+    private const HISTORY_CACHE_TTL = 3600; // 1 hour
+    private const HISTORY_MAX_TURNS = 5;
 
     private string $webhookUrl;
 
@@ -32,18 +34,23 @@ final class ChatbotGateway
         $greetingReply = $this->greetingReply($message);
 
         if ($greetingReply !== null) {
+            $this->appendToHistory($sessionId, $message, $greetingReply);
+
             return $greetingReply;
         }
 
         $quickReply = $this->quickReplyMatcher->match($message);
 
         if ($quickReply !== null) {
+            $this->appendToHistory($sessionId, $message, $quickReply);
+
             return $quickReply;
         }
 
         $rewrittenMessage = $this->rewriteMessageForContext($message);
+        $historyContext   = $this->getHistoryContext($sessionId);
 
-        $cacheKey = $this->replyCacheKey($sessionId, $rewrittenMessage);
+        $cacheKey = $this->replyCacheKey($sessionId, $rewrittenMessage, $historyContext);
         $cached   = get_transient($cacheKey);
 
         if (is_string($cached) && $cached !== '') {
@@ -53,6 +60,7 @@ final class ChatbotGateway
         $body = wp_json_encode([
             'message'    => $rewrittenMessage,
             'session_id' => $sessionId,
+            'history'    => $historyContext,
         ]);
 
         if (! is_string($body)) {
@@ -96,6 +104,7 @@ final class ChatbotGateway
 
         if ($reply !== '') {
             set_transient($cacheKey, $reply, self::REPLY_CACHE_TTL);
+            $this->appendToHistory($sessionId, $message, $reply);
         }
 
         return $reply;
@@ -121,9 +130,55 @@ final class ChatbotGateway
         return substr($trimmed, 0, self::MAX_INPUT_CHARS);
     }
 
-    private function replyCacheKey(string $sessionId, string $message): string
+    private function replyCacheKey(string $sessionId, string $message, string $history = ''): string
     {
-        return 'qs_n8n_reply_' . md5($sessionId . '|' . $message);
+        return 'qs_n8n_reply_' . md5($sessionId . '|' . $message . '|' . $history);
+    }
+
+    private function historyKey(string $sessionId): string
+    {
+        return 'qs_chat_hist_' . md5($sessionId);
+    }
+
+    private function appendToHistory(string $sessionId, string $userMsg, string $botReply): void
+    {
+        $key   = $this->historyKey($sessionId);
+        $turns = get_transient($key);
+        $turns = is_array($turns) ? $turns : [];
+
+        $turns[] = [
+            'u' => mb_substr($userMsg, 0, 200),
+            'b' => mb_substr($botReply, 0, 300),
+        ];
+
+        if (count($turns) > self::HISTORY_MAX_TURNS) {
+            $turns = array_slice($turns, -self::HISTORY_MAX_TURNS);
+        }
+
+        set_transient($key, $turns, self::HISTORY_CACHE_TTL);
+    }
+
+    private function getHistoryContext(string $sessionId): string
+    {
+        $key   = $this->historyKey($sessionId);
+        $turns = get_transient($key);
+
+        if (! is_array($turns) || $turns === []) {
+            return '';
+        }
+
+        $lines = [];
+
+        foreach ($turns as $turn) {
+            if (! is_array($turn)) {
+                continue;
+            }
+
+            $lines[] = 'Usuaria: ' . ($turn['u'] ?? '');
+            $lines[] = 'Asistente: ' . ($turn['b'] ?? '');
+        }
+
+        return implode("\n", $lines);
     }
 
     private function resolveWebhookUrl(): string
