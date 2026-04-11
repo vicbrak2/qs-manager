@@ -142,9 +142,10 @@ final class ChatbotGateway
 
     private function appendToHistory(string $sessionId, string $userMsg, string $botReply): void
     {
-        $key   = $this->historyKey($sessionId);
-        $turns = get_transient($key);
-        $turns = is_array($turns) ? $turns : [];
+        $key      = $this->historyKey($sessionId);
+        $existing = get_transient($key);
+        $turns    = is_string($existing) ? (json_decode($existing, true) ?? []) : [];
+        $turns    = is_array($turns) ? $turns : [];
 
         $turns[] = [
             'u' => mb_substr($userMsg, 0, 200),
@@ -155,13 +156,23 @@ final class ChatbotGateway
             $turns = array_slice($turns, -self::HISTORY_MAX_TURNS);
         }
 
-        set_transient($key, $turns, self::HISTORY_CACHE_TTL);
+        $encoded = json_encode($turns);
+
+        if (is_string($encoded)) {
+            set_transient($key, $encoded, self::HISTORY_CACHE_TTL);
+        }
     }
 
     private function getHistoryContext(string $sessionId): string
     {
-        $key   = $this->historyKey($sessionId);
-        $turns = get_transient($key);
+        $key      = $this->historyKey($sessionId);
+        $existing = get_transient($key);
+
+        if (! is_string($existing) || $existing === '') {
+            return '';
+        }
+
+        $turns = json_decode($existing, true);
 
         if (! is_array($turns) || $turns === []) {
             return '';
