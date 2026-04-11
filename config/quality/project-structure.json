@@ -9,6 +9,7 @@
     ".githooks",
     ".gitignore",
     ".php-cs-fixer.cache",
+    ".warp",
     ".vscode",
     "app",
     "assets",
