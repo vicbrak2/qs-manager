@@ -73,13 +73,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env['EVOLUTION_URL'] }}/message/sendText/mi_instancia",
+        "url": "http://host.docker.internal:8080/message/sendText/qmiluna-test",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "apikey",
-              "value": "={{ $env['EVOLUTION_KEY'] }}"
+              "value": "7fecd4e92df97a3c5e7a00d44f2149049e4561745fe57e3bf0f84247c49e0ba2"
             }
           ]
         },
