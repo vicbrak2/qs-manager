@@ -138,13 +138,13 @@
                   {
                       "parameters":  {
                                          "method":  "POST",
-                                         "url":  "https://qsmanager26.loca.lt/message/sendText/qamiluna-test",
+                                         "url":  "={{ ($env['EVOLUTION_API_BASE_URL'] || 'http://localhost:8080').replace(/\\/$/, '') + '/message/sendText/' + ($env['EVOLUTION_INSTANCE_NAME'] || 'qamiluna-test') }}",
                                          "sendHeaders":  true,
                                          "headerParameters":  {
                                                                   "parameters":  [
                                                                                      {
                                                                                          "name":  "apikey",
-                                                                                         "value":  "MI_CLAVE_SECRETA_123"
+                                                                                         "value":  "={{ $env['EVOLUTION_API_KEY'] || '' }}"
                                                                                      }
                                                                                  ]
                                                               },

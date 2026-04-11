@@ -1,0 +1,54 @@
+services:
+  evolution-api:
+    image: evoapicloud/evolution-api:latest
+    container_name: evolution_api_core
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - evolution-postgres
+    ports:
+      - "8080:8080"
+    environment:
+      # Configuraciones base adaptables desde el entorno
+      - SERVER_URL=${EVOLUTION_API_BASE_URL:-http://localhost:8080}
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-MI_CLAVE_SECRETA_123}
+      # Persistencia obligatoria para Evolution API v2
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://postgres:postgres@evolution-postgres:5432/evolution_db?schema=public
+      - DATABASE_URL=postgresql://postgres:postgres@evolution-postgres:5432/evolution_db?schema=public
+      - DATABASE_CONNECTION_TYPE=postgres
+      - DATABASE_CONNECTION_CLIENT_NAME=evolution_api
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis:6379/6
+      # Configuraciones de Integración estándar utiles para el boilerplate
+      - AUTH_WEBHOOK=1
+      - WEBHOOK_EVENTS_APPLICATION_STARTUP=false
+    volumes:
+      - evolution_instances:/evolution/instances
+      - evolution_store:/evolution/store
+
+  redis:
+    image: redis:latest
+    container_name: evolution_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - evolution_redis:/data
+
+  evolution-postgres:
+    image: postgres:15
+    container_name: evolution_postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=evolution_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - evolution_postgres:/var/lib/postgresql/data
+
+volumes:
+  evolution_instances:
+  evolution_store:
+  evolution_redis:
+  evolution_postgres:

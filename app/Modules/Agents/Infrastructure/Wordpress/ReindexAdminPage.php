@@ -21,6 +21,7 @@ final class ReindexAdminPage implements HookableInterface
     private const QDRANT_API_KEY_OPTION = 'qs_qdrant_api_key';
     private const WHATSAPP_URL_OPTION = 'qs_chatbot_fallback_whatsapp_url';
     private const WHATSAPP_WEBHOOK_URL_OPTION = 'qs_n8n_whatsapp_url';
+    private const WHATSAPP_PHONE_OPTION = 'qs_n8n_whatsapp_phone';
     private const CONTEXT_DOCUMENTS_OPTION = 'qs_chatbot_context_documents';
     private const CONTEXT_FEEDBACK_TRANSIENT_PREFIX = 'qs_chatbot_context_feedback_';
     private const CONTEXT_ACTION_FEEDBACK_TRANSIENT_PREFIX = 'qs_chatbot_context_action_feedback_';
@@ -79,6 +80,7 @@ final class ReindexAdminPage implements HookableInterface
         $qdrantApiKeySaved = $this->option(self::QDRANT_API_KEY_OPTION) !== '';
         $whatsappUrl = $this->option(self::WHATSAPP_URL_OPTION);
         $whatsappWebhookUrl = $this->option(self::WHATSAPP_WEBHOOK_URL_OPTION);
+        $whatsappDestinationPhone = $this->option(self::WHATSAPP_PHONE_OPTION);
         $quickRepliesJson = $this->option(QuickReplyMatcher::OPTION_NAME);
         $quickReplyThreshold = $this->option(QuickReplyMatcher::THRESHOLD_OPTION_NAME);
         $settingsSaved = isset($_GET['qs_settings_updated']) && $_GET['qs_settings_updated'] === '1';
@@ -229,6 +231,24 @@ final class ReindexAdminPage implements HookableInterface
                                 <p class="description">
                                     Webhook de n8n que enruta mensajes por Evolution API (no criticos) o Meta API (criticos).<br>
                                     Valor efectivo actual: <code><?php echo esc_html($this->whatsAppGateway->webhookUrl()); ?></code>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="qs_n8n_whatsapp_phone">Numero destino WhatsApp</label></th>
+                            <td>
+                                <input
+                                    id="qs_n8n_whatsapp_phone"
+                                    name="qs_n8n_whatsapp_phone"
+                                    type="text"
+                                    class="regular-text code"
+                                    value="<?php echo esc_attr($whatsappDestinationPhone); ?>"
+                                    placeholder="56912345678"
+                                >
+                                <p class="description">
+                                    Numero por defecto usado por el webhook WhatsApp cuando no se envia <code>phone</code> en el payload.<br>
+                                    Valor efectivo actual:
+                                    <code><?php echo esc_html($this->whatsAppGateway->defaultPhone() !== '' ? $this->whatsAppGateway->defaultPhone() : 'sin configurar'); ?></code>
                                 </p>
                             </td>
                         </tr>
@@ -638,6 +658,7 @@ final class ReindexAdminPage implements HookableInterface
         $clearQdrantApiKey = $this->postedCheckbox('qs_qdrant_api_key_clear');
         $whatsappUrl = $this->postedUrl('qs_chatbot_fallback_whatsapp_url');
         $whatsappWebhookUrl = $this->postedUrl('qs_n8n_whatsapp_url');
+        $whatsappDestinationPhone = $this->sanitizeWhatsappPhone($this->postedText('qs_n8n_whatsapp_phone'));
         $quickReplyThreshold = $this->sanitizeQuickReplyThreshold($this->postedText('qs_chatbot_quick_reply_threshold'));
         $quickRepliesJson = $this->sanitizeQuickRepliesJson($this->postedText('qs_chatbot_quick_replies_json'));
 
@@ -651,6 +672,7 @@ final class ReindexAdminPage implements HookableInterface
         }
         $this->storeOption(self::WHATSAPP_URL_OPTION, $whatsappUrl);
         $this->storeOption(self::WHATSAPP_WEBHOOK_URL_OPTION, $whatsappWebhookUrl);
+        $this->storeOption(self::WHATSAPP_PHONE_OPTION, $whatsappDestinationPhone);
         $this->storeOption(QuickReplyMatcher::THRESHOLD_OPTION_NAME, $quickReplyThreshold);
         $this->storeOption(QuickReplyMatcher::OPTION_NAME, $quickRepliesJson);
 
@@ -944,6 +966,19 @@ final class ReindexAdminPage implements HookableInterface
         } catch (\InvalidArgumentException $exception) {
             wp_die('El JSON de quick replies no es valido: ' . $exception->getMessage());
         }
+    }
+
+    private function sanitizeWhatsappPhone(string $value): string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        $sanitized = preg_replace('/[^0-9+]/', '', $value);
+
+        return is_string($sanitized) ? trim($sanitized) : '';
     }
 
     private function currentTab(): string

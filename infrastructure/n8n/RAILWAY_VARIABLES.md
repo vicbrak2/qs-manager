@@ -25,6 +25,9 @@ N8N_PROXY_HOPS=1
 NODE_ENV=production
 QDRANT_URL=https://3d2e2314-92fc-4e65-9ede-dd5202acdaca.eu-west-1-0.aws.cloud.qdrant.io
 QDRANT_API_KEY=[NUEVA_KEY_REGENERADA]
+EVOLUTION_API_BASE_URL=https://evolution.qamilunastudio.com
+EVOLUTION_INSTANCE_NAME=qamiluna-test
+EVOLUTION_API_KEY=[NUEVA_KEY_REGENERADA]
 ```
 
 ## Variables sensibles - REGENERA ESTAS
