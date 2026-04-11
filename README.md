@@ -67,9 +67,9 @@
 ### Packaging y Deploy
 *   **Packaging local:** `php tools/package-plugin.php` o `composer run package`.
 *   **Salida:** `dist/qs-core/` y `dist/qs-core.zip`.
-*   **Deploy automático:** push a `main` luego de pasar `quality`, reutilizando el artifact generado en `package` y desplegando por FTP incremental.
+*   **Deploy automático:** push a `main` luego de pasar `quality`; `package` genera el artefacto y sincroniza `dist/qs-core/` por FTP contra la raíz remota.
 *   **Secrets requeridos en GitHub:** `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`.
-*   **Estado remoto de sync FTP:** `.ftp-deploy-sync-state.json` en la raíz remota del usuario FTP.
+*   **Sincronización FTP:** `lftp mirror --reverse --delete` desde `dist/qs-core/` hacia `/`, sin depender de un archivo de estado remoto.
 
 ### Scripts locales para probar la API
 Si `QS_API_BASE`, `QS_API_USER` y `QS_API_PASS` existen en `.env`, los scripts los leen automáticamente:
