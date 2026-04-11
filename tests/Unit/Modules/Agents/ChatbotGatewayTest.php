@@ -130,6 +130,11 @@ namespace QS\Tests\Unit\Modules\Agents {
             self::$transients[$key] = $value;
         }
 
+        public static function clearTransient(string $key): void
+        {
+            unset(self::$transients[$key]);
+        }
+
         /**
          * @param array<string, mixed> $response
          */
@@ -189,14 +194,37 @@ namespace QS\Tests\Unit\Modules\Agents {
                 'body' => '{"output":"respuesta sesion b"}',
             ]);
 
+            // Same message, different sessions: each must reach n8n independently.
             $first = $gateway->ask('Necesito ayuda con un caso especial', 'session-a');
-            $cached = $gateway->ask('Necesito ayuda con un caso especial', 'session-a');
             $secondSession = $gateway->ask('Necesito ayuda con un caso especial', 'session-b');
 
             self::assertSame('respuesta sesion a', $first);
-            self::assertSame('respuesta sesion a', $cached);
             self::assertSame('respuesta sesion b', $secondSession);
             self::assertCount(2, ChatbotGatewayWordpressStubs::remotePosts());
+        }
+
+        public function testCacheHitWhenSameSessionAndSameConversationState(): void
+        {
+            $gateway = new ChatbotGateway(new QuickReplyMatcher());
+
+            ChatbotGatewayWordpressStubs::queueRemoteResponse([
+                'response' => ['code' => 200],
+                'body' => '{"output":"respuesta unica"}',
+            ]);
+
+            // Two concurrent requests with the same session and no accumulated history
+            // (history is only stored after the first call completes, so a concurrent
+            // duplicate at session start is the scenario where cache helps most).
+            $first  = $gateway->ask('consulta unica sin historial previo', 'session-fresh');
+
+            // Manually reset history so the second call sees the same conversation state.
+            ChatbotGatewayWordpressStubs::clearTransient('qs_chat_hist_' . md5('session-fresh'));
+
+            $cached = $gateway->ask('consulta unica sin historial previo', 'session-fresh');
+
+            self::assertSame('respuesta unica', $first);
+            self::assertSame('respuesta unica', $cached);
+            self::assertCount(1, ChatbotGatewayWordpressStubs::remotePosts());
         }
 
         public function testAskTruncatesLongInputBeforeSendingToN8n(): void
