@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+const LEGACY_SYNC_FILE_DESCRIPTION = 'DO NOT DELETE THIS FILE. This file is used to keep track of which files have been synced in the most recent deployment. If you delete this file a resync will need to be done (which can take a while) - read more: https://github.com/SamKirkland/FTP-Deploy-Action';
+const LEGACY_SYNC_FILE_VERSION = '1.0.0';
+
 if (! extension_loaded('ftp')) {
     fwrite(STDERR, "The PHP FTP extension is required.\n");
     exit(1);
@@ -52,7 +55,7 @@ $remoteState = load_remote_state($connection, $remoteStatePath);
 
 $uploads = [];
 foreach ($localState['files'] as $path => $metadata) {
-    if (! isset($remoteState['files'][$path]) || $remoteState['files'][$path]['sha1'] !== $metadata['sha1']) {
+    if (! isset($remoteState['files'][$path]) || $remoteState['files'][$path]['hash'] !== $metadata['hash']) {
         $uploads[$path] = $metadata;
     }
 }
@@ -91,17 +94,7 @@ foreach ($deletes as $path) {
 
 cleanup_remote_directories($connection, $remoteRoot, $localState, $remoteState);
 
-$statePayload = [
-    'version' => 1,
-    'generated_at' => gmdate(DATE_ATOM),
-    'files' => array_map(
-        static fn (array $metadata): array => [
-            'sha1' => $metadata['sha1'],
-            'size' => $metadata['size'],
-        ],
-        $localState['files']
-    ),
-];
+$statePayload = legacy_state_payload($localState);
 
 $tempStateFile = tempnam(sys_get_temp_dir(), 'ftp-state-');
 if ($tempStateFile === false) {
@@ -124,7 +117,7 @@ ftp_close($connection);
 echo "FTP deployment completed successfully.\n";
 
 /**
- * @return array{files: array<string, array{sha1: string, size: int, local_path: string}>}
+ * @return array{files: array<string, array{hash: string, size: int, local_path: string}>}
  */
 function build_local_state(string $localRoot): array
 {
@@ -142,7 +135,7 @@ function build_local_state(string $localRoot): array
         $localPath = $file->getPathname();
         $relativePath = normalize_relative_path(substr($localPath, strlen($localRoot) + 1));
         $files[$relativePath] = [
-            'sha1' => sha1_file($localPath),
+            'hash' => hash_file('sha256', $localPath),
             'size' => (int) $file->getSize(),
             'local_path' => $localPath,
         ];
@@ -154,7 +147,7 @@ function build_local_state(string $localRoot): array
 }
 
 /**
- * @return array{files: array<string, array{sha1: string, size: int}>}
+ * @return array{files: array<string, array{hash: string, size: int}>}
  */
 function load_remote_state(FTP\Connection $connection, string $remoteStatePath): array
 {
@@ -177,24 +170,45 @@ function load_remote_state(FTP\Connection $connection, string $remoteStatePath):
     }
 
     $decoded = json_decode($rawState, true);
+    $files = [];
+    if (is_array($decoded) && isset($decoded['data']) && is_array($decoded['data'])) {
+        foreach ($decoded['data'] as $record) {
+            if (
+                ! is_array($record)
+                || ($record['type'] ?? null) !== 'file'
+                || ! isset($record['name'], $record['hash'], $record['size'])
+                || ! is_string($record['name'])
+                || ! is_string($record['hash'])
+                || ! is_numeric($record['size'])
+            ) {
+                continue;
+            }
+
+            $files[normalize_relative_path($record['name'])] = [
+                'hash' => $record['hash'],
+                'size' => (int) $record['size'],
+            ];
+        }
+
+        return ['files' => $files];
+    }
+
     if (! is_array($decoded) || ! isset($decoded['files']) || ! is_array($decoded['files'])) {
         return ['files' => []];
     }
 
-    $files = [];
     foreach ($decoded['files'] as $path => $metadata) {
-        if (
-            ! is_string($path)
-            || ! is_array($metadata)
-            || ! isset($metadata['sha1'], $metadata['size'])
-            || ! is_string($metadata['sha1'])
-            || ! is_numeric($metadata['size'])
-        ) {
+        if (! is_string($path) || ! is_array($metadata) || ! isset($metadata['size']) || ! is_numeric($metadata['size'])) {
+            continue;
+        }
+
+        $hash = $metadata['hash'] ?? $metadata['sha1'] ?? null;
+        if (! is_string($hash)) {
             continue;
         }
 
         $files[normalize_relative_path($path)] = [
-            'sha1' => $metadata['sha1'],
+            'hash' => $hash,
             'size' => (int) $metadata['size'],
         ];
     }
@@ -242,8 +256,8 @@ function ensure_remote_directory(FTP\Connection $connection, string $directory, 
 }
 
 /**
- * @param array{files: array<string, array{sha1: string, size: int, local_path?: string}>} $localState
- * @param array{files: array<string, array{sha1: string, size: int}>} $remoteState
+ * @param array{files: array<string, array{hash: string, size: int, local_path?: string}>} $localState
+ * @param array{files: array<string, array{hash: string, size: int}>} $remoteState
  */
 function cleanup_remote_directories(FTP\Connection $connection, string $remoteRoot, array $localState, array $remoteState): void
 {
@@ -305,4 +319,38 @@ function join_remote_path(string $base, string $path): string
     }
 
     return $path === '' ? $base : $base . '/' . $path;
+}
+
+/**
+ * @param array{files: array<string, array{hash: string, size: int, local_path?: string}>} $localState
+ * @return array{description: string, version: string, generatedTime: int, data: list<array{name: string, type: string, size?: int, hash?: string}>}
+ */
+function legacy_state_payload(array $localState): array
+{
+    $records = [];
+
+    $directories = array_keys(directory_set(array_keys($localState['files'])));
+    sort($directories);
+    foreach ($directories as $directory) {
+        $records[] = [
+            'type' => 'folder',
+            'name' => $directory,
+        ];
+    }
+
+    foreach ($localState['files'] as $path => $metadata) {
+        $records[] = [
+            'type' => 'file',
+            'name' => $path,
+            'size' => $metadata['size'],
+            'hash' => $metadata['hash'],
+        ];
+    }
+
+    return [
+        'description' => LEGACY_SYNC_FILE_DESCRIPTION,
+        'version' => LEGACY_SYNC_FILE_VERSION,
+        'generatedTime' => (int) round(microtime(true) * 1000),
+        'data' => $records,
+    ];
 }
