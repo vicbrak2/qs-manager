@@ -16,11 +16,11 @@ type WorkflowSummary = {
 
 const REQUEST_TIMEOUT_MS = 45_000;
 
-const n8nBaseUrl = (process.env.N8N_BASE_URL ?? '').trim().replace(/\/+$/, '');
+const n8nBaseUrl = (process.env.N8N_BASE_URL ?? process.env.N8N_API_URL ?? '').trim().replace(/\/+$/, '');
 const n8nApiKey = (process.env.N8N_API_KEY ?? '').trim();
 
 if (n8nBaseUrl === '' || n8nApiKey === '') {
-    console.error('Missing required environment variables: N8N_BASE_URL and/or N8N_API_KEY.');
+    console.error('Missing required environment variables: N8N_BASE_URL (or N8N_API_URL) and/or N8N_API_KEY.');
     process.exit(1);
 }
 
