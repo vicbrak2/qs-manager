@@ -58,6 +58,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
+          extensions: ftp
 
       - name: Install production dependencies
         run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
@@ -76,32 +77,16 @@ jobs:
             dist/qs-core
             dist/qs-core.zip
 
-      - name: Install FTP deploy client
-        run: sudo apt-get update && sudo apt-get install -y lftp
-
       - name: Deploy to cPanel via FTP
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_LOCAL_DIR: dist/qs-core
+          FTP_REMOTE_DIR: /
+          FTP_STATE_NAME: .ftp-deploy-sync-state.json
         run: |
-          cat > ~/.netrc <<EOF
-          machine $FTP_SERVER
-            login $FTP_USERNAME
-            password $FTP_PASSWORD
-          EOF
-          chmod 600 ~/.netrc
-          trap 'rm -f ~/.netrc' EXIT
-          lftp "$FTP_SERVER" <<'LFTP'
-          set cmd:fail-exit true
-          set net:timeout 30
-          set net:max-retries 1
-          set net:reconnect-interval-base 5
-          set ftp:ssl-allow false
-          set ftp:passive-mode on
-          mirror --reverse --delete --verbose --parallel=4 dist/qs-core/ /
-          quit
-          LFTP
+          php tools/deploy/ftp-sync.php
 
   deploy_n8n:
     runs-on: ubuntu-latest
