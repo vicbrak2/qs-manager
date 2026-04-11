@@ -42,7 +42,7 @@ final class MigrationRunnerTest extends WpTestCase
         return new MigrationRunner(
             QS_CORE_ROOT_DIR,
             new PluginVersion($pluginConfig),
-            new Logger($pluginConfig)
+            new Logger(QS_CORE_ROOT_DIR, $pluginConfig)
         );
     }
 }

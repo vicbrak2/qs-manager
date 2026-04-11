@@ -17,6 +17,8 @@ final class ConfigLoaderTest extends TestCase
 
         self::assertSame('qs-core', $config['name']);
         self::assertSame('1.0.0', $config['version']);
+        self::assertSame('qs-core.log', $config['logging']['file']);
+        self::assertSame(['qs_'], $config['capabilities']['admin_override_prefixes']);
     }
 
     public function testLoadModuleConfigsReturnsNamedModules(): void

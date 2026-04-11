@@ -77,21 +77,13 @@ final class MigrationRunner
 
     public function cleanup(): void
     {
-        $options = [
-            $this->pluginVersion->versionOptionKey(),
-            $this->pluginVersion->installedAtOptionKey(),
-            $this->pluginVersion->schemaOptionKey(),
-            $this->pluginVersion->financeSettingsOptionKey(),
-            $this->pluginVersion->bookingSyncSettingsOptionKey(),
-        ];
-
-        foreach ($options as $option) {
+        foreach ($this->pluginVersion->optionKeys() as $option) {
             if ($option !== '' && function_exists('delete_option')) {
                 delete_option($option);
             }
         }
 
-        $this->logger->info('QS Core uninstall cleanup executed.');
+        $this->logger->info('Plugin uninstall cleanup executed.');
     }
 
     /**
@@ -127,32 +119,18 @@ final class MigrationRunner
 
     private function ensureDefaultOptions(): void
     {
-        $financeKey = $this->pluginVersion->financeSettingsOptionKey();
-        $bookingKey = $this->pluginVersion->bookingSyncSettingsOptionKey();
+        foreach ($this->pluginVersion->defaultOptionValues() as $name => $defaultValue) {
+            if (! is_string($name) || $name === '') {
+                continue;
+            }
 
-        if ($financeKey !== '' && get_option($financeKey, false) === false) {
-            add_option(
-                $financeKey,
-                [
-                    'currency' => 'CLP',
-                    'monthly_fixed_costs' => [],
-                ],
-                '',
-                false
-            );
-        }
+            $optionKey = $this->pluginVersion->optionKey($name);
 
-        if ($bookingKey !== '' && get_option($bookingKey, false) === false) {
-            add_option(
-                $bookingKey,
-                [
-                    'provider' => 'latepoint',
-                    'enabled' => true,
-                    'mode' => 'wpdb_adapter',
-                ],
-                '',
-                false
-            );
+            if ($optionKey === '' || get_option($optionKey, false) !== false) {
+                continue;
+            }
+
+            add_option($optionKey, $defaultValue, '', false);
         }
     }
 }

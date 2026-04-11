@@ -35,7 +35,7 @@ final class PluginBootstrapper
                 'admin_notices',
                 static function () use ($exception): void {
                     printf(
-                        '<div class="notice notice-error"><p><strong>QS Core:</strong> fallo al inicializar: %s</p></div>',
+                        '<div class="notice notice-error"><p><strong>Plugin:</strong> fallo al inicializar: %s</p></div>',
                         esc_html($exception->getMessage())
                     );
                 }
@@ -66,7 +66,7 @@ final class PluginBootstrapper
         $container->get(RoleRegistrar::class)->syncRoles();
         $container->get(PostTypeRegistrar::class)->registerPostTypes();
         $container->get(ActivationSetupHooks::class)->run();
-        $container->get(Logger::class)->info('QS Core activated.');
+        $container->get(Logger::class)->info('Plugin activated.');
     }
 
     public function deactivate(): void
@@ -75,7 +75,7 @@ final class PluginBootstrapper
             flush_rewrite_rules(false);
         }
 
-        $this->container()->get(Logger::class)->info('QS Core deactivated.');
+        $this->container()->get(Logger::class)->info('Plugin deactivated.');
     }
 
     public function uninstall(): void

@@ -29,26 +29,53 @@ final class PluginVersion
 
     public function versionOptionKey(): string
     {
-        return $this->config->option('version');
+        return $this->optionKey('version');
     }
 
     public function installedAtOptionKey(): string
     {
-        return $this->config->option('installed_at');
+        return $this->optionKey('installed_at');
     }
 
     public function schemaOptionKey(): string
     {
-        return $this->config->option('schema_version');
+        return $this->optionKey('schema_version');
     }
 
-    public function financeSettingsOptionKey(): string
+    public function optionKey(string $key): string
     {
-        return $this->config->option('finance_settings');
+        return $this->config->option($key);
     }
 
-    public function bookingSyncSettingsOptionKey(): string
+    /**
+     * @return array<string, string>
+     */
+    public function optionKeys(): array
     {
-        return $this->config->option('booking_sync_settings');
+        $options = $this->config->get('options', []);
+
+        if (! is_array($options)) {
+            return [];
+        }
+
+        $keys = [];
+
+        foreach ($options as $name => $value) {
+            if (is_string($name) && is_string($value) && $value !== '') {
+                $keys[$name] = $value;
+            }
+        }
+
+        return $keys;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function defaultOptionValues(): array
+    {
+        $defaults = $this->config->get('option_defaults', []);
+
+        return is_array($defaults) ? $defaults : [];
     }
 }

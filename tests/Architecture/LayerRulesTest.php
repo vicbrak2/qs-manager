@@ -47,6 +47,36 @@ final class LayerRulesTest extends TestCase
         self::assertSame([], $violations, implode(PHP_EOL, $violations));
     }
 
+    public function testCoreDoesNotContainProductSpecificStrings(): void
+    {
+        $coreRoot = QS_CORE_ROOT_DIR . '/app/Core';
+        $forbiddenPatterns = [
+            'qs-core',
+            'QS Core',
+            'Qamiluna',
+            'qamiluna',
+            'qs_',
+        ];
+
+        $violations = [];
+
+        foreach ($this->phpFilesIn($coreRoot) as $file) {
+            $contents = file_get_contents($file->getPathname());
+
+            if ($contents === false) {
+                continue;
+            }
+
+            foreach ($forbiddenPatterns as $pattern) {
+                if (str_contains($contents, $pattern)) {
+                    $violations[] = sprintf('%s contains forbidden pattern "%s".', $file->getPathname(), $pattern);
+                }
+            }
+        }
+
+        self::assertSame([], $violations, implode(PHP_EOL, $violations));
+    }
+
     /**
      * @return array<int, SplFileInfo>
      */

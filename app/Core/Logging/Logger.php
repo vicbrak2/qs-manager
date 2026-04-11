@@ -10,10 +10,12 @@ final class Logger
 {
     private string $logFile;
 
-    public function __construct(PluginConfig $config)
+    public function __construct(string $rootDir, PluginConfig $config)
     {
         $logDirectory = (string) $config->get('paths.logs', 'var/logs');
-        $this->logFile = rtrim(QS_CORE_ROOT_DIR . '/' . trim($logDirectory, '/'), '/') . '/qs-core.log';
+        $logFilename = (string) $config->get('logging.file', 'plugin.log');
+
+        $this->logFile = rtrim($rootDir . '/' . trim($logDirectory, '/'), '/') . '/' . ltrim($logFilename, '/');
     }
 
     public function debug(string $message): void

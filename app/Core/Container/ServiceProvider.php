@@ -117,7 +117,7 @@ final class ServiceProvider
 
                 return $wpdb;
             }),
-            'qs.root_dir' => $rootDir,
+            'plugin.root_dir' => $rootDir,
             EnvironmentDetector::class => autowire(),
             ConfigLoader::class => autowire()->constructor($rootDir, get(EnvironmentDetector::class)),
             PluginConfig::class => factory(
@@ -140,7 +140,12 @@ final class ServiceProvider
                     return $container;
                 }
             ),
-            Logger::class => autowire(),
+            'wordpress.post_types' => factory(
+                static function (ConfigLoader $configLoader): array {
+                    return $configLoader->load('wordpress/post-types.php');
+                }
+            ),
+            Logger::class => autowire()->constructor(get('plugin.root_dir'), get(PluginConfig::class)),
             ErrorHandler::class => autowire(),
             EventDispatcher::class => autowire(),
             NonceManager::class => autowire(),
@@ -151,7 +156,7 @@ final class ServiceProvider
             UserRepository::class => autowire(WpUserRepository::class),
             RoleRegistrar::class => autowire(),
             RoleHooks::class => autowire(),
-            PostTypeRegistrar::class => autowire(),
+            PostTypeRegistrar::class => autowire()->constructor(get('wordpress.post_types')),
             RestRouteRegistrar::class => autowire(),
             MetaFieldMapper::class => autowire(),
             BitacoraPolicy::class => autowire(),

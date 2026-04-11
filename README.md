@@ -7,11 +7,15 @@
 
 ## Plugin `qs-core`
 *   **Arquitectura:** Monolito modular (DDD lite).
-*   **Namespace:** `QS\Core`.
+*   **Namespaces:** raiz `QS\\`, con nucleo compartido en `QS\Core` y modulos en `QS\Modules`.
 *   **Autoload:** PSR-4 via Composer.
 *   **Contenedor de Inyección de Dependencias (DI):** PHP-DI (free, liviano, compatible con WP).
 *   **Configuración:** `phpdotenv` o WP Options según el entorno.
 *   **Eventos Internos:** Hooks de WordPress encapsulados.
+
+### Documentacion de arquitectura
+*   **ADRs:** `docs/adr/`
+*   **Extraccion a boilerplate:** ver `docs/adr/ADR-011-generic-wp-boilerplate.md` y `docs/generic-wp-boilerplate-plan.md`.
 
 ## Persistencia
 *   **Custom Post Types (CPT) de WordPress:** `qs_bitacora`, `qs_service`, `qs_payment`, `qs_expense`.

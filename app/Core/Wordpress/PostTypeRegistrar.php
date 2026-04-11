@@ -9,52 +9,37 @@ use QS\Core\Contracts\HookableInterface;
 final class PostTypeRegistrar implements HookableInterface
 {
     /**
-     * @var array<string, array<string, mixed>>
+     * @param array<string, array<string, mixed>> $postTypes
      */
-    private const POST_TYPES = [
-        'qs_bitacora' => [
-            'label' => 'Bitacoras QS',
-            'singular_label' => 'Bitacora QS',
-            'menu_icon' => 'dashicons-location-alt',
-        ],
-        'qs_payment' => [
-            'label' => 'Pagos QS',
-            'singular_label' => 'Pago QS',
-            'menu_icon' => 'dashicons-money-alt',
-        ],
-        'qs_expense' => [
-            'label' => 'Gastos QS',
-            'singular_label' => 'Gasto QS',
-            'menu_icon' => 'dashicons-chart-bar',
-        ],
-        'qs_lead' => [
-            'label' => 'Leads QS',
-            'singular_label' => 'Lead QS',
-            'menu_icon' => 'dashicons-groups',
-        ],
-    ];
+    public function __construct(private readonly array $postTypes)
+    {
+    }
 
     public function register(): void
     {
-        if (function_exists('add_action')) {
+        if ($this->wordpressFunctionExists('add_action')) {
             add_action('init', [$this, 'registerPostTypes']);
         }
     }
 
     public function registerPostTypes(): void
     {
-        if (! function_exists('register_post_type')) {
+        if (! $this->wordpressFunctionExists('register_post_type')) {
             return;
         }
 
-        foreach (self::POST_TYPES as $slug => $definition) {
+        foreach ($this->postTypes as $slug => $definition) {
+            if (! is_array($definition)) {
+                continue;
+            }
+
             register_post_type(
                 $slug,
                 [
-                    'label' => $definition['label'],
+                    'label' => $definition['label'] ?? $slug,
                     'labels' => [
-                        'name' => $definition['label'],
-                        'singular_name' => $definition['singular_label'],
+                        'name' => $definition['label'] ?? $slug,
+                        'singular_name' => $definition['singular_label'] ?? $slug,
                     ],
                     'public' => false,
                     'show_ui' => true,
@@ -62,9 +47,14 @@ final class PostTypeRegistrar implements HookableInterface
                     'supports' => ['title', 'editor', 'custom-fields'],
                     'capability_type' => 'post',
                     'map_meta_cap' => true,
-                    'menu_icon' => $definition['menu_icon'],
+                    'menu_icon' => $definition['menu_icon'] ?? 'dashicons-admin-post',
                 ]
             );
         }
+    }
+
+    private function wordpressFunctionExists(string $function): bool
+    {
+        return function_exists(__NAMESPACE__ . '\\' . $function) || function_exists($function);
     }
 }
