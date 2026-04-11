@@ -85,11 +85,21 @@ jobs:
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
-          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<'LFTP'
-          set ftp:ssl-allow true
+          cat > ~/.netrc <<EOF
+          machine $FTP_SERVER
+            login $FTP_USERNAME
+            password $FTP_PASSWORD
+          EOF
+          chmod 600 ~/.netrc
+          trap 'rm -f ~/.netrc' EXIT
+          lftp "$FTP_SERVER" <<'LFTP'
+          set cmd:fail-exit true
+          set net:timeout 30
+          set net:max-retries 1
+          set net:reconnect-interval-base 5
+          set ftp:ssl-allow false
           set ftp:passive-mode on
-          set ssl:verify-certificate no
-          mirror --reverse --delete --verbose dist/qs-core/ /
+          mirror --reverse --delete --verbose --parallel=4 dist/qs-core/ /
           quit
           LFTP
 
