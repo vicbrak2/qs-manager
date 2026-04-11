@@ -32,7 +32,7 @@ if ($localRoot === false || ! is_dir($localRoot)) {
 }
 
 $remoteRoot = normalize_remote_dir($remoteDir);
-$remoteStatePath = join_remote_path($remoteRoot, $stateName);
+$remoteStatePath = normalize_relative_path($stateName);
 
 $connection = $useSsl ? @ftp_ssl_connect($server, $port, $timeout) : @ftp_connect($server, $port, $timeout);
 if ($connection === false) {
@@ -48,6 +48,12 @@ if (! @ftp_login($connection, $username, $password)) {
 
 ftp_pasv($connection, true);
 ftp_set_option($connection, FTP_TIMEOUT_SEC, $timeout);
+
+if (! @ftp_chdir($connection, $remoteRoot)) {
+    fwrite(STDERR, "Unable to change directory to remote root {$remoteRoot}.\n");
+    ftp_close($connection);
+    exit(1);
+}
 
 echo "Building local deployment manifest...\n";
 $localState = build_local_state($localRoot);
@@ -72,11 +78,10 @@ echo sprintf("Files to delete: %d\n", count($deletes));
 
 $ensuredDirectories = [];
 foreach ($uploads as $path => $metadata) {
-    $remotePath = join_remote_path($remoteRoot, $path);
-    ensure_remote_directory($connection, dirname($remotePath), $ensuredDirectories);
+    ensure_remote_directory($connection, dirname($path), $ensuredDirectories);
 
     $localPath = $metadata['local_path'];
-    if (! @ftp_put($connection, $remotePath, $localPath, FTP_BINARY)) {
+    if (! @ftp_put($connection, $path, $localPath, FTP_BINARY)) {
         fwrite(STDERR, "Failed to upload {$path}.\n");
         ftp_close($connection);
         exit(1);
@@ -84,15 +89,14 @@ foreach ($uploads as $path => $metadata) {
 }
 
 foreach ($deletes as $path) {
-    $remotePath = join_remote_path($remoteRoot, $path);
-    if (! @ftp_delete($connection, $remotePath)) {
+    if (! @ftp_delete($connection, $path)) {
         fwrite(STDERR, "Failed to delete {$path}.\n");
         ftp_close($connection);
         exit(1);
     }
 }
 
-cleanup_remote_directories($connection, $remoteRoot, $localState, $remoteState);
+cleanup_remote_directories($connection, $localState, $remoteState);
 
 $statePayload = legacy_state_payload($localState);
 
@@ -221,45 +225,50 @@ function load_remote_state(FTP\Connection $connection, string $remoteStatePath):
  */
 function ensure_remote_directory(FTP\Connection $connection, string $directory, array &$ensuredDirectories): void
 {
-    $directory = rtrim(str_replace('\\', '/', $directory), '/');
-    if ($directory === '') {
+    $directory = trim(str_replace('\\', '/', $directory), '/');
+    if ($directory === '' || $directory === '.') {
         return;
     }
 
-    $workingDirectory = @ftp_pwd($connection);
-    if (! is_string($workingDirectory) || $workingDirectory === '') {
-        $workingDirectory = '/';
+    $rootDirectory = @ftp_pwd($connection);
+    if (! is_string($rootDirectory) || $rootDirectory === '') {
+        $rootDirectory = '.';
     }
 
-    $parts = array_values(array_filter(explode('/', ltrim($directory, '/')), static fn (string $part): bool => $part !== ''));
-    $current = '';
+    $parts = array_values(array_filter(explode('/', $directory), static fn (string $part): bool => $part !== ''));
+    $current = [];
 
     foreach ($parts as $part) {
-        $current .= '/' . $part;
-        if (isset($ensuredDirectories[$current])) {
+        $current[] = $part;
+        $currentPath = implode('/', $current);
+        if (isset($ensuredDirectories[$currentPath])) {
             continue;
         }
 
-        if (@ftp_chdir($connection, $current)) {
-            @ftp_chdir($connection, $workingDirectory);
-            $ensuredDirectories[$current] = true;
+        if (@ftp_chdir($connection, $part)) {
+            $ensuredDirectories[$currentPath] = true;
             continue;
         }
 
-        if (! @ftp_mkdir($connection, $current) && ! @ftp_chdir($connection, $current)) {
-            throw new RuntimeException("Unable to create remote directory {$current}.");
+        if (! @ftp_mkdir($connection, $part) && ! @ftp_chdir($connection, $part)) {
+            throw new RuntimeException("Unable to create remote directory {$currentPath}.");
         }
 
-        @ftp_chdir($connection, $workingDirectory);
-        $ensuredDirectories[$current] = true;
+        if (! @ftp_chdir($connection, $part)) {
+            throw new RuntimeException("Unable to enter remote directory {$currentPath}.");
+        }
+
+        $ensuredDirectories[$currentPath] = true;
     }
+
+    @ftp_chdir($connection, $rootDirectory);
 }
 
 /**
  * @param array{files: array<string, array{hash: string, size: int, local_path?: string}>} $localState
  * @param array{files: array<string, array{hash: string, size: int}>} $remoteState
  */
-function cleanup_remote_directories(FTP\Connection $connection, string $remoteRoot, array $localState, array $remoteState): void
+function cleanup_remote_directories(FTP\Connection $connection, array $localState, array $remoteState): void
 {
     $localDirectories = directory_set(array_keys($localState['files']));
     $remoteDirectories = directory_set(array_keys($remoteState['files']));
@@ -275,7 +284,7 @@ function cleanup_remote_directories(FTP\Connection $connection, string $remoteRo
             continue;
         }
 
-        @ftp_rmdir($connection, join_remote_path($remoteRoot, $directory));
+        @ftp_rmdir($connection, $directory);
     }
 }
 
@@ -307,18 +316,6 @@ function normalize_remote_dir(string $path): string
     $normalized = '/' . trim(str_replace('\\', '/', $path), '/');
 
     return $normalized === '//' ? '/' : $normalized;
-}
-
-function join_remote_path(string $base, string $path): string
-{
-    $base = rtrim(str_replace('\\', '/', $base), '/');
-    $path = ltrim(str_replace('\\', '/', $path), '/');
-
-    if ($base === '') {
-        return '/' . $path;
-    }
-
-    return $path === '' ? $base : $base . '/' . $path;
 }
 
 /**
