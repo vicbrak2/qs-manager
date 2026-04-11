@@ -1,0 +1,125 @@
+{
+  "name": "WhatsApp Hybrid Router",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hybrid-whatsapp",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook (HTTP)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [ 0, 0 ]
+    },
+    {
+      "parameters": {},
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [ 0, 200 ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.esCritico === true || $json.body?.esCritico === true }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Is Critical?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [ 250, 100 ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v19.0/{{ $env['META_PHONE_ID'] }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "messaging_product",
+              "value": "whatsapp"
+            },
+            {
+              "name": "to",
+              "value": "={{ $json.phone || $json.body?.phone }}"
+            },
+            {
+              "name": "type",
+              "value": "text"
+            },
+            {
+              "name": "text",
+              "value": "={{ {\"body\": $json.text || $json.body?.text} }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Meta API (Official)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [ 500, 0 ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['EVOLUTION_URL'] }}/message/sendText/mi_instancia",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env['EVOLUTION_KEY'] }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.phone || $json.body?.phone }}"
+            },
+            {
+              "name": "options",
+              "value": "={{ {\"delay\": 1200, \"presence\": \"composing\"} }}"
+            },
+            {
+              "name": "textMessage",
+              "value": "={{ {\"text\": $json.text || $json.body?.text} }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Evolution API (Unofficial)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [ 500, 200 ]
+    }
+  ],
+  "connections": {
+    "Webhook (HTTP)": {
+      "main": [ [ { "node": "Is Critical?", "type": "main", "index": 0 } ] ]
+    },
+    "Execute Workflow Trigger": {
+      "main": [ [ { "node": "Is Critical?", "type": "main", "index": 0 } ] ]
+    },
+    "Is Critical?": {
+      "main": [
+        [ { "node": "Meta API (Official)", "type": "main", "index": 0 } ],
+        [ { "node": "Evolution API (Unofficial)", "type": "main", "index": 0 } ]
+      ]
+    }
+  }
+}
