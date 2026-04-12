@@ -24,6 +24,7 @@ final class ReindexAdminPage implements HookableInterface
     private const WHATSAPP_PHONE_OPTION = 'qs_n8n_whatsapp_phone';
     private const WHATSAPP_ACTIONS_ENABLED_OPTION = 'qs_n8n_whatsapp_actions_enabled';
     private const WHATSAPP_ALLOWED_PHONES_OPTION = 'qs_n8n_whatsapp_allowed_phones';
+    private const WHATSAPP_INSTANCE_OPTION = 'qs_n8n_whatsapp_instance';
     private const CONTEXT_DOCUMENTS_OPTION = 'qs_chatbot_context_documents';
     private const CONTEXT_FEEDBACK_TRANSIENT_PREFIX = 'qs_chatbot_context_feedback_';
     private const CONTEXT_ACTION_FEEDBACK_TRANSIENT_PREFIX = 'qs_chatbot_context_action_feedback_';
@@ -85,6 +86,7 @@ final class ReindexAdminPage implements HookableInterface
         $whatsappDestinationPhone = $this->option(self::WHATSAPP_PHONE_OPTION);
         $whatsappActionsEnabled = $this->whatsAppGateway->actionsEnabled();
         $whatsappAllowedPhones = $this->option(self::WHATSAPP_ALLOWED_PHONES_OPTION);
+        $whatsappInstance = $this->option(self::WHATSAPP_INSTANCE_OPTION);
         $quickRepliesJson = $this->option(QuickReplyMatcher::OPTION_NAME);
         $quickReplyThreshold = $this->option(QuickReplyMatcher::THRESHOLD_OPTION_NAME);
         $settingsSaved = isset($_GET['qs_settings_updated']) && $_GET['qs_settings_updated'] === '1';
@@ -253,6 +255,24 @@ final class ReindexAdminPage implements HookableInterface
                                     Numero por defecto usado por el webhook WhatsApp cuando no se envia <code>phone</code> en el payload.<br>
                                     Valor efectivo actual:
                                     <code><?php echo esc_html($this->whatsAppGateway->defaultPhone() !== '' ? $this->whatsAppGateway->defaultPhone() : 'sin configurar'); ?></code>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="qs_n8n_whatsapp_instance">Instancia remitente</label></th>
+                            <td>
+                                <input
+                                    id="qs_n8n_whatsapp_instance"
+                                    name="qs_n8n_whatsapp_instance"
+                                    type="text"
+                                    class="regular-text code"
+                                    value="<?php echo esc_attr($whatsappInstance); ?>"
+                                    placeholder="qamiluna-test"
+                                >
+                                <p class="description">
+                                    Nombre de la instancia en Evolution API desde la cual se enviara el mensaje.<br>
+                                    Valor efectivo actual:
+                                    <code><?php echo esc_html($this->whatsAppGateway->instanceName() !== '' ? $this->whatsAppGateway->instanceName() : 'sin configurar'); ?></code>
                                 </p>
                             </td>
                         </tr>
@@ -702,6 +722,7 @@ final class ReindexAdminPage implements HookableInterface
         $whatsappDestinationPhone = $this->sanitizeWhatsappPhone($this->postedText('qs_n8n_whatsapp_phone'));
         $whatsappActionsEnabled = $this->postedCheckbox('qs_n8n_whatsapp_actions_enabled');
         $whatsappAllowedPhones = $this->sanitizeWhatsappPhoneList($this->postedText('qs_n8n_whatsapp_allowed_phones'));
+        $whatsappInstance = $this->postedText('qs_n8n_whatsapp_instance');
         $quickReplyThreshold = $this->sanitizeQuickReplyThreshold($this->postedText('qs_chatbot_quick_reply_threshold'));
         $quickRepliesJson = $this->sanitizeQuickRepliesJson($this->postedText('qs_chatbot_quick_replies_json'));
 
@@ -718,6 +739,7 @@ final class ReindexAdminPage implements HookableInterface
         $this->storeOption(self::WHATSAPP_PHONE_OPTION, $whatsappDestinationPhone);
         update_option(self::WHATSAPP_ACTIONS_ENABLED_OPTION, $whatsappActionsEnabled ? '1' : '0', false);
         $this->storeOption(self::WHATSAPP_ALLOWED_PHONES_OPTION, $whatsappAllowedPhones);
+        $this->storeOption(self::WHATSAPP_INSTANCE_OPTION, $whatsappInstance);
         $this->storeOption(QuickReplyMatcher::THRESHOLD_OPTION_NAME, $quickReplyThreshold);
         $this->storeOption(QuickReplyMatcher::OPTION_NAME, $quickRepliesJson);
 

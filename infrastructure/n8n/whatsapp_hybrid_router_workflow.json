@@ -138,7 +138,7 @@
                   {
                       "parameters":  {
                                          "method":  "POST",
-                                         "url":  "={{ ($env['EVOLUTION_API_BASE_URL'] || 'http://host.docker.internal:8080').replace(/\\/$/, '') }}/message/sendText/{{ $env['EVOLUTION_INSTANCE_NAME'] || 'qamiluna-test' }}",
+                                         "url":  "={{ ($env['EVOLUTION_API_BASE_URL'] || 'http://host.docker.internal:8080').replace(/\\/$/, '') }}/message/sendText/{{ $json.instance || $json.body?.instance || $env['EVOLUTION_INSTANCE_NAME'] || 'qamiluna-test' }}",
                                          "sendHeaders":  true,
                                          "headerParameters":  {
                                                                   "parameters":  [

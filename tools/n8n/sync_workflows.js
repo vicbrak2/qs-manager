@@ -7,6 +7,7 @@ const WORKFLOW_FILES = [
     'infrastructure/n8n/chatbot_rag_workflow.json',
     'infrastructure/n8n/wp_rag_ingestion_workflow.json',
     'infrastructure/n8n/whatsapp_hybrid_router_workflow.json',
+    'infrastructure/n8n/whatsapp_inbound_bridge_workflow.json',
 ];
 
 const CREDENTIAL_REQUIREMENTS = {

@@ -12,9 +12,11 @@ final class WhatsAppGateway
     private const PHONE_OPTION_NAME = 'qs_n8n_whatsapp_phone';
     private const ACTIONS_ENABLED_OPTION_NAME = 'qs_n8n_whatsapp_actions_enabled';
     private const ALLOWED_PHONES_OPTION_NAME = 'qs_n8n_whatsapp_allowed_phones';
+    private const INSTANCE_OPTION_NAME = 'qs_n8n_whatsapp_instance';
 
     private string $webhookUrl;
     private string $defaultPhone;
+    private string $instanceName;
     private bool $actionsEnabled;
     /** @var list<string> */
     private array $allowedPhones;
@@ -24,6 +26,7 @@ final class WhatsAppGateway
     ) {
         $this->webhookUrl = $this->resolveWebhookUrl();
         $this->defaultPhone = $this->resolveDefaultPhone();
+        $this->instanceName = $this->resolveInstanceName();
         $this->actionsEnabled = $this->resolveActionsEnabled();
         $this->allowedPhones = $this->resolveAllowedPhones();
     }
@@ -71,6 +74,7 @@ final class WhatsAppGateway
         $body = wp_json_encode([
             'phone'     => $destinationPhone,
             'text'      => $text,
+            'instance'  => $this->instanceName,
             'esCritico' => $esCritico,
         ]);
 
@@ -141,6 +145,11 @@ final class WhatsAppGateway
     {
         return $this->actionsEnabled;
     }
+ 
+    public function instanceName(): string
+    {
+        return $this->instanceName;
+    }
 
     /**
      * @return list<string>
@@ -190,6 +199,27 @@ final class WhatsAppGateway
         }
 
         return '';
+    }
+ 
+    private function resolveInstanceName(): string
+    {
+        if (defined('EVOLUTION_INSTANCE_NAME') && is_string(EVOLUTION_INSTANCE_NAME) && trim(EVOLUTION_INSTANCE_NAME) !== '') {
+            return trim(EVOLUTION_INSTANCE_NAME);
+        }
+ 
+        $envValue = getenv('EVOLUTION_INSTANCE_NAME');
+ 
+        if (is_string($envValue) && trim($envValue) !== '') {
+            return trim($envValue);
+        }
+ 
+        $optionValue = get_option(self::INSTANCE_OPTION_NAME, '');
+ 
+        if (is_string($optionValue) && trim($optionValue) !== '') {
+            return trim($optionValue);
+        }
+ 
+        return 'qamiluna-test';
     }
 
     private function resolveActionsEnabled(): bool
