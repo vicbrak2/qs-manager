@@ -10,7 +10,9 @@
       ],
       "env": {
         "N8N_BASE_URL": "${N8N_API_URL}",
-        "N8N_API_KEY": "${N8N_API_KEY}"
+        "N8N_API_KEY": "${N8N_API_KEY}",
+        "N8N_CHATBOT_TOKEN": "${N8N_CHATBOT_TOKEN}",
+        "N8N_QAMILUNA_INSTANCE": "${N8N_QAMILUNA_INSTANCE}"
       }
     }
   }
