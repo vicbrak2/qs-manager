@@ -138,33 +138,13 @@
                   {
                       "parameters":  {
                                          "method":  "POST",
-                                         "url":  "={{ ($env['EVOLUTION_API_BASE_URL'] || $env['EVOLUTION_URL'] || 'http://host.docker.internal:8080').replace(/\\/$/, '') + '/message/sendText/' + ($env['EVOLUTION_INSTANCE_NAME'] || 'qamiluna-test') }}",
+                                         "url":  "http://host.docker.internal:8080/message/sendText/qamiluna-test",
+                                         "authentication":  "genericCredentialType",
+                                         "genericAuthType":  "httpHeaderAuth",
                                          "sendHeaders":  true,
-                                         "headerParameters":  {
-                                                                  "parameters":  [
-                                                                                     {
-                                                                                         "name":  "apikey",
-                                                                                         "value":  "={{ $env['EVOLUTION_API_KEY'] || '' }}"
-                                                                                     }
-                                                                                 ]
-                                                              },
                                          "sendBody":  true,
-                                         "bodyParameters":  {
-                                                                "parameters":  [
-                                                                                   {
-                                                                                       "name":  "number",
-                                                                                       "value":  "={{ $json.phone || $json.body?.phone }}"
-                                                                                   },
-                                                                                   {
-                                                                                       "name":  "options",
-                                                                                       "value":  "={{ {\"delay\": 1200, \"presence\": \"composing\"} }}"
-                                                                                   },
-                                                                                   {
-                                                                                       "name":  "textMessage",
-                                                                                       "value":  "={{ {\"text\": $json.text || $json.body?.text} }}"
-                                                                                   }
-                                                                               ]
-                                                            },
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"number\": \"{{ $json.phone || $json.body?.phone }}\",\n  \"text\": \"{{ $json.text || $json.body?.text }}\",\n  \"delay\": 1200\n}",
                                          "options":  {
 
                                                      }
@@ -176,7 +156,13 @@
                                        500,
                                        200
                                    ],
-                      "id":  "f84c1d33-91e8-426b-9076-c9f54eb8917e"
+                      "id":  "f84c1d33-91e8-426b-9076-c9f54eb8917e",
+                      "credentials":  {
+                                          "httpHeaderAuth":  {
+                                                                 "id":  "TOYJGwWfTfUfEwnh",
+                                                                 "name":  "Evolution API Key"
+                                                             }
+                                      }
                   }
               ]
 }

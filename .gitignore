@@ -5,6 +5,7 @@
 .env.railway
 .env.production
 .env.development
+tools/n8n/.env.e2e
 
 # Secrets
 *.key

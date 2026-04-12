@@ -1,0 +1,190 @@
+{
+  "name": "WhatsApp Inbound Bridge",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evolution-inbound",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook Evolution",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "id": "a1000001-0000-0000-0000-000000000001",
+      "webhookId": "evolution-inbound-bridge-001"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizar payload de Evolution API.\n// Solo deja pasar mensajes entrantes individuales; ignora grupos, ACKs, updates y mensajes propios.\nconst body = $input.first().json.body || $input.first().json;\nconst data = body.data || body;\nconst key = data.key || {};\n\nif (body.event && body.event !== 'messages.upsert') {\n  return [];\n}\n\nif (data.fromMe === true || key.fromMe === true) {\n  return [];\n}\n\nconst rawJid = key.remoteJid || data.remoteJid || '';\nif (!rawJid || rawJid.includes('@g.us') || rawJid.includes('@broadcast')) {\n  return [];\n}\n\nif (!rawJid.endsWith('@s.whatsapp.net') && !rawJid.endsWith('@c.us')) {\n  return [];\n}\n\nconst msgObj = data.message || {};\nconst phone = rawJid.replace('@s.whatsapp.net', '').replace('@c.us', '');\nconst text =\n  msgObj.conversation ||\n  msgObj.extendedTextMessage?.text ||\n  msgObj.imageMessage?.caption ||\n  msgObj.buttonsResponseMessage?.selectedDisplayText ||\n  msgObj.listResponseMessage?.title ||\n  '';\n\nif (!text || !phone) {\n  return [];\n}\n\nreturn [\n  {\n    json: {\n      phone,\n      text,\n      rawJid,\n      timestamp: data.messageTimestamp || Date.now()\n    }\n  }\n];"
+      },
+      "name": "Normalizar Payload Evolution",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [250, 0],
+      "id": "a1000002-0000-0000-0000-000000000002"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['WORDPRESS_URL'] || $env['WP_URL'] || 'https://qamilunastudio.com' }}/wp-json/qs/v1/agents/chat",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"message\": \"{{ $json.text }}\",\n  \"session_id\": \"whatsapp_{{ $json.phone }}\",\n  \"channel\": \"whatsapp\"\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "name": "Consultar Bot WordPress",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [500, 0],
+      "id": "a1000003-0000-0000-0000-000000000003"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "phone",
+              "value": "={{ $('Normalizar Payload Evolution').item.json.phone }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.reply || $json.message || $json.response || $json.answer || 'Lo siento, no pude procesar tu mensaje.' }}"
+            },
+            {
+              "name": "esCritico",
+              "value": "false"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Armar Respuesta Router",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [750, 0],
+      "id": "a1000004-0000-0000-0000-000000000004"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env['N8N_BASE_URL'] || 'http://localhost:5678') }}/webhook/hybrid-whatsapp",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone\": \"{{ $json.phone }}\",\n  \"text\": \"{{ $json.text }}\",\n  \"esCritico\": false\n}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "name": "Enviar via Router Híbrido",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1000, 0],
+      "id": "a1000005-0000-0000-0000-000000000005"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "ok"
+            },
+            {
+              "name": "phone",
+              "value": "={{ $('Normalizar Payload Evolution').item.json.phone }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Respuesta OK",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1250, 0],
+      "id": "a1000006-0000-0000-0000-000000000006"
+    }
+  ],
+  "connections": {
+    "Webhook Evolution": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Payload Evolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Payload Evolution": {
+      "main": [
+        [
+          {
+            "node": "Consultar Bot WordPress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Bot WordPress": {
+      "main": [
+        [
+          {
+            "node": "Armar Respuesta Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar Respuesta Router": {
+      "main": [
+        [
+          {
+            "node": "Enviar via Router Híbrido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar via Router Híbrido": {
+      "main": [
+        [
+          {
+            "node": "Respuesta OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

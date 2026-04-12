@@ -22,6 +22,8 @@ final class ReindexAdminPage implements HookableInterface
     private const WHATSAPP_URL_OPTION = 'qs_chatbot_fallback_whatsapp_url';
     private const WHATSAPP_WEBHOOK_URL_OPTION = 'qs_n8n_whatsapp_url';
     private const WHATSAPP_PHONE_OPTION = 'qs_n8n_whatsapp_phone';
+    private const WHATSAPP_ACTIONS_ENABLED_OPTION = 'qs_n8n_whatsapp_actions_enabled';
+    private const WHATSAPP_ALLOWED_PHONES_OPTION = 'qs_n8n_whatsapp_allowed_phones';
     private const CONTEXT_DOCUMENTS_OPTION = 'qs_chatbot_context_documents';
     private const CONTEXT_FEEDBACK_TRANSIENT_PREFIX = 'qs_chatbot_context_feedback_';
     private const CONTEXT_ACTION_FEEDBACK_TRANSIENT_PREFIX = 'qs_chatbot_context_action_feedback_';
@@ -81,6 +83,8 @@ final class ReindexAdminPage implements HookableInterface
         $whatsappUrl = $this->option(self::WHATSAPP_URL_OPTION);
         $whatsappWebhookUrl = $this->option(self::WHATSAPP_WEBHOOK_URL_OPTION);
         $whatsappDestinationPhone = $this->option(self::WHATSAPP_PHONE_OPTION);
+        $whatsappActionsEnabled = $this->whatsAppGateway->actionsEnabled();
+        $whatsappAllowedPhones = $this->option(self::WHATSAPP_ALLOWED_PHONES_OPTION);
         $quickRepliesJson = $this->option(QuickReplyMatcher::OPTION_NAME);
         $quickReplyThreshold = $this->option(QuickReplyMatcher::THRESHOLD_OPTION_NAME);
         $settingsSaved = isset($_GET['qs_settings_updated']) && $_GET['qs_settings_updated'] === '1';
@@ -249,6 +253,43 @@ final class ReindexAdminPage implements HookableInterface
                                     Numero por defecto usado por el webhook WhatsApp cuando no se envia <code>phone</code> en el payload.<br>
                                     Valor efectivo actual:
                                     <code><?php echo esc_html($this->whatsAppGateway->defaultPhone() !== '' ? $this->whatsAppGateway->defaultPhone() : 'sin configurar'); ?></code>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Acciones WhatsApp</th>
+                            <td>
+                                <label for="qs_n8n_whatsapp_actions_enabled">
+                                    <input
+                                        id="qs_n8n_whatsapp_actions_enabled"
+                                        name="qs_n8n_whatsapp_actions_enabled"
+                                        type="checkbox"
+                                        value="1"
+                                        <?php checked($whatsappActionsEnabled); ?>
+                                    >
+                                    Permitir envios automaticos por WhatsApp
+                                </label>
+                                <p class="description">
+                                    Mantener apagado mientras no haya una allowlist revisada. Tambien puede forzarse con
+                                    <code>QS_N8N_WHATSAPP_ACTIONS_ENABLED=false</code> en properties/entorno.
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="qs_n8n_whatsapp_allowed_phones">Numeros permitidos</label></th>
+                            <td>
+                                <textarea
+                                    id="qs_n8n_whatsapp_allowed_phones"
+                                    name="qs_n8n_whatsapp_allowed_phones"
+                                    class="large-text code"
+                                    rows="4"
+                                    placeholder="56912345678&#10;56987654321"
+                                ><?php echo esc_textarea($whatsappAllowedPhones); ?></textarea>
+                                <p class="description">
+                                    Un numero por linea, o separados por coma/espacio. Si la lista queda vacia, no se envia a ningun numero.
+                                    El valor efectivo actual es:
+                                    <code><?php echo esc_html($this->renderPhoneList($this->whatsAppGateway->allowedPhones())); ?></code><br>
+                                    Tambien puede definirse con <code>QS_N8N_WHATSAPP_ALLOWED_PHONES=56912345678,56987654321</code>.
                                 </p>
                             </td>
                         </tr>
@@ -659,6 +700,8 @@ final class ReindexAdminPage implements HookableInterface
         $whatsappUrl = $this->postedUrl('qs_chatbot_fallback_whatsapp_url');
         $whatsappWebhookUrl = $this->postedUrl('qs_n8n_whatsapp_url');
         $whatsappDestinationPhone = $this->sanitizeWhatsappPhone($this->postedText('qs_n8n_whatsapp_phone'));
+        $whatsappActionsEnabled = $this->postedCheckbox('qs_n8n_whatsapp_actions_enabled');
+        $whatsappAllowedPhones = $this->sanitizeWhatsappPhoneList($this->postedText('qs_n8n_whatsapp_allowed_phones'));
         $quickReplyThreshold = $this->sanitizeQuickReplyThreshold($this->postedText('qs_chatbot_quick_reply_threshold'));
         $quickRepliesJson = $this->sanitizeQuickRepliesJson($this->postedText('qs_chatbot_quick_replies_json'));
 
@@ -673,6 +716,8 @@ final class ReindexAdminPage implements HookableInterface
         $this->storeOption(self::WHATSAPP_URL_OPTION, $whatsappUrl);
         $this->storeOption(self::WHATSAPP_WEBHOOK_URL_OPTION, $whatsappWebhookUrl);
         $this->storeOption(self::WHATSAPP_PHONE_OPTION, $whatsappDestinationPhone);
+        update_option(self::WHATSAPP_ACTIONS_ENABLED_OPTION, $whatsappActionsEnabled ? '1' : '0', false);
+        $this->storeOption(self::WHATSAPP_ALLOWED_PHONES_OPTION, $whatsappAllowedPhones);
         $this->storeOption(QuickReplyMatcher::THRESHOLD_OPTION_NAME, $quickReplyThreshold);
         $this->storeOption(QuickReplyMatcher::OPTION_NAME, $quickRepliesJson);
 
@@ -979,6 +1024,48 @@ final class ReindexAdminPage implements HookableInterface
         $sanitized = preg_replace('/[^0-9+]/', '', $value);
 
         return is_string($sanitized) ? trim($sanitized) : '';
+    }
+
+    private function sanitizeWhatsappPhoneList(string $value): string
+    {
+        $items = preg_split('/[\s,;]+/', trim($value));
+
+        if (! is_array($items)) {
+            return '';
+        }
+
+        $phones = [];
+
+        foreach ($items as $item) {
+            $phone = $this->sanitizeWhatsappPhone($item);
+
+            if ($phone === '') {
+                continue;
+            }
+
+            $phones[$this->normalizeWhatsappPhone($phone)] = $phone;
+        }
+
+        return implode("\n", array_values($phones));
+    }
+
+    /**
+     * @param list<string> $phones
+     */
+    private function renderPhoneList(array $phones): string
+    {
+        if ($phones === []) {
+            return 'sin numeros permitidos';
+        }
+
+        return implode(', ', $phones);
+    }
+
+    private function normalizeWhatsappPhone(string $phone): string
+    {
+        $normalized = preg_replace('/\D+/', '', $phone);
+
+        return is_string($normalized) ? $normalized : '';
     }
 
     private function currentTab(): string

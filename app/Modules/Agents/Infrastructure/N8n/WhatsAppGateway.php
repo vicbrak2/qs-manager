@@ -10,15 +10,22 @@ final class WhatsAppGateway
 {
     private const OPTION_NAME = 'qs_n8n_whatsapp_url';
     private const PHONE_OPTION_NAME = 'qs_n8n_whatsapp_phone';
+    private const ACTIONS_ENABLED_OPTION_NAME = 'qs_n8n_whatsapp_actions_enabled';
+    private const ALLOWED_PHONES_OPTION_NAME = 'qs_n8n_whatsapp_allowed_phones';
 
     private string $webhookUrl;
     private string $defaultPhone;
+    private bool $actionsEnabled;
+    /** @var list<string> */
+    private array $allowedPhones;
 
     public function __construct(
         private readonly Logger $logger
     ) {
         $this->webhookUrl = $this->resolveWebhookUrl();
         $this->defaultPhone = $this->resolveDefaultPhone();
+        $this->actionsEnabled = $this->resolveActionsEnabled();
+        $this->allowedPhones = $this->resolveAllowedPhones();
     }
 
     /**
@@ -28,6 +35,15 @@ final class WhatsAppGateway
      */
     public function send(string $phone, string $text, bool $esCritico = false): array
     {
+        if (! $this->actionsEnabled) {
+            return [
+                'ok' => false,
+                'status_code' => null,
+                'error' => 'Las acciones de WhatsApp estan desactivadas.',
+                'response_body' => '',
+            ];
+        }
+
         $destinationPhone = $this->resolveDestinationPhone($phone);
 
         if ($destinationPhone === '') {
@@ -38,6 +54,20 @@ final class WhatsAppGateway
                 'response_body' => '',
             ];
         }
+
+        if (! $this->isAllowedPhone($destinationPhone)) {
+            $this->logger->warning(
+                sprintf('QS WhatsApp send blocked to non-allowed destination %s.', $destinationPhone)
+            );
+
+            return [
+                'ok' => false,
+                'status_code' => null,
+                'error' => 'El numero destino no esta permitido para acciones de WhatsApp.',
+                'response_body' => '',
+            ];
+        }
+
         $body = wp_json_encode([
             'phone'     => $destinationPhone,
             'text'      => $text,
@@ -107,6 +137,19 @@ final class WhatsAppGateway
         return $this->defaultPhone;
     }
 
+    public function actionsEnabled(): bool
+    {
+        return $this->actionsEnabled;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function allowedPhones(): array
+    {
+        return $this->allowedPhones;
+    }
+
     private function resolveWebhookUrl(): string
     {
         if (defined('QS_N8N_WHATSAPP_URL') && is_string(QS_N8N_WHATSAPP_URL) && QS_N8N_WHATSAPP_URL !== '') {
@@ -149,6 +192,51 @@ final class WhatsAppGateway
         return '';
     }
 
+    private function resolveActionsEnabled(): bool
+    {
+        if (defined('QS_N8N_WHATSAPP_ACTIONS_ENABLED') && is_scalar(QS_N8N_WHATSAPP_ACTIONS_ENABLED)) {
+            return $this->stringToBoolean((string) QS_N8N_WHATSAPP_ACTIONS_ENABLED);
+        }
+
+        $envValue = getenv('QS_N8N_WHATSAPP_ACTIONS_ENABLED');
+
+        if (is_string($envValue) && trim($envValue) !== '') {
+            return $this->stringToBoolean($envValue);
+        }
+
+        $optionValue = get_option(self::ACTIONS_ENABLED_OPTION_NAME, '0');
+
+        if (is_scalar($optionValue)) {
+            return $this->stringToBoolean((string) $optionValue);
+        }
+
+        return false;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function resolveAllowedPhones(): array
+    {
+        if (defined('QS_N8N_WHATSAPP_ALLOWED_PHONES') && is_scalar(QS_N8N_WHATSAPP_ALLOWED_PHONES)) {
+            return $this->parsePhoneList((string) QS_N8N_WHATSAPP_ALLOWED_PHONES);
+        }
+
+        $envValue = getenv('QS_N8N_WHATSAPP_ALLOWED_PHONES');
+
+        if (is_string($envValue) && trim($envValue) !== '') {
+            return $this->parsePhoneList($envValue);
+        }
+
+        $optionValue = get_option(self::ALLOWED_PHONES_OPTION_NAME, '');
+
+        if (is_string($optionValue) && trim($optionValue) !== '') {
+            return $this->parsePhoneList($optionValue);
+        }
+
+        return [];
+    }
+
     private function resolveDestinationPhone(string $phone): string
     {
         $providedPhone = $this->sanitizePhone($phone);
@@ -165,5 +253,60 @@ final class WhatsAppGateway
         $sanitized = preg_replace('/[^0-9+]/', '', trim($value));
 
         return is_string($sanitized) ? trim($sanitized) : '';
+    }
+
+    private function isAllowedPhone(string $phone): bool
+    {
+        if ($this->allowedPhones === []) {
+            return false;
+        }
+
+        $normalizedPhone = $this->normalizePhoneForMatch($phone);
+
+        foreach ($this->allowedPhones as $allowedPhone) {
+            if ($this->normalizePhoneForMatch($allowedPhone) === $normalizedPhone) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function parsePhoneList(string $value): array
+    {
+        $items = preg_split('/[\s,;]+/', trim($value));
+
+        if (! is_array($items)) {
+            return [];
+        }
+
+        $phones = [];
+
+        foreach ($items as $item) {
+            $phone = $this->sanitizePhone($item);
+
+            if ($phone === '') {
+                continue;
+            }
+
+            $phones[$this->normalizePhoneForMatch($phone)] = $phone;
+        }
+
+        return array_values($phones);
+    }
+
+    private function normalizePhoneForMatch(string $phone): string
+    {
+        $normalized = preg_replace('/\D+/', '', $phone);
+
+        return is_string($normalized) ? $normalized : '';
+    }
+
+    private function stringToBoolean(string $value): bool
+    {
+        return in_array(strtolower(trim($value)), ['1', 'true', 'yes', 'on'], true);
     }
 }

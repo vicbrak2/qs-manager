@@ -39,6 +39,13 @@ const CREDENTIAL_REQUIREMENTS = {
             apiKey: ['GROQ_N8N_API_KEY'],
         },
     },
+    httpHeaderAuth: {
+        envName: 'N8N_HTTP_HEADER_CREDENTIAL_NAME',
+        defaultNames: ['Evolution API Key'],
+        bootstrapFields: {
+            value: ['EVOLUTION_API_KEY', 'EVOLUTION_KEY'],
+        },
+    },
 };
 
 const NODE_CREDENTIAL_MAP = {
@@ -79,11 +86,16 @@ async function main() {
     const workflowsResponse = await apiRequest('GET', '/workflows');
     const credentials = credentialsResponse.data || [];
     const workflows = workflowsResponse.data || [];
-    const credentialMap = await resolveCredentialMap(credentials);
-
-    for (const relativeFile of WORKFLOW_FILES) {
+    const workflowDefinitions = WORKFLOW_FILES.map((relativeFile) => {
         const absoluteFile = path.join(rootDir, relativeFile);
-        const workflow = JSON.parse(fs.readFileSync(absoluteFile, 'utf8'));
+        return {
+            relativeFile,
+            workflow: JSON.parse(fs.readFileSync(absoluteFile, 'utf8')),
+        };
+    });
+    const credentialMap = await resolveCredentialMap(credentials, workflowDefinitions.map(({ workflow }) => workflow));
+
+    for (const { workflow } of workflowDefinitions) {
         const payload = injectCredentials(normalizeWorkflow(workflow), credentialMap);
         await upsertWorkflow(payload, workflows);
     }
@@ -135,8 +147,15 @@ function pickExistingWorkflow(workflows, workflowName) {
     return candidates[0] || null;
 }
 
-async function resolveCredentialMap(credentials) {
+async function resolveCredentialMap(credentials, workflowDefinitions) {
     const requiredTypes = new Set(Object.values(NODE_CREDENTIAL_MAP));
+    for (const workflow of workflowDefinitions) {
+        for (const node of workflow.nodes || []) {
+            for (const type of Object.keys(node.credentials || {})) {
+                requiredTypes.add(type);
+            }
+        }
+    }
     const resolved = {};
     const availableCredentials = [...credentials];
 
@@ -243,6 +262,10 @@ function buildBootstrapPayload(type, requirement) {
         return null;
     }
 
+    if (type === 'httpHeaderAuth' && !data.name) {
+        data.name = env.EVOLUTION_API_HEADER_NAME || 'apikey';
+    }
+
     return {
         name: env[requirement.envName] || requirement.defaultNames[0],
         type,
@@ -271,6 +294,7 @@ function normalizeWorkflow(workflow) {
             type: node.type,
             typeVersion: node.typeVersion,
             position: node.position,
+            ...(node.credentials ? { credentials: node.credentials } : {}),
         })),
         connections: workflow.connections || {},
         settings: sanitizeSettings(workflow.settings || {}),
@@ -294,6 +318,15 @@ function injectCredentials(workflow, credentialMap) {
     return {
         ...workflow,
         nodes: workflow.nodes.map((node) => {
+            if (node.credentials) {
+                return {
+                    ...node,
+                    credentials: Object.fromEntries(
+                        Object.keys(node.credentials).map((type) => [type, credentialMap[type] || node.credentials[type]]),
+                    ),
+                };
+            }
+
             const credentialType = NODE_CREDENTIAL_MAP[node.type];
 
             if (!credentialType) {

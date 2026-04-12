@@ -92,14 +92,17 @@ namespace QS\Modules\Agents\Infrastructure\N8n {
 
     function get_option(string $name, mixed $default = ''): mixed
     {
-        return $default;
+        return ChatbotGatewayWordpressStubs::getOption($name, $default);
     }
 }
 
 namespace QS\Tests\Unit\Modules\Agents {
 
+    use QS\Core\Config\PluginConfig;
+    use QS\Core\Logging\Logger;
     use QS\Modules\Agents\Infrastructure\Chatbot\QuickReplyMatcher;
     use QS\Modules\Agents\Infrastructure\N8n\ChatbotGateway;
+    use QS\Modules\Agents\Infrastructure\N8n\WhatsAppGateway;
     use QS\Shared\Testing\TestCase;
 
     final class ChatbotGatewayWordpressStubs
@@ -113,11 +116,15 @@ namespace QS\Tests\Unit\Modules\Agents {
         /** @var list<array<string, mixed>|\WP_Error> */
         private static array $remoteResponses = [];
 
+        /** @var array<string, mixed> */
+        private static array $options = [];
+
         public static function reset(): void
         {
             self::$transients = [];
             self::$remotePosts = [];
             self::$remoteResponses = [];
+            self::$options = [];
         }
 
         public static function getTransient(string $key): ?string
@@ -170,6 +177,16 @@ namespace QS\Tests\Unit\Modules\Agents {
         public static function remotePosts(): array
         {
             return self::$remotePosts;
+        }
+
+        public static function setOption(string $name, mixed $value): void
+        {
+            self::$options[$name] = $value;
+        }
+
+        public static function getOption(string $name, mixed $default = ''): mixed
+        {
+            return self::$options[$name] ?? $default;
         }
     }
 
@@ -248,6 +265,75 @@ namespace QS\Tests\Unit\Modules\Agents {
             self::assertIsArray($payload);
             self::assertSame(800, strlen((string) ($payload['message'] ?? '')));
             self::assertSame('session-long', $payload['session_id'] ?? null);
+        }
+    }
+
+    final class WhatsAppGatewayTest extends TestCase
+    {
+        protected function setUp(): void
+        {
+            parent::setUp();
+            ChatbotGatewayWordpressStubs::reset();
+            putenv('QS_N8N_WHATSAPP_ACTIONS_ENABLED');
+            putenv('QS_N8N_WHATSAPP_ALLOWED_PHONES');
+        }
+
+        protected function tearDown(): void
+        {
+            putenv('QS_N8N_WHATSAPP_ACTIONS_ENABLED');
+            putenv('QS_N8N_WHATSAPP_ALLOWED_PHONES');
+            parent::tearDown();
+        }
+
+        public function testSendIsBlockedWhenWhatsappActionsAreDisabled(): void
+        {
+            $gateway = $this->whatsAppGateway();
+
+            $result = $gateway->send('56912345678', 'hola');
+
+            self::assertFalse($result['ok']);
+            self::assertSame('Las acciones de WhatsApp estan desactivadas.', $result['error']);
+            self::assertCount(0, ChatbotGatewayWordpressStubs::remotePosts());
+        }
+
+        public function testSendIsBlockedWhenNoAllowedPhonesAreConfigured(): void
+        {
+            ChatbotGatewayWordpressStubs::setOption('qs_n8n_whatsapp_actions_enabled', '1');
+
+            $gateway = $this->whatsAppGateway();
+
+            $result = $gateway->send('56912345678', 'hola');
+
+            self::assertFalse($result['ok']);
+            self::assertSame('El numero destino no esta permitido para acciones de WhatsApp.', $result['error']);
+            self::assertCount(0, ChatbotGatewayWordpressStubs::remotePosts());
+        }
+
+        public function testSendPostsToN8nWhenDestinationIsAllowed(): void
+        {
+            ChatbotGatewayWordpressStubs::setOption('qs_n8n_whatsapp_actions_enabled', '1');
+            ChatbotGatewayWordpressStubs::setOption('qs_n8n_whatsapp_allowed_phones', "56912345678\n56987654321");
+
+            $gateway = $this->whatsAppGateway();
+
+            $result = $gateway->send('+56 9 1234 5678', 'hola');
+
+            self::assertTrue($result['ok']);
+
+            $posts = ChatbotGatewayWordpressStubs::remotePosts();
+            self::assertCount(1, $posts);
+
+            $payload = json_decode((string) $posts[0]['args']['body'], true, 512, JSON_THROW_ON_ERROR);
+            self::assertSame('+56912345678', $payload['phone']);
+            self::assertSame('hola', $payload['text']);
+        }
+
+        private function whatsAppGateway(): WhatsAppGateway
+        {
+            return new WhatsAppGateway(new Logger(QS_CORE_ROOT_DIR, new PluginConfig([
+                'paths' => ['logs' => 'var/tmp'],
+                'logging' => ['file' => 'test.log'],
+            ])));
         }
     }
 }
