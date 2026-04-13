@@ -372,7 +372,7 @@ final class QuickReplyMatcher
         return [
             [
                 'id' => 'services',
-                'response' => 'Trabajamos principalmente con maquillaje social, peinado, novia civil y novia fiesta. Si quieres, te cuento cual opcion te conviene o te oriento con valores referenciales.',
+                'response' => 'Trabajamos principalmente con maquillaje social, peinado, combo social, novia civil y novia fiesta. Puedes revisar maquillaje social en https://qamilunastudio.com/servicios/maquillaje-social, combo social en https://qamilunastudio.com/servicios/combo-social-mp, novia civil en https://qamilunastudio.com/servicios/novia-civil-mp y novia fiesta en https://qamilunastudio.com/servicios/novia-fiesta-mp. Deseas reservar?',
                 'examples' => [
                     'servicios',
                     'que servicios tienen',
@@ -385,7 +385,7 @@ final class QuickReplyMatcher
             ],
             [
                 'id' => 'bridal_services',
-                'response' => 'Si, trabajamos tanto novia civil como novia fiesta con servicio integral. Para orientarte bien y revisar la opcion que mas te conviene, enviame fecha, comuna, horario aproximado y cuantas personas serian.',
+                'response' => 'Si, trabajamos tanto novia civil como novia fiesta con servicio integral. Puedes revisar novia civil en https://qamilunastudio.com/servicios/novia-civil-mp y novia fiesta en https://qamilunastudio.com/servicios/novia-fiesta-mp. Deseas reservar?',
                 'examples' => [
                     'novia civil',
                     'novia fiesta',
@@ -398,7 +398,7 @@ final class QuickReplyMatcher
             ],
             [
                 'id' => 'prices',
-                'response' => 'Los valores dependen del servicio, la comuna, el horario y si es para una o mas personas. Si quieres cotizar rapido, enviame en un solo mensaje servicio, fecha y comuna.',
+                'response' => 'Los valores dependen del tipo de servicio y la logistica. Para cotizar te recomiendo escribirnos directo por WhatsApp: https://wa.me/56912345678. Deseas reservar?',
                 'examples' => [
                     'precios',
                     'precio',
@@ -413,7 +413,7 @@ final class QuickReplyMatcher
             ],
             [
                 'id' => 'reservations',
-                'response' => 'Si, te puedo orientar con la reserva. Para avanzar enviame en un solo mensaje servicio, fecha, comuna y horario aproximado, y asi revisamos los siguientes pasos.',
+                'response' => 'Para reservar se revisa disponibilidad y luego se bloquea la fecha con abono. Si quieres avanzar, dime si deseas reservar y te pido los datos paso a paso.',
                 'examples' => [
                     'reservas',
                     'reserva',

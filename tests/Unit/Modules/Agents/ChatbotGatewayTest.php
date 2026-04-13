@@ -52,6 +52,13 @@ namespace QS\Modules\Agents\Infrastructure\N8n {
         return true;
     }
 
+    function delete_transient(string $key): bool
+    {
+        ChatbotGatewayWordpressStubs::clearTransient($key);
+
+        return true;
+    }
+
     /**
      * @param array<string, mixed> $value
      */
@@ -265,6 +272,38 @@ namespace QS\Tests\Unit\Modules\Agents {
             self::assertIsArray($payload);
             self::assertSame(800, strlen((string) ($payload['message'] ?? '')));
             self::assertSame('session-long', $payload['session_id'] ?? null);
+        }
+
+        public function testBookingFlowAsksForOneFieldAtATimeAfterExplicitReservationIntent(): void
+        {
+            $gateway = new ChatbotGateway(new QuickReplyMatcher());
+
+            $first = $gateway->ask('quiero reservar una hora', 'session-booking');
+            $second = $gateway->ask('Maquillaje social', 'session-booking');
+            $third = $gateway->ask('Providencia', 'session-booking');
+            $fourth = $gateway->ask('Los Leones 123', 'session-booking');
+            $fifth = $gateway->ask('+56912345678', 'session-booking');
+            $sixth = $gateway->ask('20 de abril', 'session-booking');
+
+            self::assertStringContainsString('Primero dime que servicio necesitas', $first);
+            self::assertStringContainsString('comuna', $second);
+            self::assertStringContainsString('direccion', $third);
+            self::assertStringContainsString('telefono', $fourth);
+            self::assertStringContainsString('fecha', $fifth);
+            self::assertStringContainsString('ya tengo los datos base', $sixth);
+            self::assertCount(0, ChatbotGatewayWordpressStubs::remotePosts());
+        }
+
+        public function testAffirmativeReplyStartsBookingFlowOnlyAfterBotAskedReservationIntent(): void
+        {
+            $gateway = new ChatbotGateway(new QuickReplyMatcher());
+
+            $reply = $gateway->ask('precios', 'session-price');
+            $confirmation = $gateway->ask('si', 'session-price');
+
+            self::assertStringContainsString('Deseas reservar?', $reply);
+            self::assertStringContainsString('Primero dime que servicio necesitas', $confirmation);
+            self::assertCount(0, ChatbotGatewayWordpressStubs::remotePosts());
         }
     }
 

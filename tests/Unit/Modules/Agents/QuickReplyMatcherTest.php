@@ -27,7 +27,7 @@ final class QuickReplyMatcherTest extends TestCase
         $reply = $matcher->match('puedo reservar una hora?');
 
         self::assertNotNull($reply);
-        self::assertStringContainsString('servicio, fecha, comuna y horario aproximado', $reply);
+        self::assertStringContainsString('datos paso a paso', $reply);
     }
 
     public function testMatchesBridalRuleForLongQuestion(): void
@@ -38,7 +38,7 @@ final class QuickReplyMatcherTest extends TestCase
 
         self::assertNotNull($reply);
         self::assertStringContainsString('novia civil como novia fiesta', $reply);
-        self::assertStringContainsString('fecha, comuna, horario aproximado', $reply);
+        self::assertStringContainsString('Deseas reservar?', $reply);
     }
 
     public function testConfiguredRulesCanOverrideDefaults(): void

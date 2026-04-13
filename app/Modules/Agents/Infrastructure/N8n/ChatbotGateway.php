@@ -14,6 +14,7 @@ final class ChatbotGateway
     private const MAX_INPUT_CHARS = 800;
     private const HISTORY_CACHE_TTL = 3600; // 1 hour
     private const HISTORY_MAX_TURNS = 5;
+    private const BOOKING_FLOW_TTL = 3600; // 1 hour
 
     private string $webhookUrl;
 
@@ -30,6 +31,14 @@ final class ChatbotGateway
     public function ask(string $message, string $sessionId): string|WP_Error
     {
         $message = $this->truncateInput($message);
+
+        $bookingFlowReply = $this->handleBookingFlow($message, $sessionId);
+
+        if ($bookingFlowReply !== null) {
+            $this->appendToHistory($sessionId, $message, $bookingFlowReply);
+
+            return $bookingFlowReply;
+        }
 
         $greetingReply = $this->greetingReply($message);
 
@@ -140,6 +149,11 @@ final class ChatbotGateway
         return 'qs_chat_hist_' . md5($sessionId);
     }
 
+    private function bookingFlowKey(string $sessionId): string
+    {
+        return 'qs_booking_flow_' . md5($sessionId);
+    }
+
     private function appendToHistory(string $sessionId, string $userMsg, string $botReply): void
     {
         $key      = $this->historyKey($sessionId);
@@ -190,6 +204,168 @@ final class ChatbotGateway
         }
 
         return implode("\n", $lines);
+    }
+
+    private function handleBookingFlow(string $message, string $sessionId): ?string
+    {
+        if ($message === '') {
+            return null;
+        }
+
+        $state = $this->getBookingFlowState($sessionId);
+
+        if ($state !== null) {
+            return $this->advanceBookingFlow($message, $sessionId, $state);
+        }
+
+        if (! $this->shouldStartBookingFlow($message, $sessionId)) {
+            return null;
+        }
+
+        $this->setBookingFlowState($sessionId, [
+            'stage' => 'service',
+            'data' => [],
+        ]);
+
+        return $this->bookingServicePrompt();
+    }
+
+    /**
+     * @param array{stage: string, data: array<string, string>} $state
+     */
+    private function advanceBookingFlow(string $message, string $sessionId, array $state): string
+    {
+        $stage = $state['stage'];
+        $data = $state['data'];
+
+        if ($stage === 'service') {
+            $data['service'] = $message;
+            $this->setBookingFlowState($sessionId, [
+                'stage' => 'comuna',
+                'data' => $data,
+            ]);
+
+            return 'Perfecto. En que comuna seria el servicio?';
+        }
+
+        if ($stage === 'comuna') {
+            $data['comuna'] = $message;
+            $this->setBookingFlowState($sessionId, [
+                'stage' => 'address',
+                'data' => $data,
+            ]);
+
+            return 'Gracias. Ahora enviame la direccion donde seria la atencion.';
+        }
+
+        if ($stage === 'address') {
+            $data['address'] = $message;
+            $this->setBookingFlowState($sessionId, [
+                'stage' => 'phone',
+                'data' => $data,
+            ]);
+
+            return 'Me compartes tu telefono de contacto?';
+        }
+
+        if ($stage === 'phone') {
+            $data['phone'] = $message;
+            $this->setBookingFlowState($sessionId, [
+                'stage' => 'date',
+                'data' => $data,
+            ]);
+
+            return 'Para que fecha quieres reservar?';
+        }
+
+        $data['date'] = $message;
+        $this->clearBookingFlowState($sessionId);
+
+        return 'Listo, ya tengo los datos base para revisar tu reserva. El equipo confirma disponibilidad y siguientes pasos antes de bloquear la fecha.';
+    }
+
+    /**
+     * @return array{stage: string, data: array<string, string>}|null
+     */
+    private function getBookingFlowState(string $sessionId): ?array
+    {
+        $existing = get_transient($this->bookingFlowKey($sessionId));
+
+        if (! is_string($existing) || $existing === '') {
+            return null;
+        }
+
+        $decoded = json_decode($existing, true);
+
+        if (! is_array($decoded) || ! isset($decoded['stage']) || ! is_string($decoded['stage'])) {
+            return null;
+        }
+
+        $data = isset($decoded['data']) && is_array($decoded['data']) ? $decoded['data'] : [];
+        $normalizedData = [];
+
+        foreach ($data as $key => $value) {
+            if (is_string($key) && is_string($value)) {
+                $normalizedData[$key] = $value;
+            }
+        }
+
+        return [
+            'stage' => $decoded['stage'],
+            'data' => $normalizedData,
+        ];
+    }
+
+    /**
+     * @param array{stage: string, data: array<string, string>} $state
+     */
+    private function setBookingFlowState(string $sessionId, array $state): void
+    {
+        $encoded = json_encode($state, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        if (is_string($encoded)) {
+            set_transient($this->bookingFlowKey($sessionId), $encoded, self::BOOKING_FLOW_TTL);
+        }
+    }
+
+    private function clearBookingFlowState(string $sessionId): void
+    {
+        if (function_exists('delete_transient')) {
+            delete_transient($this->bookingFlowKey($sessionId));
+            return;
+        }
+
+        set_transient($this->bookingFlowKey($sessionId), '', 1);
+    }
+
+    private function shouldStartBookingFlow(string $message, string $sessionId): bool
+    {
+        $normalized = $this->normalizeIntentText($message);
+
+        if (preg_match('/\b(quiero|deseo|necesito|me gustaria|voy a|si quiero|si deseo)\s+(reservar|agendar)\b/u', $normalized) === 1) {
+            return true;
+        }
+
+        if (preg_match('/\b(reservar una hora|agendar una hora|tomar una hora|hacer una reserva)\b/u', $normalized) === 1) {
+            return true;
+        }
+
+        return $this->isAffirmative($normalized) && $this->lastBotAskedBookingIntent($sessionId);
+    }
+
+    private function isAffirmative(string $normalized): bool
+    {
+        return preg_match('/^(si|sip|sii|si quiero|si por favor|dale|ok|ya|claro|confirmo|quiero reservar|quiero agendar)$/u', $normalized) === 1;
+    }
+
+    private function lastBotAskedBookingIntent(string $sessionId): bool
+    {
+        return str_contains($this->normalizeIntentText($this->getHistoryContext($sessionId)), 'deseas reservar');
+    }
+
+    private function bookingServicePrompt(): string
+    {
+        return "Perfecto, para reservar lo vemos paso a paso.\nPrimero dime que servicio necesitas:\n- Maquillaje social\n- Peinado\n- Combo social maquillaje + peinado\n- Novia civil\n- Novia fiesta";
     }
 
     private function resolveWebhookUrl(): string
@@ -263,6 +439,29 @@ final class ChatbotGateway
         $normalized = function_exists('mb_strtolower')
             ? mb_strtolower(trim($message))
             : strtolower(trim($message));
+
+        return trim((string) preg_replace('/\s+/', ' ', $normalized));
+    }
+
+    private function normalizeIntentText(string $message): string
+    {
+        $normalized = $this->normalizeText($message);
+
+        if (function_exists('remove_accents')) {
+            $normalized = remove_accents($normalized);
+        } else {
+            $normalized = strtr($normalized, [
+                'á' => 'a',
+                'é' => 'e',
+                'í' => 'i',
+                'ó' => 'o',
+                'ú' => 'u',
+                'ü' => 'u',
+                'ñ' => 'n',
+            ]);
+        }
+
+        $normalized = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $normalized) ?? $normalized;
 
         return trim((string) preg_replace('/\s+/', ' ', $normalized));
     }
