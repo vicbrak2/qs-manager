@@ -285,6 +285,12 @@ namespace QS\Tests\Unit\Modules\Agents {
             $fifth = $gateway->ask('+56912345678', 'session-booking');
             $sixth = $gateway->ask('20 de abril', 'session-booking');
 
+            self::assertIsString($first);
+            self::assertIsString($second);
+            self::assertIsString($third);
+            self::assertIsString($fourth);
+            self::assertIsString($fifth);
+            self::assertIsString($sixth);
             self::assertStringContainsString('Primero dime que servicio necesitas', $first);
             self::assertStringContainsString('comuna', $second);
             self::assertStringContainsString('direccion', $third);
@@ -301,6 +307,8 @@ namespace QS\Tests\Unit\Modules\Agents {
             $reply = $gateway->ask('precios', 'session-price');
             $confirmation = $gateway->ask('si', 'session-price');
 
+            self::assertIsString($reply);
+            self::assertIsString($confirmation);
             self::assertStringContainsString('Deseas reservar?', $reply);
             self::assertStringContainsString('Primero dime que servicio necesitas', $confirmation);
             self::assertCount(0, ChatbotGatewayWordpressStubs::remotePosts());
