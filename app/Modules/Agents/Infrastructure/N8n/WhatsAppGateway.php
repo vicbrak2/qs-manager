@@ -145,7 +145,7 @@ final class WhatsAppGateway
     {
         return $this->actionsEnabled;
     }
- 
+
     public function instanceName(): string
     {
         return $this->instanceName;
@@ -200,25 +200,25 @@ final class WhatsAppGateway
 
         return '';
     }
- 
+
     private function resolveInstanceName(): string
     {
         if (defined('EVOLUTION_INSTANCE_NAME') && is_string(EVOLUTION_INSTANCE_NAME) && trim(EVOLUTION_INSTANCE_NAME) !== '') {
             return trim(EVOLUTION_INSTANCE_NAME);
         }
- 
+
         $envValue = getenv('EVOLUTION_INSTANCE_NAME');
- 
+
         if (is_string($envValue) && trim($envValue) !== '') {
             return trim($envValue);
         }
- 
+
         $optionValue = get_option(self::INSTANCE_OPTION_NAME, '');
- 
+
         if (is_string($optionValue) && trim($optionValue) !== '') {
             return trim($optionValue);
         }
- 
+
         return 'qamiluna-test';
     }
 
