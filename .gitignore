@@ -47,6 +47,7 @@ temp/
 dist/
 vendor/
 var/cache/
+var/backups/
 .claude/
 .php-cs-fixer.cache
 

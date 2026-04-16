@@ -1,0 +1,27 @@
+{
+  "sites": [
+    {
+      "id": "qamiluna",
+      "label": "Qamiluna Studio",
+      "wordpressUrl": "https://qamilunastudio.com",
+      "n8nBaseUrlEnv": "N8N_BASE_URL",
+      "n8nApiKeyEnv": "N8N_API_KEY",
+      "n8nApiKeyFallbackEnv": "N8N_QAMILUNA_INSTANCE",
+      "n8nHybridWebhookPath": "hybrid-whatsapp",
+      "n8nRequiredWorkflows": [
+        "WordPress RAG Chatbot",
+        "WhatsApp Hybrid Router",
+        "WhatsApp Inbound Bridge",
+        "WP RAG Ingestion"
+      ],
+      "railwayEnvironment": "production",
+      "railwayN8nService": "n8n",
+      "railwayPostgresService": "n8n-postgres",
+      "evolutionBaseUrlEnv": "EVOLUTION_API_BASE_URL",
+      "evolutionApiKeyEnv": "EVOLUTION_API_KEY",
+      "evolutionApiKeyFallbackEnv": "EVOLUTION_KEY",
+      "evolutionInstanceNameEnv": "EVOLUTION_INSTANCE_NAME",
+      "evolutionExpectedState": "open"
+    }
+  ]
+}

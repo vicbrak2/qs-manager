@@ -57,3 +57,10 @@ Si no defines los nombres de credencial, el script intentará usar estos default
 - `Qdrant account`
 - `Hugging Face direct`
 - `OpenRouter account`
+
+## Operacion multi-sitio
+
+Los scripts reutilizables para health checks, exports de workflows y backups de Postgres viven en
+`tools/chatbots/`. La configuracion por cliente/sitio vive en `config/chatbots/sites.json`.
+
+Documentacion: `docs/ops-chatbots.md`.
