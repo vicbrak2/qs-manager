@@ -227,4 +227,20 @@ return [
         'action' => 'feedback',
         'permission_callback' => '__return_true',
     ],
+    [
+        'namespace' => 'qs/v1',
+        'route' => '/agents/whatsapp-options',
+        'methods' => 'GET',
+        'controller' => \QS\Modules\Agents\Interfaces\Rest\WhatsAppOptionsController::class,
+        'action' => 'show',
+        'permission_callback' => 'canManage',
+    ],
+    [
+        'namespace' => 'qs/v1',
+        'route' => '/agents/whatsapp-options',
+        'methods' => 'POST',
+        'controller' => \QS\Modules\Agents\Interfaces\Rest\WhatsAppOptionsController::class,
+        'action' => 'update',
+        'permission_callback' => 'canManage',
+    ],
 ];

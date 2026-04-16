@@ -22,6 +22,7 @@ final class ChatbotGateway
 
     public function __construct(
         private readonly QuickReplyMatcher $quickReplyMatcher,
+        private readonly WhatsAppGateway $whatsAppGateway,
         ?ChatbotProfile $profile = null
     ) {
         $this->profile = $profile ?? ChatbotProfile::resolveDefault();
@@ -333,6 +334,8 @@ final class ChatbotGateway
         $data['date'] = $message;
         $this->clearBookingFlowState($sessionId);
 
+        $this->sendBookingWhatsApp($data, $sessionId);
+
         return 'Listo, ya tengo los datos base para revisar tu reserva. El equipo confirma disponibilidad y siguientes pasos antes de bloquear la fecha.';
     }
 
@@ -378,6 +381,52 @@ final class ChatbotGateway
         if (is_string($encoded)) {
             set_transient($this->bookingFlowKey($sessionId), $encoded, self::BOOKING_FLOW_TTL);
         }
+    }
+
+    /**
+     * Envía un WhatsApp de resumen de reserva al número de la operadora (defaultPhone del gateway),
+     * incluyendo los datos del cliente y un resumen de la conversación.
+     *
+     * @param array<string, string> $data
+     * @param string $sessionId Usado para recuperar el historial de conversación
+     */
+    private function sendBookingWhatsApp(array $data, string $sessionId): void
+    {
+        $brand    = $this->profile->brandName();
+        $service  = $data['service'] ?? 'No especificado';
+        $comuna   = $data['comuna']  ?? 'No especificada';
+        $address  = $data['address'] ?? 'No especificada';
+        $phone    = $data['phone']   ?? 'No entregado';
+        $date     = $data['date']    ?? 'No especificada';
+
+        $lines = [
+            "📋 *Nueva solicitud de reserva — {$brand}*",
+            '',
+            "• *Servicio:* {$service}",
+            "• *Fecha:* {$date}",
+            "• *Comuna:* {$comuna}",
+            "• *Dirección:* {$address}",
+            "• *Teléfono cliente:* {$phone}",
+        ];
+
+        $history = $this->getHistoryContext($sessionId);
+
+        if ($history !== '') {
+            $lines[] = '';
+            $lines[] = '💬 *Resumen conversación:*';
+
+            foreach (explode("\n", $history) as $historyLine) {
+                $trimmed = trim($historyLine);
+
+                if ($trimmed !== '') {
+                    $lines[] = $trimmed;
+                }
+            }
+        }
+
+        $text = implode("\n", $lines);
+
+        $this->whatsAppGateway->send('', $text);
     }
 
     private function clearBookingFlowState(string $sessionId): void

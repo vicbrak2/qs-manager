@@ -40,6 +40,7 @@ use QS\Modules\Agents\Infrastructure\Wordpress\ChatbotFallbackResponder;
 use QS\Modules\Agents\Infrastructure\Wordpress\ChatbotShortcode;
 use QS\Modules\Agents\Infrastructure\Wordpress\ReindexAdminPage;
 use QS\Modules\Agents\Interfaces\Rest\ChatbotController;
+use QS\Modules\Agents\Interfaces\Rest\WhatsAppOptionsController;
 use QS\Modules\Bitacora\Application\CommandHandler\AddBitacoraNoteHandler;
 use QS\Modules\Bitacora\Application\CommandHandler\CreateBitacoraHandler;
 use QS\Modules\Bitacora\Application\CommandHandler\UpdateBitacoraHandler;
@@ -226,6 +227,7 @@ final class ServiceProvider
             ReindexAdminPage::class => autowire(),
             ChatbotShortcode::class => autowire(),
             ChatbotController::class => autowire(),
+            WhatsAppOptionsController::class => autowire(),
             QsCommand::class => autowire(),
             CliCommandRegistrar::class => autowire(),
             ActivationSetupHooks::class => autowire(),

@@ -8,11 +8,11 @@ use QS\Core\Logging\Logger;
 
 final class WhatsAppGateway
 {
-    private const OPTION_NAME = 'qs_n8n_whatsapp_url';
-    private const PHONE_OPTION_NAME = 'qs_n8n_whatsapp_phone';
-    private const ACTIONS_ENABLED_OPTION_NAME = 'qs_n8n_whatsapp_actions_enabled';
-    private const ALLOWED_PHONES_OPTION_NAME = 'qs_n8n_whatsapp_allowed_phones';
-    private const INSTANCE_OPTION_NAME = 'qs_n8n_whatsapp_instance';
+    public const OPTION_NAME = 'qs_n8n_whatsapp_url';
+    public const PHONE_OPTION_NAME = 'qs_n8n_whatsapp_phone';
+    public const ACTIONS_ENABLED_OPTION_NAME = 'qs_n8n_whatsapp_actions_enabled';
+    public const ALLOWED_PHONES_OPTION_NAME = 'qs_n8n_whatsapp_allowed_phones';
+    public const INSTANCE_OPTION_NAME = 'qs_n8n_whatsapp_instance';
 
     private string $webhookUrl;
     private string $defaultPhone;
