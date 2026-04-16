@@ -4,6 +4,10 @@ Esta capa permite operar varios chatbots con los mismos scripts. Cada sitio se d
 `config/chatbots/sites.json` y los secretos se resuelven desde variables de entorno o archivos
 locales ignorados por Git, como `.env` y `tools/n8n/.env.e2e`.
 
+El estado operativo completo del chatbot Qamiluna despues de la migracion a Evolution en Render,
+la validacion WhatsApp y la programacion de health/backups esta registrado en
+`docs/agents/chatbot-current-state.md`.
+
 ## Configuracion por sitio
 
 Cada entrada de `sites.json` declara:
