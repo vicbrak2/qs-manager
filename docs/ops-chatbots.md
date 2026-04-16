@@ -114,3 +114,4 @@ gh secret set RAILWAY_API_TOKEN
 - Los workflows versionados no deben incluir claves literales.
 - Preferir variables de entorno por sitio.
 - `N8N_ENCRYPTION_KEY` no se rota sin plan de migracion y backup previo.
+
