@@ -51,8 +51,18 @@ try {
             $expected = [string]$ctx.Site.evolutionExpectedState
             $current = ''
             for ($attempt = 1; $attempt -le [Math]::Max(1, $EvolutionRetries); $attempt++) {
-                $state = Invoke-RestMethod -Method Get -Uri "$($ctx.EvolutionBaseUrl)/instance/connectionState/$($ctx.EvolutionInstanceName)" -Headers $headers -TimeoutSec 60
-                $current = [string]$state.instance.state
+                try {
+                    $state = Invoke-RestMethod -Method Get -Uri "$($ctx.EvolutionBaseUrl)/instance/connectionState/$($ctx.EvolutionInstanceName)" -Headers $headers -TimeoutSec 30
+                    $current = [string]$state.instance.state
+                } catch {
+                    $instances = Invoke-RestMethod -Method Get -Uri "$($ctx.EvolutionBaseUrl)/instance/fetchInstances" -Headers $headers -TimeoutSec 30
+                    $instance = @($instances) | Where-Object { [string]$_.name -eq $ctx.EvolutionInstanceName } | Select-Object -First 1
+                    if ($instance) {
+                        $current = [string]$instance.connectionStatus
+                    } else {
+                        throw
+                    }
+                }
                 if ($current -eq $expected -or $attempt -eq $EvolutionRetries) {
                     break
                 }
