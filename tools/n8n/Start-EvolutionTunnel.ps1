@@ -7,7 +7,8 @@
     Uso:
       .\Start-EvolutionTunnel.ps1 [-RailwayToken "tu_token"]
 
-    Si no pasas -RailwayToken, lee la variable de entorno RAILWAY_TOKEN.
+    Si no pasas -RailwayToken, lee la variable de entorno RAILWAY_API_TOKEN
+    o RAILWAY_TOKEN para compatibilidad con tokens antiguos.
     El token se obtiene en: https://railway.com/account/tokens
 
     Deja esta ventana abierta mientras el bot esté activo.
@@ -18,7 +19,7 @@
     Descarga: https://github.com/cloudflare/cloudflared/releases/latest
 #>
 param(
-    [string]$RailwayToken = $env:RAILWAY_TOKEN,
+    [string]$RailwayToken = $(if ($env:RAILWAY_API_TOKEN) { $env:RAILWAY_API_TOKEN } else { $env:RAILWAY_TOKEN }),
     [string]$ProjectId    = '763a4ec5-1753-42a7-98eb-4c4e50c47ea3',
     [string]$ServiceId    = '7d61eb0d-6161-4881-a763-c874827d1c68',
     [string]$EnvId        = '8f508df4-e518-4be4-9991-fec1eedcd399',
@@ -51,9 +52,9 @@ function Update-RailwayEvolutionUrl {
 
     if ([string]::IsNullOrWhiteSpace($RailwayToken)) {
         Write-Host ""
-        Write-Host "[AVISO] RAILWAY_TOKEN no definido. Actualiza manualmente en Railway:" -ForegroundColor Yellow
+        Write-Host "[AVISO] RAILWAY_API_TOKEN no definido. Actualiza manualmente en Railway:" -ForegroundColor Yellow
         Write-Host "  EVOLUTION_API_BASE_URL = $PublicUrl" -ForegroundColor Cyan
-        Write-Host "  O corre: `$env:RAILWAY_TOKEN = 'tu_token'" -ForegroundColor Gray
+        Write-Host "  O corre: `$env:RAILWAY_API_TOKEN = 'tu_token'" -ForegroundColor Gray
         Write-Host "           .\Start-EvolutionTunnel.ps1" -ForegroundColor Gray
         return
     }
@@ -103,9 +104,9 @@ Write-Host "══════════════════════�
 Write-Host ""
 Write-Host "Iniciando tunnel cloudflared..." -ForegroundColor Yellow
 if ([string]::IsNullOrWhiteSpace($RailwayToken)) {
-    Write-Host "[!] RAILWAY_TOKEN no definido — URL deberá actualizarse manualmente." -ForegroundColor Yellow
+    Write-Host "[!] RAILWAY_API_TOKEN no definido — URL deberá actualizarse manualmente." -ForegroundColor Yellow
 } else {
-    Write-Host "[ok] RAILWAY_TOKEN presente — se actualizará Railway automáticamente." -ForegroundColor Green
+    Write-Host "[ok] RAILWAY_API_TOKEN presente — se actualizará Railway automáticamente." -ForegroundColor Green
 }
 Write-Host ""
 
