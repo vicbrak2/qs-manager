@@ -40,7 +40,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"message\": \"{{ $json.text }}\",\n  \"session_id\": \"whatsapp_{{ $json.phone }}\",\n  \"channel\": \"whatsapp\"\n}",
+        "jsonBody": "={{ { message: $json.text, session_id: 'whatsapp_' + $json.phone, channel: 'whatsapp' } }}",
         "options": {
           "timeout": 30000
         }
@@ -92,7 +92,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"phone\": \"{{ $json.phone }}\",\n  \"text\": \"{{ $json.text }}\",\n  \"esCritico\": false\n}",
+        "jsonBody": "={{ { phone: $json.phone, text: $json.text, esCritico: false, critical: false } }}",
         "options": {
           "timeout": 15000
         }

@@ -22,11 +22,14 @@ final class QuickReplyMatcher
     private array $rules;
 
     private float $threshold;
+    private ChatbotProfile $profile;
 
     public function __construct(
         private readonly ?string $configuredRulesJson = null,
-        private readonly ?string $configuredThreshold = null
+        private readonly ?string $configuredThreshold = null,
+        ?ChatbotProfile $profile = null
     ) {
+        $this->profile = $profile ?? ChatbotProfile::resolveDefault();
         $this->threshold = $this->resolveThreshold();
         $this->rules = array_merge($this->configuredRules(), $this->defaultRules());
     }
@@ -51,7 +54,7 @@ final class QuickReplyMatcher
             }
 
             $bestScore = $score;
-            $bestResponse = $rule['response'];
+            $bestResponse = $this->renderResponse($rule['response']);
         }
 
         return $bestResponse;
@@ -67,7 +70,7 @@ final class QuickReplyMatcher
         $sample = [
             [
                 'id' => 'whatsapp',
-                'response' => 'Si prefieres atencion directa, escribenos por WhatsApp: https://wa.me/56912345678',
+                'response' => 'Si prefieres atencion directa, escribenos por WhatsApp: {{whatsapp_url}}',
                 'examples' => [
                     'whatsapp',
                     'me das el whatsapp',
@@ -369,10 +372,15 @@ final class QuickReplyMatcher
      */
     private function defaultRules(): array
     {
+        $brandName = $this->profile->brandName();
+        $whatsappUrl = $this->profile->whatsappUrl();
+        $services = implode(', ', $this->profile->services());
+        $services = $services !== '' ? $services : 'los servicios principales';
+
         return [
             [
                 'id' => 'services',
-                'response' => 'Trabajamos principalmente con maquillaje social, peinado, combo social, novia civil y novia fiesta. Puedes revisar maquillaje social en https://qamilunastudio.com/servicios/maquillaje-social, combo social en https://qamilunastudio.com/servicios/combo-social-mp, novia civil en https://qamilunastudio.com/servicios/novia-civil-mp y novia fiesta en https://qamilunastudio.com/servicios/novia-fiesta-mp. Deseas reservar?',
+                'response' => sprintf('Trabajamos principalmente con %s. Deseas reservar?', $services),
                 'examples' => [
                     'servicios',
                     'que servicios tienen',
@@ -385,7 +393,7 @@ final class QuickReplyMatcher
             ],
             [
                 'id' => 'bridal_services',
-                'response' => 'Si, trabajamos tanto novia civil como novia fiesta con servicio integral. Puedes revisar novia civil en https://qamilunastudio.com/servicios/novia-civil-mp y novia fiesta en https://qamilunastudio.com/servicios/novia-fiesta-mp. Deseas reservar?',
+                'response' => sprintf('Si, en %s podemos orientarte con servicios para novia. Deseas reservar?', $brandName),
                 'examples' => [
                     'novia civil',
                     'novia fiesta',
@@ -398,7 +406,7 @@ final class QuickReplyMatcher
             ],
             [
                 'id' => 'prices',
-                'response' => 'Los valores dependen del tipo de servicio y la logistica. Para cotizar te recomiendo escribirnos directo por WhatsApp: https://wa.me/56912345678. Deseas reservar?',
+                'response' => sprintf('Los valores dependen del tipo de servicio y la logistica. Para cotizar te recomiendo escribirnos directo por WhatsApp: %s. Deseas reservar?', $whatsappUrl),
                 'examples' => [
                     'precios',
                     'precio',
@@ -439,7 +447,7 @@ final class QuickReplyMatcher
             ],
             [
                 'id' => 'workshops',
-                'response' => 'Para fechas disponibles y precios de nuestros talleres, por favor escríbenos directo a WhatsApp: https://wa.me/56912345678',
+                'response' => sprintf('Para fechas disponibles y precios de nuestros talleres, por favor escribenos directo a WhatsApp: %s', $whatsappUrl),
                 'examples' => [
                     'taller',
                     'talleres',
@@ -454,5 +462,13 @@ final class QuickReplyMatcher
                 'min_score' => 0.85,
             ],
         ];
+    }
+
+    private function renderResponse(string $response): string
+    {
+        return strtr($response, [
+            '{{brand_name}}' => $this->profile->brandName(),
+            '{{whatsapp_url}}' => $this->profile->whatsappUrl(),
+        ]);
     }
 }

@@ -199,21 +199,40 @@ POST /instance/restart/qamiluna-test
 
 ## Riesgos y mejoras pendientes
 
-- El prompt y algunas reglas siguen siendo especificas de Qamiluna.
-- El link de WhatsApp de cotizacion debe salir de configuracion por sitio, no del prompt.
-- La memoria esta repartida entre WordPress y n8n; conviene consolidar el estado conversacional.
-- `topK=2` puede ser poco para respuestas con mas contexto.
+- El prompt y algunas reglas siguen siendo especificas de Qamiluna si no se define un perfil por sitio.
 - El modelo gratuito de OpenRouter puede tener latencia o disponibilidad variable.
-- El inbound bridge todavia puede endurecer expresiones JSON para evitar interpolaciones fragiles.
-- El router hibrido deberia normalizar `critical` y `esCritico`.
 - Falta limpiar workflows temporales de QR si ya no se usan.
+
+## Perfil multi-sitio
+
+El chatbot ahora resuelve un perfil por sitio desde `config/chatbots/profiles.json`, o desde
+`QS_CHATBOT_PROFILE_JSON` si se quiere sobreescribir sin tocar codigo.
+
+Cada perfil define:
+
+- `site_id`
+- `brand_name`
+- `locale`
+- `tone`
+- `whatsapp_url`
+- `aliases`
+- `services`
+- `booking_fields`
+- `restrictions`
+- `vector_collection`
+- `retrieval_top_k`
+
+WordPress envia este perfil a n8n en cada request junto con `site_id`, `channel`,
+`vector_collection`, `retrieval_top_k`, `session_id` e historial curado.
+
+La memoria conversacional confiable queda en WordPress. n8n recibe el historial ya preparado en
+`body.history` y no mantiene memoria propia del agente para evitar duplicacion de estado.
 
 ## Siguiente fase propuesta
 
 Antes de optimizar respuestas, convertir el chatbot a un patron multi-sitio:
 
-1. Definir perfil por sitio: marca, tono, WhatsApp, servicios, reglas comerciales y restricciones.
-2. Inyectar ese perfil en WordPress/n8n sin hardcodear datos del cliente.
-3. Separar o filtrar la base vectorial por `site_id`.
-4. Unificar memoria y flujo de reserva en una sola fuente de verdad.
-5. Mejorar retrieval, prompts y fallback con pruebas repetibles por sitio.
+1. Reindexar contenido para asegurar metadata `site_id` en Qdrant.
+2. Medir calidad de respuestas con preguntas reales por canal.
+3. Ajustar perfiles por sitio antes de duplicar a nuevos clientes.
+4. Evaluar modelo pago/estable si el modelo gratuito presenta latencia.

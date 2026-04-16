@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace QS\Modules\Agents\Infrastructure\Wordpress;
 
+use QS\Modules\Agents\Infrastructure\Chatbot\ChatbotProfile;
 use WP_Error;
 
 final class ChatbotFallbackResponder
 {
     private const OPTION_NAME = 'qs_chatbot_fallback_whatsapp_url';
+    private ChatbotProfile $profile;
 
     public function __construct(
-        private readonly string $configuredWhatsappUrl = ''
+        private readonly string $configuredWhatsappUrl = '',
+        ?ChatbotProfile $profile = null
     ) {
+        $this->profile = $profile ?? ChatbotProfile::resolveDefault();
     }
 
     /**
@@ -56,6 +60,10 @@ final class ChatbotFallbackResponder
 
         if ($configuredValue !== '') {
             return $configuredValue;
+        }
+
+        if ($this->profile->whatsappUrl() !== '') {
+            return $this->profile->whatsappUrl();
         }
 
         if (

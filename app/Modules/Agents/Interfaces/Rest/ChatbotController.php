@@ -31,8 +31,9 @@ final class ChatbotController
         }
 
         $sessionId = $this->resolveSessionId($request);
+        $channel = $this->sanitizeChannel((string) $request->get_param('channel'));
 
-        $reply = $this->gateway->ask($message, $sessionId);
+        $reply = $this->gateway->ask($message, $sessionId, $channel);
 
         if (is_wp_error($reply)) {
             if ($this->shouldUseFallback($reply)) {
@@ -177,6 +178,14 @@ final class ChatbotController
         }
 
         return substr($sessionId, 0, 120);
+    }
+
+    private function sanitizeChannel(string $channel): string
+    {
+        $channel = strtolower(trim($channel));
+        $channel = preg_replace('/[^a-z0-9_\-]/', '', $channel);
+
+        return is_string($channel) && $channel !== '' ? substr($channel, 0, 40) : 'web';
     }
 
     /**

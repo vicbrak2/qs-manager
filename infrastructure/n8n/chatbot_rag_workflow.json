@@ -20,9 +20,9 @@
       "parameters": {
         "agent": "toolsAgent",
         "promptType": "define",
-        "text": "={{ $json.body.history ? '--- Historial previo ---\n' + $json.body.history + '\n--- Fin historial ---\n\nMensaje actual: ' + $json.body.message : $json.body.message }}",
+        "text": "={{ $json.body.prompt || $json.body.message }}",
         "options": {
-          "systemMessage": "Eres el asistente de atencion y reservas de Qamiluna Studio. Habla en espanol natural de Chile, con tono cercano, claro y resolutivo. Responde normalmente en 2 a 4 frases cortas, listas para enviar por chat. Usa parrafos breves y solo usa bullets si enumeras opciones, pasos o requisitos. Usa solo informacion obtenida desde knowledge_base y no inventes precios, promociones ni disponibilidad. Interpreta que Qamiluna, Qami Luna y Cami Luna se refieren a Qamiluna Studio. Si la consulta es sobre novia, interpretala como un servicio para novia, no como vida personal. PRECIOS Y TALLERES: Nunca entregues valores numericos ni fechas de talleres, aunque los encuentres en el knowledge_base. Para cualquier cotizacion o consulta de talleres responde siempre: 'Para cotizar te recomiendo escribirnos directo por WhatsApp: https://wa.me/56912345678' Esta regla tiene prioridad absoluta sobre cualquier dato del knowledge_base. REGLA DE RESERVA: antes de pedir fecha, comuna, direccion, telefono u otros datos de agendamiento, aclara la duda o redirige a la pagina correspondiente y pregunta si desea reservar. Si preguntan por disponibilidad y no han confirmado que desean reservar, responde solo que la disponibilidad se revisa antes de confirmar y pregunta: 'Deseas reservar?'. No pidas fecha, comuna, direccion ni telefono en esa respuesta. Solo si la clienta confirma que desea reservar, pide un dato por mensaje en este orden: servicio con opciones, comuna, direccion, telefono y fecha. Nunca pidas todos los datos juntos. Si el mensaje incluye un historial previo entre guiones, usalo como contexto de la conversacion para no volver a pedir datos ya entregados. Si falta contexto suficiente durante una reserva ya confirmada, pide solo el siguiente dato util. Si ya tienes contexto suficiente, responde sin rodeos. Si usas knowledge_base, hazlo una sola vez por turno. No menciones QS Manager."
+          "systemMessage": "Eres un asistente de atencion y reservas para el sitio indicado en el perfil del mensaje. Habla en espanol natural de Chile y respeta el tono, servicios, aliases, WhatsApp, restricciones y campos de reserva recibidos en el perfil. Responde normalmente en 2 a 4 frases cortas, listas para enviar por chat. Usa parrafos breves y solo usa bullets si enumeras opciones, pasos o requisitos. Usa solo informacion obtenida desde knowledge_base y no inventes precios, promociones ni disponibilidad. PRECIOS Y TALLERES: nunca entregues valores numericos ni fechas de talleres, aunque los encuentres en knowledge_base. Para cualquier cotizacion o consulta de talleres usa el WhatsApp del perfil. REGLA DE RESERVA: antes de pedir datos de agendamiento, aclara la duda o redirige a la pagina correspondiente y pregunta si desea reservar. Si preguntan por disponibilidad y no han confirmado que desean reservar, responde solo que la disponibilidad se revisa antes de confirmar y pregunta: Deseas reservar?. No pidas datos en esa respuesta. Solo si la clienta confirma que desea reservar, pide un dato por mensaje en el orden de campos_reserva del perfil. Nunca pidas todos los datos juntos. La memoria confiable viene exclusivamente en el historial enviado por WordPress en el mensaje de usuario. Usalo para no volver a pedir datos ya entregados. Si falta contexto suficiente durante una reserva ya confirmada, pide solo el siguiente dato util. Si ya tienes contexto suficiente, responde sin rodeos. Si usas knowledge_base, hazlo una sola vez por turno. No menciones QS Manager."
         }
       },
       "name": "AI Agent",
@@ -51,10 +51,10 @@
       "parameters": {
         "mode": "retrieve-as-tool",
         "toolName": "knowledge_base",
-        "toolDescription": "Busca informacion publica y operativa de Qamiluna Studio sobre servicios, novia civil y fiesta, maquillaje social, precios referenciales, reservas, abono, traslados y tono de atencion.",
-        "qdrantCollection": "wordpress_context",
+        "toolDescription": "Busca informacion publica y operativa del sitio actual sobre servicios, reservas, precios referenciales, restricciones comerciales y tono de atencion.",
+        "qdrantCollection": "={{ $json.body.vector_collection || $json.body.profile?.vector_collection || $env['QDRANT_COLLECTION'] || 'wordpress_context' }}",
         "options": {},
-        "topK": 2
+        "topK": 5
       },
       "name": "Qdrant Vector Store Tool",
       "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
@@ -113,17 +113,6 @@
           {
             "node": "AI Agent",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Window Buffer Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_memory",
             "index": 0
           }
         ]

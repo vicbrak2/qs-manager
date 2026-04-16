@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QS\Modules\Agents\Infrastructure\N8n;
 
 use QS\Core\Logging\Logger;
+use QS\Modules\Agents\Infrastructure\Chatbot\ChatbotProfile;
 use QS\Modules\Agents\Infrastructure\Qdrant\QdrantGateway;
 
 final class IngestGateway
@@ -13,11 +14,14 @@ final class IngestGateway
     private const MAX_ATTEMPTS = 5;
 
     private string $webhookUrl;
+    private ChatbotProfile $profile;
 
     public function __construct(
         private readonly Logger $logger,
-        private readonly QdrantGateway $qdrantGateway
+        private readonly QdrantGateway $qdrantGateway,
+        ?ChatbotProfile $profile = null
     ) {
+        $this->profile = $profile ?? ChatbotProfile::resolveDefault();
         $this->webhookUrl = $this->resolveWebhookUrl();
     }
 
@@ -65,6 +69,9 @@ final class IngestGateway
             'title'   => $title,
             'url'     => $url,
             'content' => $content,
+            'site_id' => $this->profile->siteId(),
+            'brand_name' => $this->profile->brandName(),
+            'vector_collection' => $this->profile->vectorCollection(),
         ]);
 
         if (! is_string($body)) {

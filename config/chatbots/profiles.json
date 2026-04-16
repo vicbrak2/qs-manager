@@ -1,0 +1,37 @@
+{
+  "profiles": [
+    {
+      "site_id": "qamiluna",
+      "brand_name": "Qamiluna Studio",
+      "locale": "es-CL",
+      "tone": "cercano, claro y resolutivo",
+      "whatsapp_url": "https://wa.me/56912345678",
+      "aliases": [
+        "Qamiluna",
+        "Qami Luna",
+        "Cami Luna"
+      ],
+      "services": [
+        "Maquillaje social",
+        "Peinado",
+        "Combo social maquillaje + peinado",
+        "Novia civil",
+        "Novia fiesta"
+      ],
+      "booking_fields": [
+        "servicio",
+        "comuna",
+        "direccion",
+        "telefono",
+        "fecha"
+      ],
+      "restrictions": [
+        "No inventar precios, promociones ni disponibilidad.",
+        "No entregar valores numericos ni fechas de talleres.",
+        "Enviar cotizaciones y consultas de talleres a WhatsApp."
+      ],
+      "vector_collection": "wordpress_context",
+      "retrieval_top_k": 5
+    }
+  ]
+}

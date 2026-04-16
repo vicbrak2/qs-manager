@@ -5,9 +5,17 @@ declare(strict_types=1);
 namespace QS\Modules\Agents\Infrastructure\Wordpress;
 
 use QS\Core\Contracts\HookableInterface;
+use QS\Modules\Agents\Infrastructure\Chatbot\ChatbotProfile;
 
 final class ChatbotShortcode implements HookableInterface
 {
+    private ChatbotProfile $profile;
+
+    public function __construct(?ChatbotProfile $profile = null)
+    {
+        $this->profile = $profile ?? ChatbotProfile::resolveDefault();
+    }
+
     public function register(): void
     {
         add_action('wp_enqueue_scripts', [$this, 'enqueueAssets']);
@@ -45,7 +53,7 @@ final class ChatbotShortcode implements HookableInterface
             'feedbackApiUrl' => esc_url(rest_url('qs/v1/agents/feedback')),
             'nonce'       => wp_create_nonce('wp_rest'),
             'placeholder' => __('Escribe tu mensaje...', 'qs-core'),
-            'botName'     => 'Qamiluna Studio',
+            'botName'     => $this->profile->brandName(),
             'errorMsg'    => __('Lo siento, hubo un problema. Intenta de nuevo.', 'qs-core'),
             'feedbackThanks' => __('Gracias por tu feedback.', 'qs-core'),
             'feedbackError' => __('No se pudo guardar tu feedback.', 'qs-core'),
@@ -55,7 +63,7 @@ final class ChatbotShortcode implements HookableInterface
     public function render(mixed $atts): string
     {
         $atts = shortcode_atts([
-            'title'       => 'Chat con Qamiluna Studio',
+            'title'       => 'Chat con ' . $this->profile->brandName(),
             'placeholder' => 'Escribe tu consulta...',
             'height'      => '480px',
         ], $atts, 'qs_chatbot');
@@ -74,7 +82,7 @@ final class ChatbotShortcode implements HookableInterface
             <div class="qs-chatbot-messages" data-qs-chatbot-messages role="log" aria-live="polite">
                 <div class="qs-chatbot-msg qs-chatbot-msg--bot">
                     <div class="qs-chatbot-bubble">
-                        <p class="qs-chatbot-block qs-chatbot-block--paragraph">¡Hola! Soy el asistente de Qamiluna Studio. ¿En qué puedo ayudarte hoy? 💄</p>
+                        <p class="qs-chatbot-block qs-chatbot-block--paragraph">¡Hola! Soy el asistente de <?php echo esc_html($this->profile->brandName()); ?>. ¿En qué puedo ayudarte hoy? 💄</p>
                     </div>
                 </div>
             </div>

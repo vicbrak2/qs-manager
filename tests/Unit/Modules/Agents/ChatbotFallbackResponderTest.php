@@ -24,7 +24,7 @@ final class ChatbotFallbackResponderTest extends TestCase
         self::assertStringContainsString('https://wa.me/56912345678', $payload['response']);
     }
 
-    public function testUnavailableResponseOmitsWhatsappUrlWhenMissing(): void
+    public function testUnavailableResponseUsesDefaultProfileWhatsappUrlWhenMissing(): void
     {
         $responder = new ChatbotFallbackResponder();
 
@@ -32,7 +32,7 @@ final class ChatbotFallbackResponderTest extends TestCase
 
         self::assertTrue($payload['success']);
         self::assertTrue($payload['fallback']);
-        self::assertNull($payload['whatsapp_url']);
+        self::assertSame('https://wa.me/56912345678', $payload['whatsapp_url']);
         self::assertSame('service_unavailable', $payload['fallback_reason']);
         self::assertStringContainsString('WhatsApp', $payload['response']);
     }

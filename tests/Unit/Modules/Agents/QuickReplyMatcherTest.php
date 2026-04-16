@@ -17,7 +17,7 @@ final class QuickReplyMatcherTest extends TestCase
         $reply = $matcher->match('que servicios tienen?');
 
         self::assertNotNull($reply);
-        self::assertStringContainsString('maquillaje social', $reply);
+        self::assertStringContainsString('Maquillaje social', $reply);
     }
 
     public function testMatchesReservationRuleUsingFuzzySimilarity(): void
@@ -37,7 +37,7 @@ final class QuickReplyMatcherTest extends TestCase
         $reply = $matcher->match('Cual es la diferencia entre novia civil y novia fiesta si quiero maquillarme con ustedes en Santiago?');
 
         self::assertNotNull($reply);
-        self::assertStringContainsString('novia civil como novia fiesta', $reply);
+        self::assertStringContainsString('servicios para novia', $reply);
         self::assertStringContainsString('Deseas reservar?', $reply);
     }
 

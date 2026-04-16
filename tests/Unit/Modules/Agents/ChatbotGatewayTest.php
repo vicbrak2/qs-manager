@@ -242,7 +242,7 @@ namespace QS\Tests\Unit\Modules\Agents {
             $first  = $gateway->ask('consulta unica sin historial previo', 'session-fresh');
 
             // Manually reset history so the second call sees the same conversation state.
-            ChatbotGatewayWordpressStubs::clearTransient('qs_chat_hist_' . md5('session-fresh'));
+            ChatbotGatewayWordpressStubs::clearTransient('qs_chat_hist_' . md5('qamiluna|session-fresh'));
 
             $cached = $gateway->ask('consulta unica sin historial previo', 'session-fresh');
 

@@ -13,6 +13,7 @@ la validacion WhatsApp y la programacion de health/backups esta registrado en
 Cada entrada de `sites.json` declara:
 
 - URL publica de WordPress.
+- Perfil conversacional asociado (`chatbotProfileId`).
 - Variables de entorno donde viven `N8N_BASE_URL`, `N8N_API_KEY`, `EVOLUTION_API_BASE_URL`,
   `EVOLUTION_API_KEY` y `EVOLUTION_INSTANCE_NAME`.
 - Servicios Railway asociados a n8n y Postgres.
@@ -24,6 +25,27 @@ Para agregar otro cliente:
 2. Cambia `id`, `label`, `wordpressUrl` y nombres de servicios si aplica.
 3. Agrega los secretos en `.env`, en un archivo local equivalente o en el entorno del proceso.
 4. Ejecuta los comandos usando `-Site nuevo-id`.
+
+## Perfil conversacional por sitio
+
+La personalidad y reglas del chatbot viven en `config/chatbots/profiles.json`. Para crear un
+nuevo chatbot, agrega un perfil con el mismo `site_id` usado en `sites.json`.
+
+Campos principales:
+
+- `brand_name`: nombre visible de la marca.
+- `tone`: tono que n8n debe usar.
+- `whatsapp_url`: URL usada para cotizaciones, talleres y fallback.
+- `aliases`: nombres alternativos que el bot debe tratar como la misma marca.
+- `services`: opciones que se muestran en el flujo de reserva.
+- `booking_fields`: orden de datos que se piden al reservar.
+- `restrictions`: reglas comerciales que el modelo no debe romper.
+- `vector_collection`: coleccion Qdrant del sitio.
+- `retrieval_top_k`: cantidad de resultados RAG a recuperar.
+
+En produccion se puede sobreescribir el perfil sin commit usando `QS_CHATBOT_PROFILE_JSON`.
+Si hay varios perfiles versionados, `QS_CHATBOT_SITE_ID` selecciona cual usar; por defecto usa
+`qamiluna`.
 
 ## Health check
 

@@ -80,7 +80,7 @@
                                          "conditions":  {
                                                             "boolean":  [
                                                                             {
-                                                                                "value1":  "={{ $json.esCritico === true || $json.body?.esCritico === true }}",
+                                                                                "value1":  "={{ [true, 'true', 1, '1', 'yes', 'si', 'sí'].includes($json.esCritico ?? $json.critical ?? $json.body?.esCritico ?? $json.body?.critical ?? false) }}",
                                                                                 "value2":  true
                                                                             }
                                                                         ]

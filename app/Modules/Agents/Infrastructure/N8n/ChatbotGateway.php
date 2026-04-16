@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QS\Modules\Agents\Infrastructure\N8n;
 
+use QS\Modules\Agents\Infrastructure\Chatbot\ChatbotProfile;
 use QS\Modules\Agents\Infrastructure\Chatbot\QuickReplyMatcher;
 use WP_Error;
 
@@ -17,10 +18,13 @@ final class ChatbotGateway
     private const BOOKING_FLOW_TTL = 3600; // 1 hour
 
     private string $webhookUrl;
+    private ChatbotProfile $profile;
 
     public function __construct(
-        private readonly QuickReplyMatcher $quickReplyMatcher
+        private readonly QuickReplyMatcher $quickReplyMatcher,
+        ?ChatbotProfile $profile = null
     ) {
+        $this->profile = $profile ?? ChatbotProfile::resolveDefault();
         $this->webhookUrl = $this->resolveWebhookUrl();
     }
 
@@ -28,7 +32,7 @@ final class ChatbotGateway
      * Envía un mensaje al agente de n8n y devuelve la respuesta en texto plano.
      * Retorna null si n8n no está disponible o responde con error.
      */
-    public function ask(string $message, string $sessionId): string|WP_Error
+    public function ask(string $message, string $sessionId, string $channel = 'web'): string|WP_Error
     {
         $message = $this->truncateInput($message);
 
@@ -68,8 +72,15 @@ final class ChatbotGateway
 
         $body = wp_json_encode([
             'message'    => $rewrittenMessage,
+            'prompt'     => $this->buildAgentPrompt($rewrittenMessage, $historyContext),
             'session_id' => $sessionId,
             'history'    => $historyContext,
+            'channel'    => $this->sanitizeChannel($channel),
+            'site_id'    => $this->profile->siteId(),
+            'profile'    => $this->profile->toArray(),
+            'vector_collection' => $this->profile->vectorCollection(),
+            'retrieval_top_k' => $this->profile->retrievalTopK(),
+            'memory_source' => 'wordpress',
         ]);
 
         if (! is_string($body)) {
@@ -124,6 +135,11 @@ final class ChatbotGateway
         return $this->webhookUrl;
     }
 
+    public function profile(): ChatbotProfile
+    {
+        return $this->profile;
+    }
+
     private function truncateInput(string $message): string
     {
         $trimmed = trim($message);
@@ -139,19 +155,55 @@ final class ChatbotGateway
         return substr($trimmed, 0, self::MAX_INPUT_CHARS);
     }
 
+    private function sanitizeChannel(string $channel): string
+    {
+        $channel = strtolower(trim($channel));
+        $channel = preg_replace('/[^a-z0-9_\-]/', '', $channel);
+
+        return is_string($channel) && $channel !== '' ? substr($channel, 0, 40) : 'web';
+    }
+
+    private function buildAgentPrompt(string $message, string $history): string
+    {
+        $profile = $this->profile->toArray();
+        $lines = [
+            '--- Perfil del sitio ---',
+            'site_id: ' . $profile['site_id'],
+            'marca: ' . $profile['brand_name'],
+            'locale: ' . $profile['locale'],
+            'tono: ' . $profile['tone'],
+            'whatsapp: ' . $profile['whatsapp_url'],
+            'aliases: ' . implode(', ', $profile['aliases']),
+            'servicios: ' . implode(', ', $profile['services']),
+            'campos_reserva: ' . implode(', ', $profile['booking_fields']),
+            'restricciones: ' . implode(' ', $profile['restrictions']),
+            '--- Fin perfil ---',
+        ];
+
+        if ($history !== '') {
+            $lines[] = '--- Historial previo curado por WordPress ---';
+            $lines[] = $history;
+            $lines[] = '--- Fin historial ---';
+        }
+
+        $lines[] = 'Mensaje actual: ' . $message;
+
+        return implode("\n", $lines);
+    }
+
     private function replyCacheKey(string $sessionId, string $message, string $history = ''): string
     {
-        return 'qs_n8n_reply_' . md5($sessionId . '|' . $message . '|' . $history);
+        return 'qs_n8n_reply_' . md5($this->profile->siteId() . '|' . $sessionId . '|' . $message . '|' . $history);
     }
 
     private function historyKey(string $sessionId): string
     {
-        return 'qs_chat_hist_' . md5($sessionId);
+        return 'qs_chat_hist_' . md5($this->profile->siteId() . '|' . $sessionId);
     }
 
     private function bookingFlowKey(string $sessionId): string
     {
-        return 'qs_booking_flow_' . md5($sessionId);
+        return 'qs_booking_flow_' . md5($this->profile->siteId() . '|' . $sessionId);
     }
 
     private function appendToHistory(string $sessionId, string $userMsg, string $botReply): void
@@ -365,7 +417,13 @@ final class ChatbotGateway
 
     private function bookingServicePrompt(): string
     {
-        return "Perfecto, para reservar lo vemos paso a paso.\nPrimero dime que servicio necesitas:\n- Maquillaje social\n- Peinado\n- Combo social maquillaje + peinado\n- Novia civil\n- Novia fiesta";
+        $services = $this->profile->services();
+
+        if ($services === []) {
+            return 'Perfecto, para reservar lo vemos paso a paso. Primero dime que servicio necesitas.';
+        }
+
+        return "Perfecto, para reservar lo vemos paso a paso.\nPrimero dime que servicio necesitas:\n- " . implode("\n- ", $services);
     }
 
     private function resolveWebhookUrl(): string
@@ -414,23 +472,27 @@ final class ChatbotGateway
 
         $normalized = $this->normalizeText($message);
 
-        // Normaliza alias frecuentes para no perder contexto por variaciones de escritura.
-        $normalized = preg_replace('/\b(cami\s*luna|qami\s*luna|camiluna)\b/u', 'qamiluna studio', $normalized) ?? $normalized;
+        $brandName = $this->profile->brandName();
+        $aliasPattern = $this->aliasPattern();
+
+        if ($aliasPattern !== '') {
+            $normalized = preg_replace($aliasPattern, $this->normalizeText($brandName), $normalized) ?? $normalized;
+        }
 
         return match (true) {
             preg_match('/^(reserva|reservas|agendar|agenda|disponibilidad)$/u', $normalized) === 1
-                => 'Quiero informacion sobre reservas, disponibilidad, abono y como agendar en Qamiluna Studio.',
+                => sprintf('Quiero informacion sobre reservas, disponibilidad, abono y como agendar en %s.', $brandName),
             preg_match('/^(precio|precios|valor|valores|cuanto sale|cuanto cuesta)$/u', $normalized) === 1
-                => 'Quiero informacion sobre precios referenciales y como cotizar en Qamiluna Studio.',
+                => sprintf('Quiero informacion sobre precios referenciales y como cotizar en %s.', $brandName),
             preg_match('/^(servicios|que servicios tienen|que servicios ofrecen|listalos|listalas|lista los servicios|lista las opciones|enumera los servicios|cuales son los servicios|cu[aá]les son los servicios)$/u', $normalized) === 1
-                => 'Quiero una lista clara de los servicios principales de Qamiluna Studio.',
+                => sprintf('Quiero una lista clara de los servicios principales de %s.', $brandName),
             preg_match('/^(novia|novias|novia civil|novia fiesta)$/u', $normalized) === 1
-                => 'Quiero informacion sobre servicios para novia civil y novia fiesta en Qamiluna Studio.',
-            preg_match('/^(qamiluna|qamiluna studio|cami luna|qami luna|estudio)$/u', $normalized) === 1
-                => 'Quiero una descripcion breve de Qamiluna Studio y sus servicios principales.',
-            preg_match('/^(que es qamiluna studio|que es qamiluna|que es cami luna|hablame sobre el estudio|hablame del estudio|pasame informacion|informacion|info)$/u', $normalized) === 1
-                => 'Quiero una descripcion breve de Qamiluna Studio, sus servicios principales y como funciona la atencion.',
-            default => preg_replace('/\b(cami\s*luna|qami\s*luna|camiluna)\b/ui', 'Qamiluna Studio', $message) ?? $message,
+                => sprintf('Quiero informacion sobre servicios para novia en %s.', $brandName),
+            $this->isBrandOnlyQuery($normalized)
+                => sprintf('Quiero una descripcion breve de %s y sus servicios principales.', $brandName),
+            preg_match('/^(hablame sobre el estudio|hablame del estudio|pasame informacion|informacion|info)$/u', $normalized) === 1
+                => sprintf('Quiero una descripcion breve de %s, sus servicios principales y como funciona la atencion.', $brandName),
+            default => $this->normalizeAliasesInOriginalMessage($message),
         };
     }
 
@@ -464,6 +526,54 @@ final class ChatbotGateway
         $normalized = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $normalized) ?? $normalized;
 
         return trim((string) preg_replace('/\s+/', ' ', $normalized));
+    }
+
+    private function aliasPattern(): string
+    {
+        $aliases = array_merge([$this->profile->brandName()], $this->profile->aliases());
+        $patterns = [];
+
+        foreach ($aliases as $alias) {
+            $normalized = $this->normalizeText($alias);
+
+            if ($normalized === '') {
+                continue;
+            }
+
+            $parts = preg_split('/\s+/u', $normalized) ?: [];
+            $parts = array_values(array_filter($parts, static fn (string $part): bool => $part !== ''));
+
+            if ($parts === []) {
+                continue;
+            }
+
+            $patterns[] = implode('\s*', array_map(static fn (string $part): string => preg_quote($part, '/'), $parts));
+        }
+
+        $patterns = array_values(array_unique($patterns));
+
+        return $patterns !== [] ? '/\b(' . implode('|', $patterns) . ')\b/u' : '';
+    }
+
+    private function isBrandOnlyQuery(string $normalized): bool
+    {
+        $brand = $this->normalizeText($this->profile->brandName());
+        $aliases = array_map(fn (string $alias): string => $this->normalizeText($alias), $this->profile->aliases());
+        $candidates = array_values(array_filter(array_unique(array_merge([$brand, 'estudio'], $aliases))));
+
+        return in_array($normalized, $candidates, true)
+            || in_array($normalized, array_map(static fn (string $candidate): string => 'que es ' . $candidate, $candidates), true);
+    }
+
+    private function normalizeAliasesInOriginalMessage(string $message): string
+    {
+        $aliasPattern = $this->aliasPattern();
+
+        if ($aliasPattern === '') {
+            return $message;
+        }
+
+        return preg_replace($aliasPattern . 'i', $this->profile->brandName(), $message) ?? $message;
     }
 
     /**

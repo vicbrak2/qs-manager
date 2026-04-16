@@ -5,16 +5,20 @@ declare(strict_types=1);
 namespace QS\Modules\Agents\Infrastructure\Qdrant;
 
 use QS\Core\Logging\Logger;
+use QS\Modules\Agents\Infrastructure\Chatbot\ChatbotProfile;
 
 final class QdrantGateway
 {
     private const QDRANT_URL_OPTION = 'qs_qdrant_url';
     private const QDRANT_API_KEY_OPTION = 'qs_qdrant_api_key';
     private const COLLECTION_NAME = 'wordpress_context';
+    private ChatbotProfile $profile;
 
     public function __construct(
-        private readonly Logger $logger
+        private readonly Logger $logger,
+        ?ChatbotProfile $profile = null
     ) {
+        $this->profile = $profile ?? ChatbotProfile::resolveDefault();
     }
 
     /**
@@ -60,6 +64,14 @@ final class QdrantGateway
         }
 
         $filter = [
+            'must' => [
+                [
+                    'key' => 'metadata.site_id',
+                    'match' => [
+                        'value' => $this->profile->siteId(),
+                    ],
+                ],
+            ],
             'should' => array_map(
                 static fn (string $postId): array => [
                     'key' => 'metadata.post_id',
@@ -74,7 +86,7 @@ final class QdrantGateway
         $countResult = $this->countByFilter($filter);
         $deleteResult = $this->request(
             'POST',
-            '/collections/' . self::COLLECTION_NAME . '/points/delete?wait=true',
+            '/collections/' . $this->collectionName() . '/points/delete?wait=true',
             ['filter' => $filter]
         );
 
@@ -100,6 +112,16 @@ final class QdrantGateway
                 'limit' => 1000,
                 'with_payload' => false,
                 'with_vector' => false,
+                'filter' => [
+                    'must' => [
+                        [
+                            'key' => 'metadata.site_id',
+                            'match' => [
+                                'value' => $this->profile->siteId(),
+                            ],
+                        ],
+                    ],
+                ],
             ];
 
             if ($offset !== null) {
@@ -108,7 +130,7 @@ final class QdrantGateway
 
             $result = $this->request(
                 'POST',
-                '/collections/' . self::COLLECTION_NAME . '/points/scroll',
+                '/collections/' . $this->collectionName() . '/points/scroll',
                 $body
             );
 
@@ -159,7 +181,7 @@ final class QdrantGateway
 
         $deleteResult = $this->request(
             'POST',
-            '/collections/' . self::COLLECTION_NAME . '/points/delete?wait=true',
+            '/collections/' . $this->collectionName() . '/points/delete?wait=true',
             ['points' => array_values($pointIds)]
         );
 
@@ -182,7 +204,7 @@ final class QdrantGateway
      */
     private function ensurePostIdIndex(): array
     {
-        $collectionResult = $this->request('GET', '/collections/' . self::COLLECTION_NAME);
+        $collectionResult = $this->request('GET', '/collections/' . $this->collectionName());
 
         if (! $collectionResult['ok']) {
             return $collectionResult;
@@ -193,7 +215,10 @@ final class QdrantGateway
             ? $decoded['result']['payload_schema']
             : [];
 
-        if (array_key_exists('metadata.post_id', $schema)) {
+        $postIdIndexed = array_key_exists('metadata.post_id', $schema);
+        $siteIdIndexed = array_key_exists('metadata.site_id', $schema);
+
+        if ($postIdIndexed && $siteIdIndexed) {
             return [
                 'ok' => true,
                 'status_code' => $collectionResult['status_code'],
@@ -202,11 +227,33 @@ final class QdrantGateway
             ];
         }
 
-        return $this->request(
+        $postIdResult = $postIdIndexed ? [
+            'ok' => true,
+            'status_code' => $collectionResult['status_code'],
+            'error' => null,
+            'response_body' => $collectionResult['response_body'],
+        ] : $this->request(
             'PUT',
-            '/collections/' . self::COLLECTION_NAME . '/index?wait=true',
+            '/collections/' . $this->collectionName() . '/index?wait=true',
             [
                 'field_name' => 'metadata.post_id',
+                'field_schema' => 'keyword',
+            ]
+        );
+
+        if (! $postIdResult['ok']) {
+            return $postIdResult;
+        }
+
+        if ($siteIdIndexed) {
+            return $postIdResult;
+        }
+
+        return $this->request(
+            'PUT',
+            '/collections/' . $this->collectionName() . '/index?wait=true',
+            [
+                'field_name' => 'metadata.site_id',
                 'field_schema' => 'keyword',
             ]
         );
@@ -220,7 +267,7 @@ final class QdrantGateway
     {
         $result = $this->request(
             'POST',
-            '/collections/' . self::COLLECTION_NAME . '/points/count',
+            '/collections/' . $this->collectionName() . '/points/count',
             [
                 'filter' => $filter,
                 'exact' => true,
@@ -379,6 +426,11 @@ final class QdrantGateway
         }
 
         return '';
+    }
+
+    private function collectionName(): string
+    {
+        return $this->profile->vectorCollection() !== '' ? $this->profile->vectorCollection() : self::COLLECTION_NAME;
     }
 
     /**

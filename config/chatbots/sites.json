@@ -3,6 +3,7 @@
     {
       "id": "qamiluna",
       "label": "Qamiluna Studio",
+      "chatbotProfileId": "qamiluna",
       "wordpressUrl": "https://qamilunastudio.com",
       "n8nBaseUrlEnv": "N8N_BASE_URL",
       "n8nApiKeyEnv": "N8N_API_KEY",
