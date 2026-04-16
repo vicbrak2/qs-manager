@@ -79,6 +79,35 @@ var/backups/chatbots/{site}/postgres/{timestamp}/
 
 Ejecuta health check, export de workflows activos y backup de Postgres.
 
+## Programacion en GitHub Actions
+
+Hay dos workflows programados:
+
+- `.github/workflows/chatbot-health.yml`: cada 30 minutos ejecuta el health check.
+  Si falla, abre o comenta un issue con label `ops-alert`.
+- `.github/workflows/chatbot-backup.yml`: una vez al dia ejecuta snapshot completo y sube
+  los backups como artifact privado del workflow.
+
+Secrets requeridos en GitHub:
+
+- `N8N_API_KEY` o `N8N_QAMILUNA_INSTANCE`
+- `EVOLUTION_API_KEY`
+- `RAILWAY_API_TOKEN` para backups de Postgres
+
+Variables opcionales en GitHub, porque Qamiluna tiene defaults en los workflows:
+
+- `N8N_BASE_URL`
+- `EVOLUTION_API_BASE_URL`
+- `EVOLUTION_INSTANCE_NAME`
+
+Si GitHub CLI tiene permisos de administracion de Actions secrets:
+
+```powershell
+gh secret set N8N_API_KEY
+gh secret set EVOLUTION_API_KEY
+gh secret set RAILWAY_API_TOKEN
+```
+
 ## Politica de secretos
 
 - No commitear `.env`, `.env.e2e`, dumps ni exports.

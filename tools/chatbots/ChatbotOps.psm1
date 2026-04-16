@@ -1,7 +1,7 @@
 Set-StrictMode -Version Latest
 
 function Get-ChatbotRepoRoot {
-    $root = Resolve-Path (Join-Path $PSScriptRoot '..\..')
+    $root = Resolve-Path (Join-Path (Join-Path $PSScriptRoot '..') '..')
     return $root.Path
 }
 
@@ -41,7 +41,7 @@ function Get-ChatbotConfig {
 
     $repoRoot = Get-ChatbotRepoRoot
     if ($ConfigPath -eq '') {
-        $ConfigPath = Join-Path $repoRoot 'config\chatbots\sites.json'
+        $ConfigPath = Join-Path (Join-Path (Join-Path $repoRoot 'config') 'chatbots') 'sites.json'
     }
 
     if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf)) {
@@ -113,7 +113,7 @@ function New-ChatbotOpsContext {
 
     $repoRoot = Get-ChatbotRepoRoot
     if ($EnvFile -eq '') {
-        $EnvFile = Join-Path $repoRoot 'tools\n8n\.env.e2e'
+        $EnvFile = Join-Path (Join-Path (Join-Path $repoRoot 'tools') 'n8n') '.env.e2e'
     }
     if ($RootEnvFile -eq '') {
         $RootEnvFile = Join-Path $repoRoot '.env'
@@ -153,7 +153,7 @@ function New-ChatbotBackupPath {
     )
 
     $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-    $path = Join-Path $Context.RepoRoot "var\backups\chatbots\$($Context.Site.id)\$Kind\$timestamp"
+    $path = Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $Context.RepoRoot 'var') 'backups') 'chatbots') $Context.Site.id) (Join-Path $Kind $timestamp)
     New-Item -ItemType Directory -Force -Path $path | Out-Null
     return $path
 }

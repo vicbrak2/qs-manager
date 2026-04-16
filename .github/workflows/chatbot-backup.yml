@@ -1,0 +1,52 @@
+name: Chatbot Backups
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+    inputs:
+      site:
+        description: 'Site id from config/chatbots/sites.json'
+        required: false
+        default: qamiluna
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SITE_ID: ${{ github.event.inputs.site || 'qamiluna' }}
+      N8N_BASE_URL: ${{ vars.N8N_BASE_URL || 'https://n8n.qamilunastudio.com' }}
+      N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+      N8N_QAMILUNA_INSTANCE: ${{ secrets.N8N_QAMILUNA_INSTANCE }}
+      EVOLUTION_API_BASE_URL: ${{ vars.EVOLUTION_API_BASE_URL || 'https://qamiluna-evolution-api.onrender.com' }}
+      EVOLUTION_API_KEY: ${{ secrets.EVOLUTION_API_KEY }}
+      EVOLUTION_INSTANCE_NAME: ${{ vars.EVOLUTION_INSTANCE_NAME || 'qamiluna-test' }}
+      RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Run chatbot snapshot
+        shell: pwsh
+        run: ./tools/chatbots/Invoke-ChatbotOpsSnapshot.ps1 -Site $env:SITE_ID
+
+      - name: Upload chatbot backups
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: chatbot-backups-${{ env.SITE_ID }}-${{ github.run_id }}
+          path: var/backups/chatbots/${{ env.SITE_ID }}/
+          retention-days: 30
