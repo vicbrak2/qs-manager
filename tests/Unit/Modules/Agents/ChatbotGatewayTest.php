@@ -205,9 +205,19 @@ namespace QS\Tests\Unit\Modules\Agents {
             ChatbotGatewayWordpressStubs::reset();
         }
 
+        private function makeChatbotGateway(): ChatbotGateway
+        {
+            $whatsApp = new WhatsAppGateway(new Logger(QS_CORE_ROOT_DIR, new PluginConfig([
+                'paths' => ['logs' => 'var/tmp'],
+                'logging' => ['file' => 'test.log'],
+            ])));
+
+            return new ChatbotGateway(new QuickReplyMatcher(), $whatsApp);
+        }
+
         public function testCacheIsScopedPerSessionId(): void
         {
-            $gateway = new ChatbotGateway(new QuickReplyMatcher());
+            $gateway = $this->makeChatbotGateway();
 
             ChatbotGatewayWordpressStubs::queueRemoteResponse([
                 'response' => ['code' => 200],
@@ -229,7 +239,7 @@ namespace QS\Tests\Unit\Modules\Agents {
 
         public function testCacheHitWhenSameSessionAndSameConversationState(): void
         {
-            $gateway = new ChatbotGateway(new QuickReplyMatcher());
+            $gateway = $this->makeChatbotGateway();
 
             ChatbotGatewayWordpressStubs::queueRemoteResponse([
                 'response' => ['code' => 200],
@@ -253,7 +263,7 @@ namespace QS\Tests\Unit\Modules\Agents {
 
         public function testAskTruncatesLongInputBeforeSendingToN8n(): void
         {
-            $gateway = new ChatbotGateway(new QuickReplyMatcher());
+            $gateway = $this->makeChatbotGateway();
 
             ChatbotGatewayWordpressStubs::queueRemoteResponse([
                 'response' => ['code' => 200],
@@ -276,7 +286,7 @@ namespace QS\Tests\Unit\Modules\Agents {
 
         public function testBookingFlowAsksForOneFieldAtATimeAfterExplicitReservationIntent(): void
         {
-            $gateway = new ChatbotGateway(new QuickReplyMatcher());
+            $gateway = $this->makeChatbotGateway();
 
             $first = $gateway->ask('quiero reservar una hora', 'session-booking');
             $second = $gateway->ask('Maquillaje social', 'session-booking');
@@ -302,7 +312,7 @@ namespace QS\Tests\Unit\Modules\Agents {
 
         public function testAffirmativeReplyStartsBookingFlowOnlyAfterBotAskedReservationIntent(): void
         {
-            $gateway = new ChatbotGateway(new QuickReplyMatcher());
+            $gateway = $this->makeChatbotGateway();
 
             $reply = $gateway->ask('precios', 'session-price');
             $confirmation = $gateway->ask('si', 'session-price');
