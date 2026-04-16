@@ -150,7 +150,7 @@
                                                               },
                                          "sendBody":  true,
                                          "specifyBody":  "json",
-                                         "jsonBody":  "{\n  \"number\": \"{{ $json.phone || $json.body?.phone }}\",\n  \"text\": \"{{ $json.text || $json.body?.text }}\"\n}",
+                                         "jsonBody":  "={{ { number: $json.phone || $json.body?.phone, text: $json.text || $json.body?.text } }}",
                                          "options":  {
 
                                                      }
