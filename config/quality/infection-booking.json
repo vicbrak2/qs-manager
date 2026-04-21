@@ -8,6 +8,7 @@
   "phpUnit": {
     "configDir": "../.."
   },
+  "testFrameworkOptions": "--testsuite=Unit",
   "logs": {
     "text": "../../tools/mutation/reports/infection-booking.log",
     "summary": "../../tools/mutation/reports/infection-booking-summary.log"

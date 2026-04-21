@@ -41,7 +41,6 @@ final class Logger
     public function log(LogLevel $level, string $message): void
     {
         $entry = sprintf('[%s] [%s] %s', gmdate('c'), strtoupper($level->value), $message);
-        error_log($entry);
         @file_put_contents($this->logFile, $entry . PHP_EOL, FILE_APPEND);
     }
 }
