@@ -32,7 +32,9 @@ final class ChatbotFallbackResponderTest extends TestCase
 
         self::assertTrue($payload['success']);
         self::assertTrue($payload['fallback']);
-        self::assertSame('https://wa.me/56912345678', $payload['whatsapp_url']);
+        // Profile is the lowest-priority fallback in resolveWhatsappUrl(); falls through
+        // here because no constructor value, WP option, env var, or constant is set.
+        self::assertSame('https://wa.me/56950172974', $payload['whatsapp_url']);
         self::assertSame('service_unavailable', $payload['fallback_reason']);
         self::assertStringContainsString('WhatsApp', $payload['response']);
     }

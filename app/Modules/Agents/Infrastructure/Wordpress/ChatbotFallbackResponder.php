@@ -54,6 +54,14 @@ final class ChatbotFallbackResponder
         return $this->resolveWhatsappUrl();
     }
 
+    /**
+     * Resolution order (highest to lowest priority):
+     *   1. $configuredWhatsappUrl (constructor injection — explicit override for tests/DI)
+     *   2. WP option "qs_chatbot_fallback_whatsapp_url" (admin UI, no deploy required)
+     *   3. Env var QS_CHATBOT_FALLBACK_WHATSAPP_URL (devops / container-level override)
+     *   4. Constant QS_CHATBOT_FALLBACK_WHATSAPP_URL (wp-config.php hardcoded override)
+     *   5. Profile (config/chatbots/profiles.json — per-site default)
+     */
     private function resolveWhatsappUrl(): string
     {
         $configuredValue = trim($this->configuredWhatsappUrl);
@@ -62,8 +70,18 @@ final class ChatbotFallbackResponder
             return $configuredValue;
         }
 
-        if ($this->profile->whatsappUrl() !== '') {
-            return $this->profile->whatsappUrl();
+        if (function_exists('get_option')) {
+            $optionValue = get_option(self::OPTION_NAME, '');
+
+            if (is_string($optionValue) && trim($optionValue) !== '') {
+                return trim($optionValue);
+            }
+        }
+
+        $envValue = getenv('QS_CHATBOT_FALLBACK_WHATSAPP_URL');
+
+        if (is_string($envValue) && trim($envValue) !== '') {
+            return trim($envValue);
         }
 
         if (
@@ -74,18 +92,10 @@ final class ChatbotFallbackResponder
             return trim(QS_CHATBOT_FALLBACK_WHATSAPP_URL);
         }
 
-        $envValue = getenv('QS_CHATBOT_FALLBACK_WHATSAPP_URL');
-
-        if (is_string($envValue) && trim($envValue) !== '') {
-            return trim($envValue);
+        if ($this->profile->whatsappUrl() !== '') {
+            return $this->profile->whatsappUrl();
         }
 
-        if (! function_exists('get_option')) {
-            return '';
-        }
-
-        $optionValue = get_option(self::OPTION_NAME, '');
-
-        return is_string($optionValue) ? trim($optionValue) : '';
+        return '';
     }
 }
