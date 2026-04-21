@@ -6,9 +6,9 @@
     ]
   },
   "phpUnit": {
-    "configDir": "../..",
-    "testFrameworkOptions": "--testsuite=Unit"
+    "configDir": "../.."
   },
+  "testFrameworkOptions": "--testsuite=Unit",
   "logs": {
     "text": "../../tools/mutation/reports/infection-finance.log",
     "summary": "../../tools/mutation/reports/infection-finance-summary.log"
