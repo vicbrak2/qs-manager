@@ -90,7 +90,7 @@ jobs:
 
   deploy_n8n:
     runs-on: ubuntu-latest
-    needs: package
+    needs: quality
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
