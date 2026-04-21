@@ -105,7 +105,8 @@ async function main() {
 async function upsertWorkflow(payload, existingWorkflows) {
     const existing = pickExistingWorkflow(existingWorkflows, payload.name);
     const action = existing ? 'Updating' : 'Creating';
-    console.log(`${action} workflow "${payload.name}"`);
+    const shouldBeActive = payload.active !== false;
+    console.log(`${action} workflow "${payload.name}" (active: ${shouldBeActive})`);
 
     if (config.dryRun) {
         console.log(`DRY RUN: skipped ${action.toLowerCase()} "${payload.name}"`);
@@ -114,8 +115,9 @@ async function upsertWorkflow(payload, existingWorkflows) {
 
     if (existing) {
         await apiRequest('PUT', `/workflows/${existing.id}`, payload);
-        await apiRequest('POST', `/workflows/${existing.id}/activate`);
-        console.log(`Activated workflow "${payload.name}" (${existing.id})`);
+        const activationEndpoint = shouldBeActive ? 'activate' : 'deactivate';
+        await apiRequest('POST', `/workflows/${existing.id}/${activationEndpoint}`);
+        console.log(`${shouldBeActive ? 'Activated' : 'Deactivated'} workflow "${payload.name}" (${existing.id})`);
         return;
     }
 
@@ -126,8 +128,12 @@ async function upsertWorkflow(payload, existingWorkflows) {
         throw new Error(`n8n did not return a workflow id when creating "${payload.name}"`);
     }
 
-    await apiRequest('POST', `/workflows/${workflowId}/activate`);
-    console.log(`Created and activated workflow "${payload.name}" (${workflowId})`);
+    if (shouldBeActive) {
+        await apiRequest('POST', `/workflows/${workflowId}/activate`);
+        console.log(`Created and activated workflow "${payload.name}" (${workflowId})`);
+    } else {
+        console.log(`Created workflow "${payload.name}" (${workflowId}) — left inactive`);
+    }
 }
 
 function pickExistingWorkflow(workflows, workflowName) {
@@ -289,6 +295,7 @@ function firstEnvValue(names) {
 function normalizeWorkflow(workflow) {
     return {
         name: workflow.name,
+        active: workflow.active !== false,
         nodes: (workflow.nodes || []).map((node) => ({
             parameters: node.parameters || {},
             name: node.name,
