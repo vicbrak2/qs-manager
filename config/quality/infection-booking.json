@@ -6,7 +6,8 @@
     ]
   },
   "phpUnit": {
-    "configDir": "../.."
+    "configDir": "../..",
+    "testFrameworkOptions": "--testsuite=Unit"
   },
   "logs": {
     "text": "../../tools/mutation/reports/infection-booking.log",
