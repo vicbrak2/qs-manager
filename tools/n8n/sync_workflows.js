@@ -97,15 +97,15 @@ async function main() {
     const credentialMap = await resolveCredentialMap(credentials, workflowDefinitions.map(({ workflow }) => workflow));
 
     for (const { workflow } of workflowDefinitions) {
+        const shouldBeActive = workflow.active !== false;
         const payload = injectCredentials(normalizeWorkflow(workflow), credentialMap);
-        await upsertWorkflow(payload, workflows);
+        await upsertWorkflow(payload, workflows, shouldBeActive);
     }
 }
 
-async function upsertWorkflow(payload, existingWorkflows) {
+async function upsertWorkflow(payload, existingWorkflows, shouldBeActive = true) {
     const existing = pickExistingWorkflow(existingWorkflows, payload.name);
     const action = existing ? 'Updating' : 'Creating';
-    const shouldBeActive = payload.active !== false;
     console.log(`${action} workflow "${payload.name}" (active: ${shouldBeActive})`);
 
     if (config.dryRun) {
@@ -295,7 +295,6 @@ function firstEnvValue(names) {
 function normalizeWorkflow(workflow) {
     return {
         name: workflow.name,
-        active: workflow.active !== false,
         nodes: (workflow.nodes || []).map((node) => ({
             parameters: node.parameters || {},
             name: node.name,
