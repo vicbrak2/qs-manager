@@ -26,8 +26,6 @@ final class ReindexAdminPage implements HookableInterface
     private const WHATSAPP_ALLOWED_PHONES_OPTION = 'qs_n8n_whatsapp_allowed_phones';
     private const WHATSAPP_INSTANCE_OPTION = 'qs_n8n_whatsapp_instance';
     private const CONTEXT_DOCUMENTS_OPTION = 'qs_chatbot_context_documents';
-    private const CONTEXT_FEEDBACK_TRANSIENT_PREFIX = 'qs_chatbot_context_feedback_';
-    private const CONTEXT_ACTION_FEEDBACK_TRANSIENT_PREFIX = 'qs_chatbot_context_action_feedback_';
 
     public function __construct(
         private readonly ReindexContentHandler $handler,
