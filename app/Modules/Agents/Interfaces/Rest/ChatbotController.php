@@ -33,6 +33,10 @@ final class ChatbotController
         $sessionId = $this->resolveSessionId($request);
         $channel = $this->sanitizeChannel((string) $request->get_param('channel'));
 
+        if ($channel === 'whatsapp' && !$this->isWhatsAppChannelEnabled()) {
+            return new WP_REST_Response(['success' => false, 'disabled' => true], 200);
+        }
+
         $reply = $this->gateway->ask($message, $sessionId, $channel);
 
         if (is_wp_error($reply)) {
@@ -186,6 +190,23 @@ final class ChatbotController
         $channel = preg_replace('/[^a-z0-9_\-]/', '', $channel);
 
         return is_string($channel) && $channel !== '' ? substr($channel, 0, 40) : 'web';
+    }
+
+    private function isWhatsAppChannelEnabled(): bool
+    {
+        if (defined('QS_WHATSAPP_CHANNEL_ENABLED') && is_scalar(QS_WHATSAPP_CHANNEL_ENABLED)) {
+            return filter_var(QS_WHATSAPP_CHANNEL_ENABLED, FILTER_VALIDATE_BOOLEAN);
+        }
+
+        $env = getenv('QS_WHATSAPP_CHANNEL_ENABLED');
+
+        if (is_string($env) && $env !== '') {
+            return filter_var($env, FILTER_VALIDATE_BOOLEAN);
+        }
+
+        $option = function_exists('get_option') ? get_option('qs_whatsapp_channel_enabled', '0') : '0';
+
+        return filter_var($option, FILTER_VALIDATE_BOOLEAN);
     }
 
     /**
