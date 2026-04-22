@@ -34,7 +34,6 @@ final class ReindexAdminPage implements HookableInterface
         private readonly IngestGateway $ingestGateway,
         private readonly ChatbotGateway $chatbotGateway,
         private readonly WhatsAppGateway $whatsAppGateway,
-        private readonly ChatbotFallbackResponder $fallbackResponder,
         private readonly WpdbChatLogRepository $chatLogRepository,
         private readonly QdrantGateway $qdrantGateway
     ) {
