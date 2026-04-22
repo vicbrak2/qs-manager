@@ -2,7 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const envPath = path.resolve(__dirname, '..', '..', '.env');
+const envPath = path.resolve(__dirname, '..', '..', '..', '.env');
 const token = fs.readFileSync(envPath, 'utf8').split('\n').find(l => l.startsWith('N8N_CHATBOT_TOKEN')).split('=')[1].replace(/"/g, '').trim();
 
 const req = http.request({

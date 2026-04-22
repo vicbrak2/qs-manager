@@ -2,7 +2,7 @@ const fs = require('fs');
 const http = require('http');
 const path = require('path');
 
-const envPath = path.resolve(__dirname, '..', '..', '.env');
+const envPath = path.resolve(__dirname, '..', '..', '..', '.env');
 const envKeys = fs.readFileSync(envPath, 'utf8').split('\n').reduce((acc, line) => {
     let [key, ...val] = line.split('=');
     if (key && val.length) {

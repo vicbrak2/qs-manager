@@ -57,7 +57,7 @@ const NODE_CREDENTIAL_MAP = {
     '@n8n/n8n-nodes-langchain.lmChatGroq': 'groqApi',
 };
 
-const rootDir = path.resolve(__dirname, '..', '..');
+const rootDir = path.resolve(__dirname, '..', '..', '..');
 const dotEnv = loadDotEnv(path.join(rootDir, '.env'));
 const env = {
     ...dotEnv,
