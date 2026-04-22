@@ -108,14 +108,16 @@ try {
         -Uri "$n8nBase/api/v1/workflows?active=true" `
         -Headers $n8nHeaders -TimeoutSec 15
 
-    $wfList = if ($wfs.data) { $wfs.data } else { @($wfs) }
+    if ($wfs.data) { $wfList = $wfs.data } else { $wfList = @($wfs) }
     $wfNames = $wfList | ForEach-Object { $_.name }
 
     $required = @('WordPress RAG Chatbot', 'WhatsApp Hybrid Router', 'WhatsApp Inbound Bridge')
     foreach ($req in $required) {
         $found = $wfNames -contains $req
         if (-not $found) { $allOk = $false }
-        Write-Check "Workflow: $req" $found (if (-not $found) { "NO está activo. Activos: $($wfNames -join ', ')" } else { "activo" })
+        $detail = "activo"
+        if (-not $found) { $detail = "NO está activo. Activos: $($wfNames -join ', ')" }
+        Write-Check "Workflow: $req" $found $detail
     }
 } catch {
     Write-Check "n8n" $false $_.Exception.Message

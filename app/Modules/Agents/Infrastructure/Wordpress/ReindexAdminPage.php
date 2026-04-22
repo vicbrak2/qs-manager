@@ -94,511 +94,269 @@ final class ReindexAdminPage implements HookableInterface
         $contextActionFeedback = $this->consumeContextActionFeedback();
         $contextDocuments = $this->contextDocuments();
         $contextSources = $this->contextSources($contextDocuments);
-        $contextImportedCount = $contextFeedback !== null ? $contextFeedback['imported'] : 0;
-        $contextFailedCount = $contextFeedback !== null ? $contextFeedback['failed'] : 0;
-        $contextFailures = $contextFeedback !== null ? $contextFeedback['failures'] : [];
         $currentTab = $this->currentTab();
+
+        $chatbotConfigured = $this->chatbotGateway->webhookUrl() !== 'http://localhost:5678/webhook/wp-chatbot-rag';
+        $ingestConfigured = $this->ingestGateway->webhookUrl() !== 'http://localhost:5678/webhook/wp-ingest-rag';
+        $qdrantConfigured = $this->qdrantGateway->hasApiKeyConfigured();
         ?>
+        <style>
+            .qs-admin-header { background: #fff; padding: 20px; border: 1px solid #ccd0d4; margin-bottom: 20px; border-radius: 4px; }
+            .qs-status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
+            .qs-status-card { padding: 15px; border-radius: 6px; border: 1px solid #e5e5e5; background: #f9f9f9; }
+            .qs-status-card h4 { margin: 0 0 10px 0; font-size: 14px; }
+            .qs-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+            .qs-badge-ok { background: #d4edda; color: #155724; }
+            .qs-badge-warn { background: #fff3cd; color: #856404; }
+            .qs-advanced-toggle-wrap { margin: 20px 0; padding: 10px; background: #f0f0f1; border-radius: 4px; }
+            .qs-advanced-section { display: none; border-top: 1px solid #ddd; padding-top: 20px; margin-top: 20px; }
+            .qs-show-advanced .qs-advanced-section { display: block; }
+            .qs-hero-button { padding: 15px 30px !important; font-size: 16px !important; height: auto !important; }
+        </style>
+
         <div class="wrap">
-            <h1>QS Chatbot — Re-indexar contenido en Qdrant</h1>
+            <div class="qs-admin-header">
+                <h1 style="margin-bottom: 10px;">🤖 Panel de Control del Chatbot</h1>
+                <p class="description">Gestiona la inteligencia y el entrenamiento de tu asistente virtual de forma sencilla.</p>
+                
+                <div class="qs-status-grid">
+                    <div class="qs-status-card">
+                        <h4>🧠 Cerebro (n8n)</h4>
+                        <span class="qs-badge <?php echo $chatbotConfigured ? 'qs-badge-ok' : 'qs-badge-warn'; ?>">
+                            <?php echo $chatbotConfigured ? 'Conectado' : 'Configuración Local'; ?>
+                        </span>
+                    </div>
+                    <div class="qs-status-card">
+                        <h4>📚 Memoria (Qdrant)</h4>
+                        <span class="qs-badge <?php echo $qdrantConfigured ? 'qs-badge-ok' : 'qs-badge-warn'; ?>">
+                            <?php echo $qdrantConfigured ? 'Sincronizada' : 'Sin API Key'; ?>
+                        </span>
+                    </div>
+                    <div class="qs-status-card">
+                        <h4>📱 WhatsApp</h4>
+                        <span class="qs-badge <?php echo $whatsappInstance !== '' ? 'qs-badge-ok' : 'qs-badge-warn'; ?>">
+                            <?php echo $whatsappInstance !== '' ? 'Instancia: ' . esc_html($whatsappInstance) : 'No configurado'; ?>
+                        </span>
+                    </div>
+                </div>
+            </div>
 
             <?php if ($settingsSaved) : ?>
-                <div class="notice notice-success is-dismissible"><p>Configuracion del chatbot guardada.</p></div>
+                <div class="notice notice-success is-dismissible"><p>Configuración actualizada correctamente.</p></div>
             <?php endif; ?>
 
             <nav class="nav-tab-wrapper" style="margin-bottom:16px;">
-                <a
-                    href="<?php echo esc_url($this->pageUrl(['tab' => 'contexto'])); ?>"
-                    class="nav-tab <?php echo $currentTab === 'contexto' ? 'nav-tab-active' : ''; ?>"
-                >
-                    Configuracion y contexto
-                </a>
-                <a
-                    href="<?php echo esc_url($this->pageUrl(['tab' => 'conversaciones'])); ?>"
-                    class="nav-tab <?php echo $currentTab === 'conversaciones' ? 'nav-tab-active' : ''; ?>"
-                >
-                    Conversaciones
-                </a>
+                <a href="<?php echo esc_url($this->pageUrl(['tab' => 'contexto'])); ?>" class="nav-tab <?php echo $currentTab === 'contexto' ? 'nav-tab-active' : ''; ?>">Configuración y Entrenamiento</a>
+                <a href="<?php echo esc_url($this->pageUrl(['tab' => 'conversaciones'])); ?>" class="nav-tab <?php echo $currentTab === 'conversaciones' ? 'nav-tab-active' : ''; ?>">Historial de Chats</a>
             </nav>
 
             <?php if ($currentTab === 'conversaciones') : ?>
                 <?php $this->renderConversationsTab(); ?>
-            </div>
-                <?php
-                return;
+                </div><?php return;
             endif; ?>
 
-            <h2>Configuracion de Webhooks</h2>
-            <p>
-                Define las URLs publicas de n8n para que WordPress pueda llamar al chatbot y a la ingesta.<br>
-                Prioridad de resolucion: constantes PHP, variables de entorno, opciones guardadas aqui y luego <code>localhost</code>.
-            </p>
-
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-top:16px;max-width:960px;">
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                 <?php wp_nonce_field('qs_save_chatbot_settings'); ?>
                 <input type="hidden" name="action" value="qs_save_chatbot_settings">
 
-                <table class="form-table" role="presentation">
-                    <tbody>
-                        <tr>
-                            <th scope="row"><label for="qs_n8n_chatbot_url">URL webhook chatbot</label></th>
-                            <td>
-                                <input
-                                    id="qs_n8n_chatbot_url"
-                                    name="qs_n8n_chatbot_url"
-                                    type="url"
-                                    class="regular-text code"
-                                    value="<?php echo esc_attr($chatbotUrl); ?>"
-                                    placeholder="https://tu-n8n/webhook/wp-chatbot-rag"
-                                >
-                                <p class="description">Valor efectivo actual: <code><?php echo esc_html($this->chatbotGateway->webhookUrl()); ?></code></p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="qs_n8n_ingest_url">URL webhook ingesta</label></th>
-                            <td>
-                                <input
-                                    id="qs_n8n_ingest_url"
-                                    name="qs_n8n_ingest_url"
-                                    type="url"
-                                    class="regular-text code"
-                                    value="<?php echo esc_attr($ingestUrl); ?>"
-                                    placeholder="https://tu-n8n/webhook/wp-ingest-rag"
-                                >
-                                <p class="description">Valor efectivo actual: <code><?php echo esc_html($this->ingestGateway->webhookUrl()); ?></code></p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="qs_qdrant_url">URL Qdrant</label></th>
-                            <td>
-                                <input
-                                    id="qs_qdrant_url"
-                                    name="qs_qdrant_url"
-                                    type="url"
-                                    class="regular-text code"
-                                    value="<?php echo esc_attr($qdrantUrl); ?>"
-                                    placeholder="https://tu-cluster.qdrant.io"
-                                >
-                                <p class="description">Usada por el chequeo <code>/agents/status</code> para validar conectividad desde WordPress.</p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="qs_qdrant_api_key">Qdrant API key</label></th>
-                            <td>
-                                <input
-                                    id="qs_qdrant_api_key"
-                                    name="qs_qdrant_api_key"
-                                    type="password"
-                                    class="regular-text code"
-                                    value=""
-                                    autocomplete="new-password"
-                                    placeholder="<?php echo esc_attr($qdrantApiKeySaved ? 'Guardada, deja en blanco para mantenerla' : 'Pega tu API key de Qdrant'); ?>"
-                                >
-                                <p class="description">
-                                    Se usa para purgar y borrar vectores directamente desde WordPress. Si este WordPress no carga tu <code>.env</code>, debes guardarla aquí.<br>
-                                    Estado efectivo actual:
-                                    <code><?php echo esc_html($this->qdrantGateway->hasApiKeyConfigured() ? 'configurada' : 'sin configurar'); ?></code>
-                                </p>
-                                <label for="qs_qdrant_api_key_clear">
-                                    <input id="qs_qdrant_api_key_clear" name="qs_qdrant_api_key_clear" type="checkbox" value="1">
-                                    Borrar API key guardada en WordPress
-                                </label>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="qs_chatbot_fallback_whatsapp_url">URL WhatsApp fallback</label></th>
-                            <td>
-                                <input
-                                    id="qs_chatbot_fallback_whatsapp_url"
-                                    name="qs_chatbot_fallback_whatsapp_url"
-                                    type="url"
-                                    class="regular-text code"
-                                    value="<?php echo esc_attr($whatsappUrl); ?>"
-                                    placeholder="https://wa.me/56912345678"
-                                >
-                                <p class="description">
-                                    Se usa como respuesta por defecto cuando el chatbot no puede conectarse con n8n o Docker.<br>
-                                    Valor efectivo actual:
-                                    <code><?php echo esc_html($this->fallbackResponder->whatsappUrl() !== '' ? $this->fallbackResponder->whatsappUrl() : 'sin configurar'); ?></code>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="qs_n8n_whatsapp_url">URL webhook WhatsApp</label></th>
-                            <td>
-                                <input
-                                    id="qs_n8n_whatsapp_url"
-                                    name="qs_n8n_whatsapp_url"
-                                    type="url"
-                                    class="regular-text code"
-                                    value="<?php echo esc_attr($whatsappWebhookUrl); ?>"
-                                    placeholder="https://tu-n8n/webhook/hybrid-whatsapp"
-                                >
-                                <p class="description">
-                                    Webhook de n8n que enruta mensajes por Evolution API (no criticos) o Meta API (criticos).<br>
-                                    Valor efectivo actual: <code><?php echo esc_html($this->whatsAppGateway->webhookUrl()); ?></code>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="qs_n8n_whatsapp_phone">Numero destino WhatsApp</label></th>
-                            <td>
-                                <input
-                                    id="qs_n8n_whatsapp_phone"
-                                    name="qs_n8n_whatsapp_phone"
-                                    type="text"
-                                    class="regular-text code"
-                                    value="<?php echo esc_attr($whatsappDestinationPhone); ?>"
-                                    placeholder="56912345678"
-                                >
-                                <p class="description">
-                                    Numero por defecto usado por el webhook WhatsApp cuando no se envia <code>phone</code> en el payload.<br>
-                                    Valor efectivo actual:
-                                    <code><?php echo esc_html($this->whatsAppGateway->defaultPhone() !== '' ? $this->whatsAppGateway->defaultPhone() : 'sin configurar'); ?></code>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="qs_n8n_whatsapp_instance">Instancia remitente</label></th>
-                            <td>
-                                <input
-                                    id="qs_n8n_whatsapp_instance"
-                                    name="qs_n8n_whatsapp_instance"
-                                    type="text"
-                                    class="regular-text code"
-                                    value="<?php echo esc_attr($whatsappInstance); ?>"
-                                    placeholder="qamiluna-test"
-                                >
-                                <p class="description">
-                                    Nombre de la instancia en Evolution API desde la cual se enviara el mensaje.<br>
-                                    Valor efectivo actual:
-                                    <code><?php echo esc_html($this->whatsAppGateway->instanceName() !== '' ? $this->whatsAppGateway->instanceName() : 'sin configurar'); ?></code>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row">Acciones WhatsApp</th>
-                            <td>
-                                <label for="qs_n8n_whatsapp_actions_enabled">
-                                    <input
-                                        id="qs_n8n_whatsapp_actions_enabled"
-                                        name="qs_n8n_whatsapp_actions_enabled"
-                                        type="checkbox"
-                                        value="1"
-                                        <?php checked($whatsappActionsEnabled); ?>
-                                    >
-                                    Permitir envios automaticos por WhatsApp
-                                </label>
-                                <p class="description">
-                                    Mantener apagado mientras no haya una allowlist revisada. Tambien puede forzarse con
-                                    <code>QS_N8N_WHATSAPP_ACTIONS_ENABLED=false</code> en properties/entorno.
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="qs_n8n_whatsapp_allowed_phones">Numeros permitidos</label></th>
-                            <td>
-                                <textarea
-                                    id="qs_n8n_whatsapp_allowed_phones"
-                                    name="qs_n8n_whatsapp_allowed_phones"
-                                    class="large-text code"
-                                    rows="4"
-                                    placeholder="56912345678&#10;56987654321"
-                                ><?php echo esc_textarea($whatsappAllowedPhones); ?></textarea>
-                                <p class="description">
-                                    Un numero por linea, o separados por coma/espacio. Si la lista queda vacia, no se envia a ningun numero.
-                                    El valor efectivo actual es:
-                                    <code><?php echo esc_html($this->renderPhoneList($this->whatsAppGateway->allowedPhones())); ?></code><br>
-                                    Tambien puede definirse con <code>QS_N8N_WHATSAPP_ALLOWED_PHONES=56912345678,56987654321</code>.
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="qs_chatbot_quick_reply_threshold">Umbral quick replies</label></th>
-                            <td>
-                                <input
-                                    id="qs_chatbot_quick_reply_threshold"
-                                    name="qs_chatbot_quick_reply_threshold"
-                                    type="number"
-                                    class="small-text code"
-                                    min="0.50"
-                                    max="1"
-                                    step="0.05"
-                                    value="<?php echo esc_attr($quickReplyThreshold); ?>"
-                                    placeholder="0.80"
-                                >
-                                <p class="description">
-                                    Si la consulta coincide con un ejemplo en al menos este porcentaje, WordPress responde localmente sin llamar a n8n.<br>
-                                    Dejalo vacio para usar el valor por defecto <code>0.80</code>.
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="qs_chatbot_quick_replies_json">Patrones quick replies</label></th>
-                            <td>
-                                <textarea
-                                    id="qs_chatbot_quick_replies_json"
-                                    name="qs_chatbot_quick_replies_json"
-                                    class="large-text code"
-                                    rows="12"
-                                    placeholder="<?php echo esc_attr(QuickReplyMatcher::sampleRulesJson()); ?>"
-                                ><?php echo esc_textarea($quickRepliesJson); ?></textarea>
-                                <p class="description">
-                                    Reglas adicionales u overrides para responder FAQs sin IA. Formato: <code>[{id,response,examples[],min_score?}]</code>.<br>
-                                    Estas reglas se evalúan antes del webhook n8n. Las reglas base de saludo, servicios, precios y reservas ya vienen incluidas en código.
-                                </p>
-                                <pre style="white-space:pre-wrap;max-width:960px;background:#f6f7f7;padding:12px;border:1px solid #dcdcde;"><?php echo esc_html(QuickReplyMatcher::sampleRulesJson()); ?></pre>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <?php submit_button('Guardar configuracion'); ?>
-            </form>
-
-            <p style="margin-top:16px;">
-                <button id="qs-test-connectivity-btn" class="button button-secondary">Probar conectividad</button>
-            </p>
-            <p class="description" style="max-width:960px;">
-                Usa las URLs escritas actualmente en el formulario, aunque aun no las hayas guardado.<br>
-                La prueba de ingesta envia un documento tecnico minimo al webhook para diagnosticar el HTTP/body del pipeline.
-            </p>
-
-            <div id="qs-connectivity-status" style="margin-top:16px;padding:12px;background:#f6f7f7;border-left:4px solid #ccc;display:none;">
-                <span id="qs-connectivity-msg">Probando conectividad…</span>
-                <pre id="qs-connectivity-detail" style="white-space:pre-wrap;margin-top:12px;display:none;"></pre>
-            </div>
-
-            <hr style="margin:24px 0;">
-
-            <h2>Documentos de Contexto</h2>
-            <p>
-                Sube documentos para entrenar el contexto del chatbot. Soporta <code>.md</code>, <code>.txt</code> y <code>.json</code>.<br>
-                Los documentos quedan guardados en WordPress y se vuelven a indexar cada vez que ejecutes la re-indexacion completa.
-            </p>
-
-            <?php if ($contextFeedback !== null) : ?>
-                <div class="notice <?php echo $contextFailedCount > 0 ? 'notice-warning' : 'notice-success'; ?> is-dismissible">
-                    <p>
-                        Importacion de contexto: <?php echo esc_html((string) $contextImportedCount); ?> importados,
-                        <?php echo esc_html((string) $contextFailedCount); ?> fallidos.
-                    </p>
-                    <?php if ($contextFailures !== []) : ?>
-                        <pre style="white-space:pre-wrap;"><?php echo esc_html($this->renderFailures($contextFailures)); ?></pre>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
-
-            <?php if ($contextActionFeedback !== null) : ?>
-                <div class="notice <?php echo $contextActionFeedback['deleted'] > 0 ? 'notice-success' : 'notice-warning'; ?> is-dismissible">
-                    <p><?php echo esc_html($this->renderContextActionFeedback($contextActionFeedback)); ?></p>
-                </div>
-            <?php endif; ?>
-
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data" style="margin-top:16px;max-width:960px;">
-                <?php wp_nonce_field('qs_upload_context_document'); ?>
-                <input type="hidden" name="action" value="qs_upload_context_document">
-
-                <table class="form-table" role="presentation">
-                    <tbody>
-                        <tr>
-                            <th scope="row"><label for="qs_context_file">Archivo de contexto</label></th>
-                            <td>
-                                <input
-                                    id="qs_context_file"
-                                    name="qs_context_file"
-                                    type="file"
-                                    accept=".md,.txt,.json,application/json,text/plain,text/markdown"
-                                    required
-                                >
-                                <p class="description">Formato recomendado: JSON con uno o varios objetos <code>{title, url, content}</code>.</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <?php submit_button('Subir e indexar documento'); ?>
-            </form>
-
-            <p><strong>Ejemplo JSON:</strong></p>
-            <pre style="white-space:pre-wrap;max-width:960px;background:#f6f7f7;padding:12px;border:1px solid #dcdcde;">[
-  {
-    "title": "Politicas de reserva",
-    "url": "context://politicas-reserva",
-    "content": "Si una clienta pregunta por reagendamiento, responder..."
-  }
-]</pre>
-
-            <p><strong>Documentos guardados:</strong> <?php echo esc_html((string) count($contextDocuments)); ?></p>
-            <?php if ($contextDocuments !== []) : ?>
-                <div style="max-width:960px;margin-bottom:12px;padding:12px;background:#f6f7f7;border:1px solid #dcdcde;">
-                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
-                        <?php wp_nonce_field('qs_delete_context_source'); ?>
-                        <input type="hidden" name="action" value="qs_delete_context_source">
-                        <label for="qs_context_source" style="display:flex;flex-direction:column;gap:4px;">
-                            <span><strong>Borrar por origen</strong></span>
-                            <select id="qs_context_source" name="source_name" required>
-                                <option value="">Selecciona un origen</option>
-                                <?php foreach ($contextSources as $sourceName => $count) : ?>
-                                    <option value="<?php echo esc_attr($sourceName); ?>">
-                                        <?php echo esc_html($sourceName . ' (' . $count . ')'); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </label>
-                        <button type="submit" class="button button-secondary" onclick="return confirm('Se eliminaran todos los documentos de ese origen en WordPress. ¿Continuar?');">
-                            Eliminar origen completo
-                        </button>
-                    </form>
-                    <p class="description" style="margin:8px 0 0;">
-                        Atajo util para limpiar orígenes completos como <code>qs-rag-atencion.json</code> o <code>manual</code>.
-                    </p>
-                </div>
-
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="max-width:960px;">
-                    <?php wp_nonce_field('qs_delete_context_documents'); ?>
-                    <input type="hidden" name="action" value="qs_delete_context_documents">
-
-                    <p style="margin:0 0 8px;">
-                        <button type="submit" class="button button-secondary" onclick="return confirm('Se eliminaran los documentos seleccionados en WordPress. ¿Continuar?');">
-                            Eliminar seleccionados
-                        </button>
-                    </p>
-
-                    <table class="widefat striped">
-                        <thead>
-                            <tr>
-                                <th style="width:36px;">
-                                    <input type="checkbox" id="qs-context-select-all" aria-label="Seleccionar todos">
-                                </th>
-                                <th>Titulo</th>
-                                <th>Origen</th>
-                                <th>Actualizado</th>
-                            </tr>
-                        </thead>
+                <div id="qs-basic-settings">
+                    <h2>Configuración de WhatsApp y Comportamiento</h2>
+                    <table class="form-table" role="presentation">
                         <tbody>
-                            <?php foreach ($contextDocuments as $document) : ?>
-                                <tr>
-                                    <td>
-                                        <input
-                                            type="checkbox"
-                                            class="qs-context-row"
-                                            name="document_ids[]"
-                                            value="<?php echo esc_attr($document['id']); ?>"
-                                            aria-label="<?php echo esc_attr('Seleccionar ' . $document['title']); ?>"
-                                        >
-                                    </td>
-                                    <td><?php echo esc_html($document['title']); ?></td>
-                                    <td><code><?php echo esc_html($document['source_name']); ?></code></td>
-                                    <td><?php echo esc_html($document['updated_at']); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
+                            <tr>
+                                <th scope="row"><label for="qs_n8n_whatsapp_phone">Tu número de WhatsApp</label></th>
+                                <td>
+                                    <input id="qs_n8n_whatsapp_phone" name="qs_n8n_whatsapp_phone" type="text" class="regular-text" value="<?php echo esc_attr($whatsappDestinationPhone); ?>" placeholder="56912345678">
+                                    <p class="description">Número al que llegarán las notificaciones y donde reside el bot.</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="qs_n8n_whatsapp_instance">Nombre del Robot</label></th>
+                                <td>
+                                    <input id="qs_n8n_whatsapp_instance" name="qs_n8n_whatsapp_instance" type="text" class="regular-text" value="<?php echo esc_attr($whatsappInstance); ?>" placeholder="qamiluna-test">
+                                    <p class="description">Nombre identificativo de la conexión en WhatsApp.</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Respuestas Automáticas</th>
+                                <td>
+                                    <label for="qs_n8n_whatsapp_actions_enabled">
+                                        <input id="qs_n8n_whatsapp_actions_enabled" name="qs_n8n_whatsapp_actions_enabled" type="checkbox" value="1" <?php checked($whatsappActionsEnabled); ?>>
+                                        Activar respuestas automáticas por WhatsApp
+                                    </label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="qs_chatbot_quick_reply_threshold">Precisión de respuesta (0.80)</label></th>
+                                <td>
+                                    <input id="qs_chatbot_quick_reply_threshold" name="qs_chatbot_quick_reply_threshold" type="number" class="small-text" min="0.50" max="1" step="0.05" value="<?php echo esc_attr($quickReplyThreshold); ?>" placeholder="0.80">
+                                    <p class="description">Nivel de seguridad que el bot debe tener para responder (0.80 es el recomendado).</p>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
-                </form>
-            <?php else : ?>
-                <p>Aun no hay documentos de contexto cargados.</p>
-            <?php endif; ?>
+                </div>
 
-            <hr style="margin:24px 0;">
+                <div class="qs-advanced-toggle-wrap">
+                    <label>
+                        <input type="checkbox" id="qs-advanced-toggle"> ⚙️ Mostrar opciones técnicas avanzadas
+                    </label>
+                </div>
 
-            <p>
-                Este proceso envía todos los posts y páginas publicados al pipeline RAG (n8n → Qdrant).<br>
-                Úsalo cuando hayas cambiado contenido masivamente o al inicializar el sistema por primera vez.
-            </p>
+                <div class="qs-advanced-section">
+                    <h3>Configuraciones Técnicas (URLs y Webhooks)</h3>
+                    <table class="form-table" role="presentation">
+                        <tbody>
+                            <tr>
+                                <th scope="row"><label for="qs_n8n_chatbot_url">Webhook del Cerebro (Chatbot)</label></th>
+                                <td>
+                                    <input id="qs_n8n_chatbot_url" name="qs_n8n_chatbot_url" type="url" class="regular-text code" value="<?php echo esc_attr($chatbotUrl); ?>">
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="qs_n8n_ingest_url">Webhook de Entrenamiento (Ingesta)</label></th>
+                                <td>
+                                    <input id="qs_n8n_ingest_url" name="qs_n8n_ingest_url" type="url" class="regular-text code" value="<?php echo esc_attr($ingestUrl); ?>">
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="qs_qdrant_url">URL de Base de Datos (Qdrant)</label></th>
+                                <td>
+                                    <input id="qs_qdrant_url" name="qs_qdrant_url" type="url" class="regular-text code" value="<?php echo esc_attr($qdrantUrl); ?>">
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="qs_qdrant_api_key">Qdrant API key</label></th>
+                                <td>
+                                    <input id="qs_qdrant_api_key" name="qs_qdrant_api_key" type="password" class="regular-text code" value="" autocomplete="new-password" placeholder="<?php echo esc_attr($qdrantApiKeySaved ? 'Guardada' : 'Pegar API key'); ?>">
+                                    <label><input name="qs_qdrant_api_key_clear" type="checkbox" value="1"> Borrar clave guardada</label>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="qs_n8n_whatsapp_url">Webhook de WhatsApp (Hybrid)</label></th>
+                                <td>
+                                    <input id="qs_n8n_whatsapp_url" name="qs_n8n_whatsapp_url" type="url" class="regular-text code" value="<?php echo esc_attr($whatsappWebhookUrl); ?>">
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="qs_chatbot_quick_replies_json">Patrones de Respuesta (JSON)</label></th>
+                                <td>
+                                    <textarea id="qs_chatbot_quick_replies_json" name="qs_chatbot_quick_replies_json" class="large-text code" rows="6"><?php echo esc_textarea($quickRepliesJson); ?></textarea>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="qs_n8n_whatsapp_allowed_phones">Números autorizados (Whitelist)</label></th>
+                                <td>
+                                    <textarea id="qs_n8n_whatsapp_allowed_phones" name="qs_n8n_whatsapp_allowed_phones" class="large-text code" rows="3"><?php echo esc_textarea($whatsappAllowedPhones); ?></textarea>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p>
+                        <button type="button" id="qs-test-connectivity-btn" class="button button-secondary">Probar Conectividad Técnica</button>
+                    </p>
+                    <div id="qs-connectivity-status" style="margin-top:10px;padding:10px;background:#f0f0f1;display:none;">
+                        <span id="qs-connectivity-msg">Probando...</span>
+                        <pre id="qs-connectivity-detail" style="font-size:11px;margin-top:10px;display:none;"></pre>
+                    </div>
+                </div>
 
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin:16px 0;max-width:960px;">
-                <?php wp_nonce_field('qs_purge_qdrant_context'); ?>
-                <input type="hidden" name="action" value="qs_purge_qdrant_context">
-                <button type="submit" class="button button-secondary" onclick="return confirm('Se eliminaran todos los vectores de la coleccion wordpress_context en Qdrant. Luego debes reindexar. ¿Continuar?');">
-                    Purgar vectores de Qdrant
-                </button>
-                <p class="description" style="margin-top:8px;">
-                    Úsalo una vez para limpiar vectores viejos o contaminados. Después ejecuta <strong>Iniciar re-indexación</strong>.
-                </p>
+                <?php submit_button('Guardar Cambios'); ?>
             </form>
 
-            <button id="qs-reindex-btn" class="button button-primary button-large">
-                Iniciar re-indexación
-            </button>
+            <hr>
 
-            <div id="qs-reindex-status" style="margin-top:16px;padding:12px;background:#f6f7f7;border-left:4px solid #ccc;display:none;">
-                <span id="qs-reindex-msg">Procesando…</span>
-                <pre id="qs-reindex-detail" style="white-space:pre-wrap;margin-top:12px;display:none;"></pre>
+            <h2>📚 Entrenamiento: Documentos de Contexto</h2>
+            <p>Sube archivos (.txt, .md, .json) con información sobre tu negocio para que el chatbot pueda responder con base en ellos.</p>
+
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
+                <?php wp_nonce_field('qs_upload_context_document'); ?>
+                <input type="hidden" name="action" value="qs_upload_context_document">
+                <input id="qs_context_file" name="qs_context_file" type="file" accept=".md,.txt,.json" required>
+                <?php submit_button('Subir y Entrenar Documento', 'secondary'); ?>
+            </form>
+
+            <p><strong>Documentos actuales:</strong> <?php echo esc_html((string) count($contextDocuments)); ?></p>
+            
+            <?php if ($contextDocuments !== []) : ?>
+                <div style="margin-bottom: 20px;">
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                        <?php wp_nonce_field('qs_delete_context_documents'); ?>
+                        <input type="hidden" name="action" value="qs_delete_context_documents">
+                        <table class="widefat striped" style="max-width: 960px;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 20px;"><input type="checkbox" id="qs-context-select-all"></th>
+                                    <th>Título</th>
+                                    <th>Origen</th>
+                                    <th>Última actualización</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($contextDocuments as $doc) : ?>
+                                    <tr>
+                                        <td><input type="checkbox" class="qs-context-row" name="document_ids[]" value="<?php echo esc_attr($doc['id']); ?>"></td>
+                                        <td><?php echo esc_html($doc['title']); ?></td>
+                                        <td><code><?php echo esc_html($doc['source_name']); ?></code></td>
+                                        <td><?php echo esc_html($doc['updated_at']); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                        <p><button type="submit" class="button button-link-delete" onclick="return confirm('¿Eliminar seleccionados?');">Eliminar documentos seleccionados</button></p>
+                    </form>
+                </div>
+            <?php endif; ?>
+
+            <div class="qs-admin-header" style="background: #fff8e5; border-left: 4px solid #ffb900;">
+                <h3>🔄 Sincronización Completa</h3>
+                <p>Usa este botón si has actualizado mucho contenido en tu web y quieres que el chatbot aprenda todo de nuevo (esto borrará lo anterior y lo volverá a indexar).</p>
+                <button id="qs-reindex-btn" class="button button-primary qs-hero-button">¡Sincronizar Todo Ahora!</button>
+                
+                <div id="qs-reindex-status" style="margin-top:15px; display:none;">
+                    <span id="qs-reindex-msg">Sincronizando...</span>
+                </div>
             </div>
         </div>
 
         <script>
-        document.getElementById('qs-reindex-btn').addEventListener('click', function () {
-            const btn    = this;
-            const status = document.getElementById('qs-reindex-status');
-            const msg    = document.getElementById('qs-reindex-msg');
-            const detail = document.getElementById('qs-reindex-detail');
+        document.getElementById('qs-advanced-toggle').addEventListener('change', function() {
+            document.querySelector('.wrap').classList.toggle('qs-show-advanced', this.checked);
+        });
 
+        document.getElementById('qs-reindex-btn').addEventListener('click', function () {
+            const btn = this;
+            const msg = document.getElementById('qs-reindex-msg');
+            const status = document.getElementById('qs-reindex-status');
             btn.disabled = true;
-            btn.textContent = 'Procesando…';
             status.style.display = 'block';
-            status.style.borderLeftColor = '#007cba';
-            msg.textContent = 'Enviando contenido a Qdrant, por favor espera…';
-            detail.style.display = 'none';
-            detail.textContent = '';
+            msg.textContent = 'Enviando información al cerebro del bot, por favor espera...';
 
             fetch(ajaxurl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                    action: 'qs_reindex_all',
-                    nonce:  '<?php echo esc_js($nonce); ?>'
-                })
+                body: new URLSearchParams({ action: 'qs_reindex_all', nonce: '<?php echo esc_js($nonce); ?>' })
             })
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    const failures = Array.isArray(data.data.failures) ? data.data.failures : [];
-
-                    if ((data.data.failed || 0) > 0) {
-                        status.style.borderLeftColor = '#dba617';
-                        msg.textContent = '⚠ Completado: ' + data.data.indexed + ' documentos indexados, ' + data.data.failed + ' fallidos.';
-                        detail.style.display = 'block';
-                        detail.textContent = failures.slice(0, 5).map(item =>
-                            '#'+ item.post_id + ' ' + item.title + '\n' +
-                            'Error: ' + (item.error || 'sin detalle') + '\n' +
-                            'Webhook: ' + (item.webhook_url || '-') + '\n' +
-                            (item.status_code ? 'HTTP: ' + item.status_code + '\n' : '') +
-                            (item.response_body ? 'Body: ' + item.response_body + '\n' : '')
-                        ).join('\n');
-                    } else {
-                        status.style.borderLeftColor = '#46b450';
-                        msg.textContent = '✓ Completado: ' + data.data.indexed + ' documentos indexados, ' + data.data.failed + ' fallidos.';
-                    }
+                    msg.innerHTML = '<span style="color:green">✓ ¡Sincronización terminada con éxito!</span>';
                 } else {
-                    status.style.borderLeftColor = '#dc3232';
-                    msg.textContent = '✗ Error: ' + (data.data || 'Error desconocido');
+                    msg.innerHTML = '<span style="color:red">✗ Hubo un problema: ' + (data.data || 'Error desconocido') + '</span>';
                 }
             })
-            .catch(() => {
-                status.style.borderLeftColor = '#dc3232';
-                msg.textContent = '✗ Error de red al conectar con el servidor.';
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btn.textContent = 'Iniciar re-indexación';
-            });
+            .catch(() => { msg.textContent = '✗ Error de conexión.'; })
+            .finally(() => { btn.disabled = false; });
         });
 
         document.getElementById('qs-test-connectivity-btn').addEventListener('click', function () {
             const btn = this;
-            const status = document.getElementById('qs-connectivity-status');
             const msg = document.getElementById('qs-connectivity-msg');
             const detail = document.getElementById('qs-connectivity-detail');
-
+            const status = document.getElementById('qs-connectivity-status');
             btn.disabled = true;
-            btn.textContent = 'Probando…';
             status.style.display = 'block';
-            status.style.borderLeftColor = '#007cba';
-            msg.textContent = 'Ejecutando pruebas desde WordPress…';
             detail.style.display = 'none';
-            detail.textContent = '';
 
             fetch(ajaxurl, {
                 method: 'POST',
@@ -606,54 +364,28 @@ final class ReindexAdminPage implements HookableInterface
                 body: new URLSearchParams({
                     action: 'qs_test_connectivity',
                     nonce: '<?php echo esc_js($connectivityNonce); ?>',
-                    chatbot_url: document.getElementById('qs_n8n_chatbot_url').value || '',
-                    ingest_url: document.getElementById('qs_n8n_ingest_url').value || '',
-                    qdrant_url: document.getElementById('qs_qdrant_url').value || ''
+                    chatbot_url: document.getElementById('qs_n8n_chatbot_url').value,
+                    ingest_url: document.getElementById('qs_n8n_ingest_url').value,
+                    qdrant_url: document.getElementById('qs_qdrant_url').value
                 })
             })
             .then(r => r.json())
             .then(data => {
-                if (!data.success) {
-                    status.style.borderLeftColor = '#dc3232';
-                    msg.textContent = '✗ Error: ' + (data.data || 'Error desconocido');
-                    return;
+                if (data.success) {
+                    msg.textContent = 'Pruebas completadas.';
+                    detail.style.display = 'block';
+                    detail.textContent = JSON.stringify(data.data.tests, null, 2);
+                } else {
+                    msg.textContent = 'Error en las pruebas.';
                 }
-
-                const tests = Array.isArray(data.data.tests) ? data.data.tests : [];
-                const ok = tests.every(item => item.ok === true);
-
-                status.style.borderLeftColor = ok ? '#46b450' : '#dba617';
-                msg.textContent = ok
-                    ? '✓ Conectividad verificada.'
-                    : '⚠ Hay servicios con error. Revisa el detalle.';
-
-                detail.style.display = 'block';
-                detail.textContent = tests.map(item =>
-                    '[' + item.service + '] ' + (item.ok ? 'OK' : 'ERROR') + '\n' +
-                    'URL: ' + (item.url || '-') + '\n' +
-                    'Metodo: ' + (item.method || '-') + '\n' +
-                    (item.status_code ? 'HTTP: ' + item.status_code + '\n' : '') +
-                    (item.note ? 'Nota: ' + item.note + '\n' : '') +
-                    (item.error ? 'Error: ' + item.error + '\n' : '') +
-                    (item.response_body ? 'Body: ' + item.response_body + '\n' : '')
-                ).join('\n');
             })
-            .catch(() => {
-                status.style.borderLeftColor = '#dc3232';
-                msg.textContent = '✗ Error de red al ejecutar la prueba.';
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btn.textContent = 'Probar conectividad';
-            });
+            .finally(() => { btn.disabled = false; });
         });
 
         const selectAll = document.getElementById('qs-context-select-all');
         if (selectAll) {
             selectAll.addEventListener('change', function () {
-                document.querySelectorAll('.qs-context-row').forEach(function (checkbox) {
-                    checkbox.checked = selectAll.checked;
-                });
+                document.querySelectorAll('.qs-context-row').forEach(cb => cb.checked = selectAll.checked);
             });
         }
         </script>
