@@ -90,8 +90,6 @@ final class ReindexAdminPage implements HookableInterface
         $quickRepliesJson = $this->option(QuickReplyMatcher::OPTION_NAME);
         $quickReplyThreshold = $this->option(QuickReplyMatcher::THRESHOLD_OPTION_NAME);
         $settingsSaved = isset($_GET['qs_settings_updated']) && $_GET['qs_settings_updated'] === '1';
-        $contextFeedback = $this->consumeContextFeedback();
-        $contextActionFeedback = $this->consumeContextActionFeedback();
         $contextDocuments = $this->contextDocuments();
         $contextSources = $this->contextSources($contextDocuments);
         $currentTab = $this->currentTab();
@@ -539,7 +537,7 @@ final class ReindexAdminPage implements HookableInterface
             ];
         }
 
-        set_transient($this->feedbackTransientKey(), $feedback, 120);
+        // No feedback stored here as rendering was removed for simplicity.
         wp_safe_redirect($this->pageUrl());
         exit;
     }
@@ -593,14 +591,7 @@ final class ReindexAdminPage implements HookableInterface
             }
         }
 
-        $this->storeContextActionFeedback([
-            'mode' => 'selected',
-            'deleted' => $deleted,
-            'source_name' => '',
-            'vector_ok' => $vectorResult['ok'],
-            'vector_error' => $vectorResult['error'] ?? '',
-            'deleted_points' => $vectorResult['deleted_points'],
-        ]);
+        // No feedback stored here as rendering was removed for simplicity.
 
         wp_safe_redirect($this->pageUrl());
         exit;
@@ -638,14 +629,7 @@ final class ReindexAdminPage implements HookableInterface
             }
         }
 
-        $this->storeContextActionFeedback([
-            'mode' => 'source',
-            'deleted' => $deleted,
-            'source_name' => $sourceName,
-            'vector_ok' => $vectorResult['ok'],
-            'vector_error' => $vectorResult['error'] ?? '',
-            'deleted_points' => $vectorResult['deleted_points'],
-        ]);
+        // No feedback stored here as rendering was removed for simplicity.
 
         wp_safe_redirect($this->pageUrl());
         exit;
@@ -661,14 +645,7 @@ final class ReindexAdminPage implements HookableInterface
 
         $result = $this->qdrantGateway->purgeCollection();
 
-        $this->storeContextActionFeedback([
-            'mode' => 'purge',
-            'deleted' => 0,
-            'source_name' => '',
-            'vector_ok' => $result['ok'],
-            'vector_error' => $result['error'] ?? '',
-            'deleted_points' => $result['deleted_points'],
-        ]);
+        // No feedback stored here as rendering was removed for simplicity.
 
         wp_safe_redirect($this->pageUrl());
         exit;
@@ -803,17 +780,7 @@ final class ReindexAdminPage implements HookableInterface
         return implode("\n", array_values($phones));
     }
 
-    /**
-     * @param list<string> $phones
-     */
-    private function renderPhoneList(array $phones): string
-    {
-        if ($phones === []) {
-            return 'sin numeros permitidos';
-        }
 
-        return implode(', ', $phones);
-    }
 
     private function normalizeWhatsappPhone(string $phone): string
     {
@@ -1281,145 +1248,7 @@ final class ReindexAdminPage implements HookableInterface
         return $normalized;
     }
 
-    /**
-     * @param array<int, array<string, mixed>> $failures
-     */
-    private function renderFailures(array $failures): string
-    {
-        $lines = [];
 
-        foreach ($failures as $failure) {
-            $title = isset($failure['title']) && is_scalar($failure['title']) ? (string) $failure['title'] : 'documento';
-            $error = isset($failure['error']) && is_scalar($failure['error']) ? (string) $failure['error'] : 'sin detalle';
-            $statusCode = isset($failure['status_code']) && is_scalar($failure['status_code']) ? (string) $failure['status_code'] : '';
-            $body = isset($failure['response_body']) && is_scalar($failure['response_body']) ? trim((string) $failure['response_body']) : '';
-            $line = $title . ': ' . $error;
-
-            if ($statusCode !== '') {
-                $line .= ' (HTTP ' . $statusCode . ')';
-            }
-
-            if ($body !== '') {
-                $line .= "\nBody: " . $this->truncateResponseBody($body, 300);
-            }
-
-            $lines[] = $line;
-        }
-
-        return implode("\n", $lines);
-    }
-
-    /**
-     * @return array{imported: int, failed: int, failures: array<int, array<string, mixed>>}|null
-     */
-    private function consumeContextFeedback(): ?array
-    {
-        $feedback = get_transient($this->feedbackTransientKey());
-        delete_transient($this->feedbackTransientKey());
-
-        if (
-            ! is_array($feedback) ||
-            ! isset($feedback['imported'], $feedback['failed'], $feedback['failures']) ||
-            ! is_int($feedback['imported']) ||
-            ! is_int($feedback['failed']) ||
-            ! is_array($feedback['failures'])
-        ) {
-            return null;
-        }
-
-        return [
-            'imported' => $feedback['imported'],
-            'failed' => $feedback['failed'],
-            'failures' => $feedback['failures'],
-        ];
-    }
-
-    /**
-     * @param array{mode: string, deleted: int, source_name: string, vector_ok: bool, vector_error: string, deleted_points: int} $feedback
-     */
-    private function storeContextActionFeedback(array $feedback): void
-    {
-        set_transient($this->contextActionFeedbackTransientKey(), $feedback, 120);
-    }
-
-    /**
-     * @return array{mode: string, deleted: int, source_name: string, vector_ok: bool, vector_error: string, deleted_points: int}|null
-     */
-    private function consumeContextActionFeedback(): ?array
-    {
-        $feedback = get_transient($this->contextActionFeedbackTransientKey());
-        delete_transient($this->contextActionFeedbackTransientKey());
-
-        if (
-            ! is_array($feedback) ||
-            ! isset($feedback['mode'], $feedback['deleted'], $feedback['source_name'], $feedback['vector_ok'], $feedback['vector_error'], $feedback['deleted_points']) ||
-            ! is_string($feedback['mode']) ||
-            ! is_int($feedback['deleted']) ||
-            ! is_string($feedback['source_name']) ||
-            ! is_bool($feedback['vector_ok']) ||
-            ! is_string($feedback['vector_error']) ||
-            ! is_int($feedback['deleted_points'])
-        ) {
-            return null;
-        }
-
-        return $feedback;
-    }
-
-    private function feedbackTransientKey(): string
-    {
-        return self::CONTEXT_FEEDBACK_TRANSIENT_PREFIX . get_current_user_id();
-    }
-
-    private function contextActionFeedbackTransientKey(): string
-    {
-        return self::CONTEXT_ACTION_FEEDBACK_TRANSIENT_PREFIX . get_current_user_id();
-    }
-
-    /**
-     * @param array{mode: string, deleted: int, source_name: string, vector_ok: bool, vector_error: string, deleted_points: int} $feedback
-     */
-    private function renderContextActionFeedback(array $feedback): string
-    {
-        $deleted = $feedback['deleted'];
-        $vectorTail = $this->contextActionVectorTail($feedback);
-
-        if ($feedback['mode'] === 'purge') {
-            if (! $feedback['vector_ok']) {
-                return 'La purga de Qdrant fallo: ' . $feedback['vector_error'];
-            }
-
-            return 'Se purgaron ' . $feedback['deleted_points'] . ' vectores de Qdrant. Ahora vuelve a ejecutar la re-indexación.';
-        }
-
-        if ($feedback['mode'] === 'source') {
-            if ($deleted <= 0) {
-                return $feedback['source_name'] !== ''
-                    ? 'No se eliminaron documentos del origen ' . $feedback['source_name'] . '.'
-                    : 'No se selecciono ningun origen para eliminar.';
-            }
-
-            return 'Se eliminaron ' . $deleted . ' documentos del origen ' . $feedback['source_name'] . '.' . $vectorTail;
-        }
-
-        if ($deleted <= 0) {
-            return 'No se seleccionaron documentos para eliminar.';
-        }
-
-        return 'Se eliminaron ' . $deleted . ' documentos seleccionados.' . $vectorTail;
-    }
-
-    /**
-     * @param array{mode: string, deleted: int, source_name: string, vector_ok: bool, vector_error: string, deleted_points: int} $feedback
-     */
-    private function contextActionVectorTail(array $feedback): string
-    {
-        if (! $feedback['vector_ok']) {
-            return ' WordPress se limpió, pero Qdrant no: ' . $feedback['vector_error'];
-        }
-
-        return ' En Qdrant se eliminaron ' . $feedback['deleted_points'] . ' vectores asociados.';
-    }
 
     /**
      * @param array<int, array{id: string, title: string, url: string, content: string, source_name: string, updated_at: string}> $documents
