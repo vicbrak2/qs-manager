@@ -111,4 +111,4 @@ jobs:
           N8N_HUGGING_FACE_CREDENTIAL_NAME: ${{ vars.N8N_HUGGING_FACE_CREDENTIAL_NAME }}
           N8N_OPENROUTER_CREDENTIAL_NAME: ${{ vars.N8N_OPENROUTER_CREDENTIAL_NAME }}
           N8N_GROQ_CREDENTIAL_NAME: ${{ vars.N8N_GROQ_CREDENTIAL_NAME }}
-        run: node tools/n8n/sync_workflows.js
+        run: node tools/n8n/sync/sync_workflows.js

@@ -60,26 +60,64 @@ foreach ($rule in $config.restricted_paths) {
     }
 
     $allowedExtensions = @{}
-    foreach ($extension in $rule.allowed_extensions) {
-        $allowedExtensions[$extension.ToLowerInvariant()] = $true
+    if ($null -ne $rule.allowed_extensions) {
+        foreach ($extension in $rule.allowed_extensions) {
+            $allowedExtensions[$extension.ToLowerInvariant()] = $true
+        }
     }
 
     $allowedFilenames = @{}
-    foreach ($filename in $rule.allowed_filenames) {
-        $allowedFilenames[$filename] = $true
+    if ($null -ne $rule.allowed_filenames) {
+        foreach ($filename in $rule.allowed_filenames) {
+            $allowedFilenames[$filename] = $true
+        }
     }
+
+    $allowedSubdirs = $null
+    if ($rule.psobject.properties.match('allowed_subdirectories').Count -gt 0 -and $null -ne $rule.allowed_subdirectories) {
+        $allowedSubdirs = @{}
+        foreach ($subdir in $rule.allowed_subdirectories) {
+            $allowedSubdirs[$subdir] = $true
+        }
+    }
+
+    $allowRootFiles = $true
+    if ($rule.psobject.properties.match('allow_files_at_root').Count -gt 0 -and $null -ne $rule.allow_files_at_root) {
+        $allowRootFiles = $rule.allow_files_at_root
+    }
+
+    $targetPathUri = [System.Uri]::new(((Resolve-Path -LiteralPath $targetPath).Path.TrimEnd('\') + '\'))
 
     Get-ChildItem -LiteralPath $targetPath -Recurse -Force -File | ForEach-Object {
         $relativePath = Get-RelativeRepoPath -RepoRoot $repoRoot -AbsolutePath $_.FullName
         $filename = $_.Name
         $extension = $_.Extension.TrimStart('.').ToLowerInvariant()
 
+        if (Test-GitIgnored -RepoRoot $repoRoot -RelativePath $relativePath) {
+            return
+        }
+
         if (
-            -not (Test-GitIgnored -RepoRoot $repoRoot -RelativePath $relativePath) -and
             -not $allowedFilenames.ContainsKey($filename) -and
             -not ($extension -and $allowedExtensions.ContainsKey($extension))
         ) {
             $errors.Add("`"$($rule.relative_path)`" contiene `"$relativePath`", pero ahi deben vivir $($rule.description).")
+            return
+        }
+
+        $fileUri = [System.Uri]::new($_.FullName)
+        $relativeToFile = [System.Uri]::UnescapeDataString($targetPathUri.MakeRelativeUri($fileUri).ToString()).Replace('\', '/')
+        $pathParts = $relativeToFile -split '/'
+
+        if ($pathParts.Length -eq 1) {
+            if (-not $allowRootFiles) {
+                $errors.Add("`"$($rule.relative_path)`" no permite archivos sueltos en su raiz. Mueve `"$relativePath`" a un subdirectorio permitido.")
+            }
+        } elseif ($null -ne $allowedSubdirs) {
+            $topDirName = $pathParts[0]
+            if (-not $allowedSubdirs.ContainsKey($topDirName)) {
+                $errors.Add("Dentro de `"$($rule.relative_path)`", el subdirectorio `"$topDirName`" no esta permitido (`"$relativePath`"). Se permiten: $(($rule.allowed_subdirectories) -join ', ').")
+            }
         }
     }
 }

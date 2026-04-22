@@ -20,7 +20,6 @@
     "dist",
     "docs",
     "infrastructure",
-    "MEMORY.md",
     "phpunit.xml.dist",
     "qs-core.php",
     "README.md",
@@ -42,7 +41,24 @@
       "relative_path": "tools/n8n",
       "description": "solo scripts operativos y archivos de soporte",
       "allowed_extensions": ["js", "json", "md", "php", "ps1", "txt"],
-      "allowed_filenames": []
+      "allowed_filenames": [],
+      "allowed_subdirectories": ["ingestion", "maintenance", "sync", "setup", "testing"]
+    },
+    {
+      "relative_path": "app",
+      "description": "codigo fuente principal organizado por subdominios",
+      "allowed_extensions": ["php", "json", "md", "jsx", "js", "css", "yaml", "yml"],
+      "allowed_filenames": [],
+      "allowed_subdirectories": ["Core", "Interfaces", "Modules", "Shared", "UI"],
+      "allow_files_at_root": false
+    },
+    {
+      "relative_path": "docs",
+      "description": "documentacion tecnica del proyecto",
+      "allowed_extensions": ["md", "json", "png", "jpg", "gitkeep", "pdf"],
+      "allowed_filenames": [],
+      "allowed_subdirectories": ["agents", "api", "architecture", "modules", "quality", "rag", "operations"],
+      "allow_files_at_root": true
     }
   ]
 }

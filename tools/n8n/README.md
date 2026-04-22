@@ -8,18 +8,35 @@ Scripts operativos para inspeccionar, probar y ajustar la integración local con
 - `infrastructure/n8n/`: `docker-compose`, workflows JSON y documentación de despliegue.
 - `var/tmp/n8n/`: salidas temporales, snapshots y dumps locales no versionados.
 
-## Scripts actuales
+## Scripts actuales (Organizados por categoría)
 
+### 📥 Ingestión (`tools/n8n/ingestion/`)
 - `bulk_ingest.js`: ingesta masiva de documentos hacia el webhook `wp-ingest-rag`.
-- `test_webhook.js`: smoke test directo del webhook de ingesta.
-- `get_wfs.js`: lista workflows vía API de n8n.
-- `sync_workflows.js`: hace upsert de los workflows versionados del repo en una instancia remota de n8n.
-- `get_chatbot_trigger.js`: inspecciona nodos clave del workflow del chatbot.
-- `check_errors.js`: imprime el detalle de la ejecución más reciente.
 - `apply_text_splitter.js`: agrega el splitter al workflow objetivo si aún no existe.
 - `create_ingest_wf.js`: crea un workflow de ingesta vía API.
-- `update_all_workflows.js`: aplica actualizaciones masivas a workflows.
+- `documents.json`: datos de soporte para pruebas de ingesta.
+
+### 🛠️ Mantenimiento (`tools/n8n/maintenance/`)
+- `check_errors.js`: imprime el detalle de la ejecución más reciente.
+- `get_wfs.js`: lista workflows vía API de n8n.
+- `get_chatbot_trigger.js`: inspecciona nodos clave del workflow del chatbot.
 - `fix_n8n.js` y `fix_n8n.php`: helpers experimentales para ajustes por API.
+
+### 🔄 Sincronización (`tools/n8n/sync/`)
+- `sync_workflows.js`: hace upsert de los workflows versionados del repo en una instancia remota de n8n.
+- `update_all_workflows.js`: aplica actualizaciones masivas a workflows.
+- `Sync-InboundWorkflow.ps1`: script de sincronización para el bridge de inbound.
+
+### ⚙️ Configuración y Túnel (`tools/n8n/setup/`)
+- `New-EvolutionInstance.ps1`: crea una nueva instancia de Evolution API.
+- `Set-EvolutionWebhook.ps1`: configura webhooks en Evolution.
+- `Start-EvolutionTunnel.ps1`: inicia túnel Cloudflare para pruebas locales.
+- `Get-WebhookPublicUrl.ps1`: obtiene la URL pública del webhook.
+
+### 🧪 Pruebas y E2E (`tools/n8n/testing/`)
+- `Test-WhatsAppE2E.ps1`: prueba de integración de punta a punta.
+- `Check-E2EReadiness.ps1`: verifica pre-requisitos para pruebas E2E.
+- `test_webhook.js`: smoke test directo del webhook de ingesta.
 
 Varios de estos scripts leen `N8N_CHATBOT_TOKEN` desde `.env` y asumen n8n local en `http://localhost:5678`.
 

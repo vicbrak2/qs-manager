@@ -1,6 +1,6 @@
 # Estado actual del chatbot Qamiluna
 
-Fecha de registro: 2026-04-15
+Fecha de registro: 2026-04-16
 
 Este documento registra el estado operativo posterior a la migracion de Evolution API, la
 reactivacion de WhatsApp y la incorporacion de herramientas modulares de operacion. No contiene
@@ -79,6 +79,13 @@ preparada para mensajes criticos con `esCritico=true`.
 - `WP RAG Ingestion`
 - `WhatsApp Hybrid Router`
 - `WhatsApp Inbound Bridge`
+- `Evolution API Keep-Alive` (ID: `PaNSIuiuHsIL96Mw`)
+
+El workflow Keep-Alive se activo el 2026-04-16. Ejecuta un GET a
+`https://qamiluna-evolution-api.onrender.com` cada 10 minutos para evitar que
+el servicio Render free tier entre en modo sleep. Sin este ping, Evolution
+dormia tras ~15 minutos de inactividad y el siguiente envio de WhatsApp fallaba
+con "Service unavailable".
 
 Tambien existe un workflow de captura QR de Evolution usado durante la vinculacion inicial.
 
@@ -141,6 +148,30 @@ Secrets necesarios en GitHub Actions:
 - `EVOLUTION_API_KEY`
 - `RAILWAY_API_TOKEN`
 
+## Flujo de reserva via chatbot → WhatsApp
+
+El chatbot web guia al usuario por estos pasos: servicio → comuna → direccion →
+telefono → fecha. Al confirmar la fecha, `ChatbotGateway::sendBookingWhatsApp()`
+envia un POST al webhook `hybrid-whatsapp` de n8n con el resumen de la reserva.
+
+El destino del mensaje se resuelve asi:
+
+- El gateway llama `$this->whatsAppGateway->send('', $text)` — string vacio como
+  telefono significa "usar el numero del operador".
+- `WhatsAppGateway::resolveDestinationPhone('')` devuelve `$this->defaultPhone`
+  que viene de la opcion WP `qs_n8n_whatsapp_phone` = `56950172974`.
+- `isAllowedPhone()` valida contra `qs_n8n_whatsapp_allowed_phones` = `56950172974`.
+- Si `actionsEnabled` es `true` y el numero pasa la validacion, se ejecuta el POST
+  a n8n que termina en Evolution API → WhatsApp.
+
+Opciones WP de produccion confirmadas:
+
+- `qs_n8n_whatsapp_actions_enabled` = `1`
+- `qs_n8n_whatsapp_phone` = `56950172974`
+- `qs_n8n_whatsapp_url` = `https://n8n.qamilunastudio.com/webhook/hybrid-whatsapp`
+- `qs_n8n_whatsapp_instance` = `qamiluna-test`
+- `qs_n8n_whatsapp_allowed_phones` = `56950172974`
+
 ## Validaciones realizadas
 
 ### Health check GitHub Actions
@@ -171,7 +202,7 @@ Resultado validado:
 
 ### WhatsApp desplegado
 
-Prueba final exitosa:
+Prueba final exitosa (sesion anterior):
 
 - Flujo: n8n Railway -> Evolution Render -> WhatsApp.
 - Destino de prueba: numero configurado por el operador.
@@ -188,6 +219,16 @@ Evolution con:
 POST /instance/restart/qamiluna-test
 ```
 
+### Flujo completo chatbot → WhatsApp (2026-04-16)
+
+Prueba end-to-end del flujo de reserva confirmada:
+
+- n8n execution `56102`: success (1.622s).
+- Ruta: WordPress chatbot -> `hybrid-whatsapp` webhook -> Evolution API -> WhatsApp.
+- Causa de fallos anteriores (`56101`, `55293`): Evolution API dormida en Render free tier.
+- Solucion aplicada: workflow `Evolution API Keep-Alive` publicado en n8n.
+  Hace GET a Evolution cada 10 minutos — impide que Render duerma el servicio.
+
 ## Decisiones vigentes
 
 - No operar local para produccion; todo debe funcionar desplegado.
@@ -202,6 +243,9 @@ POST /instance/restart/qamiluna-test
 - El prompt y algunas reglas siguen siendo especificas de Qamiluna si no se define un perfil por sitio.
 - El modelo gratuito de OpenRouter puede tener latencia o disponibilidad variable.
 - Falta limpiar workflows temporales de QR si ya no se usan.
+- Render free tier sigue siendo una limitacion: si n8n tambien deja de estar activo
+  por mas de 15 min, el Keep-Alive no dispararia. En la practica n8n esta en Railway
+  (siempre activo), por lo que este riesgo es bajo.
 
 ## Perfil multi-sitio
 
