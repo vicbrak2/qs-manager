@@ -81,7 +81,7 @@ foreach ($uploads as $path => $metadata) {
     ensure_remote_directory($connection, dirname($path), $ensuredDirectories);
 
     $localPath = $metadata['local_path'];
-    if (! @ftp_put($connection, $path, $localPath, FTP_BINARY)) {
+    if (! ftp_put_with_retry($connection, $path, $localPath)) {
         fwrite(STDERR, "Failed to upload {$path}.\n");
         ftp_close($connection);
         exit(1);
@@ -304,6 +304,22 @@ function directory_set(array $paths): array
     }
 
     return $directories;
+}
+
+function ftp_put_with_retry(FTP\Connection $connection, string $remotePath, string $localPath, int $maxAttempts = 3): bool
+{
+    for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+        if (@ftp_put($connection, $remotePath, $localPath, FTP_BINARY)) {
+            return true;
+        }
+
+        if ($attempt < $maxAttempts) {
+            echo "Upload attempt {$attempt} failed for {$remotePath}, retrying...\n";
+            sleep(2 ** ($attempt - 1));
+        }
+    }
+
+    return false;
 }
 
 function normalize_relative_path(string $path): string
