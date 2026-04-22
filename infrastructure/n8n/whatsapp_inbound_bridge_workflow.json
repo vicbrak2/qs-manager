@@ -53,6 +53,16 @@
     },
     {
       "parameters": {
+        "jsCode": "const body = $input.first().json;\nif (body.disabled === true) {\n  return [];\n}\nconst reply = body.reply || body.message || body.response || body.answer || '';\nif (!reply) {\n  return [];\n}\nreturn $input.all();"
+      },
+      "name": "Filtrar Respuesta Deshabilitada",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [625, 0],
+      "id": "a1000007-0000-0000-0000-000000000007"
+    },
+    {
+      "parameters": {
         "values": {
           "string": [
             {
@@ -61,7 +71,7 @@
             },
             {
               "name": "text",
-              "value": "={{ $json.reply || $json.message || $json.response || $json.answer || 'Lo siento, no pude procesar tu mensaje.' }}"
+              "value": "={{ $json.reply || $json.message || $json.response || $json.answer || '' }}"
             },
             {
               "name": "esCritico",
@@ -153,6 +163,17 @@
       "main": [
         [
           {
+            "node": "Filtrar Respuesta Deshabilitada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Respuesta Deshabilitada": {
+      "main": [
+        [
+          {
             "node": "Armar Respuesta Router",
             "type": "main",
             "index": 0
@@ -183,7 +204,7 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   }
