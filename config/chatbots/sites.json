@@ -12,7 +12,6 @@
       "n8nRequiredWorkflows": [
         "WordPress RAG Chatbot",
         "WhatsApp Hybrid Router",
-        "WhatsApp Inbound Bridge",
         "WP RAG Ingestion"
       ],
       "railwayEnvironment": "production",
