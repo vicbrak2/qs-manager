@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace QS\Modules\Setup\Interfaces\Hooks;
 
+use QS\Core\Contracts\ActivationHookInterface;
 use QS\Core\Logging\Logger;
 use QS\Modules\Setup\Application\Command\SetupSiteCommand;
 use QS\Modules\Setup\Application\CommandHandler\SetupSiteHandler;
 
-final class ActivationSetupHooks
+final class ActivationSetupHooks implements ActivationHookInterface
 {
     public function __construct(
         private readonly SetupSiteHandler $setupSiteHandler,

@@ -10,8 +10,10 @@ use QS\Modules\Setup\Infrastructure\Wordpress\MenuProvisioner;
 use QS\Modules\Setup\Infrastructure\Wordpress\OptionProvisioner;
 use QS\Modules\Setup\Infrastructure\Wordpress\PageProvisioner;
 use QS\Modules\Setup\Infrastructure\Wordpress\PermalinkProvisioner;
+use QS\Shared\Bus\CommandHandlerInterface;
+use QS\Shared\Bus\CommandInterface;
 
-final class SetupSiteHandler
+final class SetupSiteHandler implements CommandHandlerInterface
 {
     public function __construct(
         private readonly PageProvisioner $pageProvisioner,
@@ -25,8 +27,10 @@ final class SetupSiteHandler
     /**
      * @return array<string, mixed>
      */
-    public function handle(SetupSiteCommand $command): array
+    public function handle(CommandInterface $command): array
     {
+        assert($command instanceof SetupSiteCommand);
+
         $pageResult = $this->pageProvisioner->provision($command->pages, $command->force);
         $frontPageId = (int) ($pageResult['pages'][$command->frontPageSlug]['id'] ?? 0);
 

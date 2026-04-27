@@ -7,8 +7,9 @@ namespace QS\Modules\Booking\Application\QueryHandler;
 use QS\Modules\Booking\Application\DTO\ReservationDTO;
 use QS\Modules\Booking\Application\Query\GetTodayReservations;
 use QS\Modules\Booking\Domain\Repository\ReservationRepository;
+use QS\Shared\Bus\QueryHandlerInterface;
 
-final class GetTodayReservationsHandler
+final class GetTodayReservationsHandler implements QueryHandlerInterface
 {
     public function __construct(private readonly ReservationRepository $reservationRepository)
     {
@@ -17,8 +18,10 @@ final class GetTodayReservationsHandler
     /**
      * @return array<int, ReservationDTO>
      */
-    public function handle(GetTodayReservations $query): array
+    public function handle(object $query): array
     {
+        assert($query instanceof GetTodayReservations);
+
         return array_map(
             static fn ($reservation): ReservationDTO => new ReservationDTO($reservation),
             $this->reservationRepository->findToday()

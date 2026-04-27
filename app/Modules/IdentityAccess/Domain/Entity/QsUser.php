@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace QS\Modules\IdentityAccess\Domain\Entity;
 
 use QS\Modules\IdentityAccess\Domain\ValueObject\QsRole;
-use QS\Modules\IdentityAccess\Domain\ValueObject\UserId;
+use QS\Shared\ValueObjects\UserId;
 
 final class QsUser
 {

@@ -7,8 +7,9 @@ namespace QS\Modules\Finance\Application\QueryHandler;
 use QS\Modules\Finance\Application\DTO\PaymentDTO;
 use QS\Modules\Finance\Application\Query\GetPayments;
 use QS\Modules\Finance\Domain\Repository\PaymentRepository;
+use QS\Shared\Bus\QueryHandlerInterface;
 
-final class GetPaymentsHandler
+final class GetPaymentsHandler implements QueryHandlerInterface
 {
     public function __construct(private readonly PaymentRepository $paymentRepository)
     {
@@ -17,8 +18,10 @@ final class GetPaymentsHandler
     /**
      * @return array<int, PaymentDTO>
      */
-    public function handle(GetPayments $query): array
+    public function handle(object $query): array
     {
+        assert($query instanceof GetPayments);
+
         $payments = $query->month !== null
             ? $this->paymentRepository->findByMonth($query->month)
             : $this->paymentRepository->findAll();

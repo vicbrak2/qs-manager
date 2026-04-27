@@ -15,9 +15,11 @@ use QS\Modules\Bitacora\Domain\Repository\BitacoraRepository;
 use QS\Modules\Bitacora\Domain\ValueObject\PickupPoint;
 use QS\Modules\Bitacora\Domain\ValueObject\ServiceAddress;
 use QS\Modules\Bitacora\Domain\ValueObject\TravelDuration;
+use QS\Shared\Bus\CommandHandlerInterface;
+use QS\Shared\Bus\CommandInterface;
 use RuntimeException;
 
-final class UpdateBitacoraHandler
+final class UpdateBitacoraHandler implements CommandHandlerInterface
 {
     public function __construct(
         private readonly BitacoraRepository $bitacoraRepository,
@@ -25,8 +27,10 @@ final class UpdateBitacoraHandler
     ) {
     }
 
-    public function handle(UpdateBitacora $command): ?BitacoraDTO
+    public function handle(CommandInterface $command): ?BitacoraDTO
     {
+        assert($command instanceof UpdateBitacora);
+
         $existing = $this->bitacoraRepository->findById($command->id);
 
         if ($existing === null) {

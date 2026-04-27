@@ -10,26 +10,19 @@ use QS\Core\Security\RequestSanitizer;
 use QS\Modules\Bitacora\Application\Command\AddBitacoraNote;
 use QS\Modules\Bitacora\Application\Command\CreateBitacora;
 use QS\Modules\Bitacora\Application\Command\UpdateBitacora;
-use QS\Modules\Bitacora\Application\CommandHandler\AddBitacoraNoteHandler;
-use QS\Modules\Bitacora\Application\CommandHandler\CreateBitacoraHandler;
-use QS\Modules\Bitacora\Application\CommandHandler\UpdateBitacoraHandler;
+use QS\Modules\Bitacora\Application\DTO\BitacoraDTO;
 use QS\Modules\Bitacora\Application\Query\GetBitacoraById;
 use QS\Modules\Bitacora\Application\Query\GetBitacoras;
 use QS\Modules\Bitacora\Application\Query\GetBitacoraSummary;
-use QS\Modules\Bitacora\Application\QueryHandler\GetBitacoraByIdHandler;
-use QS\Modules\Bitacora\Application\QueryHandler\GetBitacorasHandler;
-use QS\Modules\Bitacora\Application\QueryHandler\GetBitacoraSummaryHandler;
+use QS\Shared\Bus\CommandBus;
+use QS\Shared\Bus\QueryBus;
 use QS\Shared\DTO\RestResponse;
 
 final class BitacoraController
 {
     public function __construct(
-        private readonly GetBitacorasHandler $getBitacorasHandler,
-        private readonly GetBitacoraByIdHandler $getBitacoraByIdHandler,
-        private readonly GetBitacoraSummaryHandler $getBitacoraSummaryHandler,
-        private readonly CreateBitacoraHandler $createBitacoraHandler,
-        private readonly UpdateBitacoraHandler $updateBitacoraHandler,
-        private readonly AddBitacoraNoteHandler $addBitacoraNoteHandler,
+        private readonly QueryBus $queryBus,
+        private readonly CommandBus $commandBus,
         private readonly RequestSanitizer $requestSanitizer,
         private readonly CapabilityChecker $capabilityChecker
     ) {
@@ -37,7 +30,8 @@ final class BitacoraController
 
     public function index(\WP_REST_Request $request): \WP_REST_Response
     {
-        $bitacoras = $this->getBitacorasHandler->handle(new GetBitacoras());
+        /** @var array<int, BitacoraDTO> $bitacoras */
+        $bitacoras = $this->queryBus->ask(new GetBitacoras());
 
         return $this->respond(array_map(static fn ($dto): array => $dto->toArray(), $bitacoras));
     }
@@ -50,7 +44,8 @@ final class BitacoraController
             return $this->notFound('Bitacora not found.');
         }
 
-        $bitacora = $this->getBitacoraByIdHandler->handle(new GetBitacoraById($id));
+        /** @var BitacoraDTO|null $bitacora */
+        $bitacora = $this->queryBus->ask(new GetBitacoraById($id));
 
         return $bitacora !== null
             ? $this->respond($bitacora->toArray())
@@ -60,7 +55,8 @@ final class BitacoraController
     public function store(\WP_REST_Request $request): \WP_REST_Response
     {
         try {
-            $bitacora = $this->createBitacoraHandler->handle($this->createCommand($this->payload($request)));
+            $bitacora = $this->commandBus->dispatch($this->createCommand($this->payload($request)));
+            assert($bitacora instanceof BitacoraDTO);
 
             return $this->respond($bitacora->toArray(), 201);
         } catch (InvalidArgumentException $exception) {
@@ -77,7 +73,8 @@ final class BitacoraController
         }
 
         try {
-            $bitacora = $this->updateBitacoraHandler->handle($this->updateCommand($id, $this->payload($request)));
+            /** @var BitacoraDTO|null $bitacora */
+            $bitacora = $this->commandBus->dispatch($this->updateCommand($id, $this->payload($request)));
 
             return $bitacora !== null
                 ? $this->respond($bitacora->toArray())
@@ -95,7 +92,8 @@ final class BitacoraController
             return $this->notFound('Bitacora not found.');
         }
 
-        $summary = $this->getBitacoraSummaryHandler->handle(new GetBitacoraSummary($id));
+        /** @var array<string, mixed>|null $summary */
+        $summary = $this->queryBus->ask(new GetBitacoraSummary($id));
 
         return $summary !== null
             ? $this->respond($summary)
@@ -118,7 +116,8 @@ final class BitacoraController
         }
 
         $authorUserId = function_exists('get_current_user_id') ? (int) get_current_user_id() : null;
-        $bitacora = $this->addBitacoraNoteHandler->handle(new AddBitacoraNote($id, $message, $authorUserId ?: null));
+        /** @var BitacoraDTO|null $bitacora */
+        $bitacora = $this->commandBus->dispatch(new AddBitacoraNote($id, $message, $authorUserId ?: null));
 
         return $bitacora !== null
             ? $this->respond($bitacora->toArray(), 201)

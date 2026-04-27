@@ -10,16 +10,20 @@ use QS\Modules\Finance\Application\Command\RegisterPayment;
 use QS\Modules\Finance\Application\DTO\PaymentDTO;
 use QS\Modules\Finance\Domain\Entity\Payment;
 use QS\Modules\Finance\Domain\Repository\PaymentRepository;
+use QS\Shared\Bus\CommandHandlerInterface;
+use QS\Shared\Bus\CommandInterface;
 use QS\Shared\ValueObjects\Money;
 
-final class RegisterPaymentHandler
+final class RegisterPaymentHandler implements CommandHandlerInterface
 {
     public function __construct(private readonly PaymentRepository $paymentRepository)
     {
     }
 
-    public function handle(RegisterPayment $command): PaymentDTO
+    public function handle(CommandInterface $command): PaymentDTO
     {
+        assert($command instanceof RegisterPayment);
+
         if ($command->amountClp <= 0) {
             throw new InvalidArgumentException('Payment amount must be greater than zero.');
         }

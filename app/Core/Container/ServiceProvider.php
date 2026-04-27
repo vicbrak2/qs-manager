@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace QS\Core\Container;
 
 use function DI\autowire;
-
-use DI\Container as DiContainer;
-
 use function DI\factory;
 use function DI\get;
 
+use DI\Container as DiContainer;
 use Psr\Container\ContainerInterface;
 use QS\Core\Bootstrap\HookLoader;
 use QS\Core\Bootstrap\ModuleRegistry;
 use QS\Core\Config\ConfigLoader;
 use QS\Core\Config\EnvironmentDetector;
 use QS\Core\Config\PluginConfig;
+use QS\Core\Contracts\ActivationHookInterface;
+use QS\Core\Contracts\HookableInterface;
+use QS\Core\Contracts\ModuleServiceProviderInterface;
 use QS\Core\Errors\ErrorHandler;
 use QS\Core\Events\EventDispatcher;
 use QS\Core\Logging\Logger;
@@ -28,91 +29,76 @@ use QS\Core\Versioning\PluginVersion;
 use QS\Core\Wordpress\PostTypeRegistrar;
 use QS\Core\Wordpress\RestRouteRegistrar;
 use QS\Interfaces\Rest\SystemController;
-use QS\Modules\Agents\Application\CommandHandler\ReindexContentHandler;
-use QS\Modules\Agents\Infrastructure\Chatbot\ChatbotProfile;
-use QS\Modules\Agents\Infrastructure\Chatbot\QuickReplyMatcher;
-use QS\Modules\Agents\Infrastructure\N8n\ChatbotGateway;
-use QS\Modules\Agents\Infrastructure\N8n\IngestGateway;
-use QS\Modules\Agents\Infrastructure\N8n\WhatsAppGateway;
-use QS\Modules\Agents\Infrastructure\Persistence\WpdbChatLogRepository;
-use QS\Modules\Agents\Infrastructure\Qdrant\QdrantGateway;
-use QS\Modules\Agents\Infrastructure\Wordpress\ChatbotFallbackResponder;
-use QS\Modules\Agents\Infrastructure\Wordpress\ChatbotShortcode;
-use QS\Modules\Agents\Infrastructure\Wordpress\ReindexAdminPage;
-use QS\Modules\Agents\Interfaces\Rest\ChatbotController;
-use QS\Modules\Agents\Interfaces\Rest\WhatsAppOptionsController;
-use QS\Modules\Bitacora\Application\CommandHandler\AddBitacoraNoteHandler;
-use QS\Modules\Bitacora\Application\CommandHandler\CreateBitacoraHandler;
-use QS\Modules\Bitacora\Application\CommandHandler\UpdateBitacoraHandler;
-use QS\Modules\Bitacora\Application\QueryHandler\GetBitacoraByIdHandler;
-use QS\Modules\Bitacora\Application\QueryHandler\GetBitacorasHandler;
-use QS\Modules\Bitacora\Application\QueryHandler\GetBitacoraSummaryHandler;
-use QS\Modules\Bitacora\Domain\Policy\BitacoraPolicy;
-use QS\Modules\Bitacora\Domain\Repository\BitacoraRepository;
-use QS\Modules\Bitacora\Infrastructure\Persistence\CptBitacoraRepository;
-use QS\Modules\Bitacora\Infrastructure\Persistence\MetaFieldMapper;
-use QS\Modules\Bitacora\Interfaces\Rest\BitacoraController;
-use QS\Modules\Booking\Application\QueryHandler\GetAllReservationsHandler;
-use QS\Modules\Booking\Application\QueryHandler\GetMuaAgendaHandler;
-use QS\Modules\Booking\Application\QueryHandler\GetReservationByIdHandler;
-use QS\Modules\Booking\Application\QueryHandler\GetTodayReservationsHandler;
-use QS\Modules\Booking\Domain\Repository\ReservationRepository;
-use QS\Modules\Booking\Domain\Service\ReservationNormalizer;
-use QS\Modules\Booking\Infrastructure\Persistence\WpdbLatepointRepository;
-use QS\Modules\Booking\Infrastructure\Wordpress\LatepointTableMap;
-use QS\Modules\Booking\Interfaces\Rest\MuaAgendaController;
-use QS\Modules\Booking\Interfaces\Rest\ReservationsController;
-use QS\Modules\Finance\Application\CommandHandler\RegisterPaymentHandler;
-use QS\Modules\Finance\Application\QueryHandler\GetExpensesHandler;
-use QS\Modules\Finance\Application\QueryHandler\GetMonthlyFinanceSummaryHandler;
-use QS\Modules\Finance\Application\QueryHandler\GetPaymentsHandler;
-use QS\Modules\Finance\Application\QueryHandler\GetServiceMarginHandler;
-use QS\Modules\Finance\Domain\Repository\ExpenseRepository;
-use QS\Modules\Finance\Domain\Repository\PaymentRepository;
-use QS\Modules\Finance\Domain\Repository\ServiceCostRepository;
-use QS\Modules\Finance\Domain\Service\MarginCalculator;
-use QS\Modules\Finance\Domain\Service\MonthlySummaryBuilder;
-use QS\Modules\Finance\Infrastructure\Persistence\ExpenseCptRepository;
-use QS\Modules\Finance\Infrastructure\Persistence\PaymentCptRepository;
-use QS\Modules\Finance\Infrastructure\Persistence\WpServiceCostRepository;
-use QS\Modules\Finance\Interfaces\Rest\FinanceController;
-use QS\Modules\IdentityAccess\Application\CommandHandler\AssignQsRoleHandler;
-use QS\Modules\IdentityAccess\Application\QueryHandler\GetUserPermissionsHandler;
-use QS\Modules\IdentityAccess\Domain\Policy\AccessPolicy;
-use QS\Modules\IdentityAccess\Domain\Repository\UserRepository;
-use QS\Modules\IdentityAccess\Infrastructure\Persistence\WpUserRepository;
-use QS\Modules\IdentityAccess\Infrastructure\Wordpress\RoleRegistrar;
-use QS\Modules\IdentityAccess\Interfaces\Hooks\RoleHooks;
-use QS\Modules\ServicesCatalog\Application\QueryHandler\GetAllServicesHandler;
-use QS\Modules\ServicesCatalog\Application\QueryHandler\GetServiceByIdHandler;
-use QS\Modules\ServicesCatalog\Domain\Repository\ServiceRepository;
-use QS\Modules\ServicesCatalog\Infrastructure\Persistence\WpdbServiceCatalogRepository;
-use QS\Modules\ServicesCatalog\Interfaces\Rest\ServicesController;
-use QS\Modules\Setup\Application\CommandHandler\SetupSiteHandler;
-use QS\Modules\Setup\Infrastructure\Wordpress\AgentStatusChecker;
-use QS\Modules\Setup\Infrastructure\Wordpress\MenuProvisioner;
-use QS\Modules\Setup\Infrastructure\Wordpress\OptionProvisioner;
-use QS\Modules\Setup\Infrastructure\Wordpress\PageProvisioner;
-use QS\Modules\Setup\Infrastructure\Wordpress\PermalinkProvisioner;
-use QS\Modules\Setup\Interfaces\Cli\CliCommandRegistrar;
-use QS\Modules\Setup\Interfaces\Cli\QsCommand;
-use QS\Modules\Setup\Interfaces\Hooks\ActivationSetupHooks;
-use QS\Modules\Setup\Interfaces\Rest\SetupController;
-use QS\Modules\Team\Application\QueryHandler\GetAllStaffHandler;
-use QS\Modules\Team\Application\QueryHandler\GetStaffAvailabilityHandler;
-use QS\Modules\Team\Application\QueryHandler\GetStaffByIdHandler;
-use QS\Modules\Team\Domain\Repository\StaffRepository;
-use QS\Modules\Team\Domain\Service\AvailabilityChecker;
-use QS\Modules\Team\Infrastructure\Persistence\WpdbStaffRepository;
-use QS\Modules\Team\Interfaces\Rest\StaffController;
+use QS\Shared\Bus\CommandBus;
+use QS\Shared\Bus\QueryBus;
 use QS\Shared\Clock\SystemClock;
 
 final class ServiceProvider
 {
     /**
+     * @var list<class-string<ModuleServiceProviderInterface>>
+     */
+    public const MODULE_PROVIDERS = [
+        \QS\Modules\Finance\FinanceServiceProvider::class,
+        \QS\Modules\Booking\BookingServiceProvider::class,
+        \QS\Modules\Bitacora\BitacoraServiceProvider::class,
+        \QS\Modules\Team\TeamServiceProvider::class,
+        \QS\Modules\ServicesCatalog\ServicesCatalogServiceProvider::class,
+        \QS\Modules\IdentityAccess\IdentityAccessServiceProvider::class,
+        \QS\Modules\Agents\AgentsServiceProvider::class,
+        \QS\Modules\Setup\SetupServiceProvider::class,
+    ];
+
+    /**
      * @return array<string, mixed>
      */
     public static function definitions(string $rootDir): array
+    {
+        $modules = [];
+
+        foreach (self::MODULE_PROVIDERS as $providerClass) {
+            $modules[] = $providerClass::definitions();
+        }
+
+        return array_merge(self::coreDefinitions($rootDir), ...$modules);
+    }
+
+    /**
+     * @return array<class-string<HookableInterface>>
+     */
+    public static function hookables(): array
+    {
+        $hookables = [];
+
+        foreach (self::MODULE_PROVIDERS as $providerClass) {
+            foreach ($providerClass::hookables() as $hookableClass) {
+                $hookables[] = $hookableClass;
+            }
+        }
+
+        return $hookables;
+    }
+
+    /**
+     * @return array<class-string<ActivationHookInterface>>
+     */
+    public static function activationHooks(): array
+    {
+        $activationHooks = [];
+
+        foreach (self::MODULE_PROVIDERS as $providerClass) {
+            foreach ($providerClass::activationHooks() as $activationHookClass) {
+                $activationHooks[] = $activationHookClass;
+            }
+        }
+
+        return $activationHooks;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function coreDefinitions(string $rootDir): array
     {
         return [
             \wpdb::class => factory(static function (): \wpdb {
@@ -155,83 +141,36 @@ final class ServiceProvider
             CapabilityChecker::class => autowire(),
             RequestSanitizer::class => autowire(),
             SystemClock::class => autowire(),
-            AccessPolicy::class => autowire(),
-            UserRepository::class => autowire(WpUserRepository::class),
-            RoleRegistrar::class => autowire(),
-            RoleHooks::class => autowire(),
+            CommandBus::class => factory(static function (ContainerInterface $container): CommandBus {
+                $bus = new CommandBus($container);
+
+                foreach (self::MODULE_PROVIDERS as $providerClass) {
+                    foreach ($providerClass::commandHandlers() as $commandClass => $handlerClass) {
+                        $bus->register($commandClass, $handlerClass);
+                    }
+                }
+
+                return $bus;
+            }),
+            QueryBus::class => factory(static function (ContainerInterface $container): QueryBus {
+                $bus = new QueryBus($container);
+
+                foreach (self::MODULE_PROVIDERS as $providerClass) {
+                    foreach ($providerClass::queryHandlers() as $queryClass => $handlerClass) {
+                        $bus->register($queryClass, $handlerClass);
+                    }
+                }
+
+                return $bus;
+            }),
             PostTypeRegistrar::class => autowire()->constructor(get('wordpress.post_types')),
             RestRouteRegistrar::class => autowire(),
-            MetaFieldMapper::class => autowire(),
-            BitacoraPolicy::class => autowire(),
-            BitacoraRepository::class => autowire(CptBitacoraRepository::class),
-            GetBitacorasHandler::class => autowire(),
-            GetBitacoraByIdHandler::class => autowire(),
-            GetBitacoraSummaryHandler::class => autowire(),
-            CreateBitacoraHandler::class => autowire(),
-            UpdateBitacoraHandler::class => autowire(),
-            AddBitacoraNoteHandler::class => autowire(),
-            StaffRepository::class => autowire(WpdbStaffRepository::class),
-            AvailabilityChecker::class => autowire(),
-            GetAllStaffHandler::class => autowire(),
-            GetStaffByIdHandler::class => autowire(),
-            GetStaffAvailabilityHandler::class => autowire(),
-            LatepointTableMap::class => autowire(),
-            ReservationNormalizer::class => autowire(),
-            ReservationRepository::class => autowire(WpdbLatepointRepository::class),
-            GetAllReservationsHandler::class => autowire(),
-            GetTodayReservationsHandler::class => autowire(),
-            GetReservationByIdHandler::class => autowire(),
-            GetMuaAgendaHandler::class => autowire(),
-            ServiceRepository::class => autowire(WpdbServiceCatalogRepository::class),
-            GetAllServicesHandler::class => autowire(),
-            GetServiceByIdHandler::class => autowire(),
-            PageProvisioner::class => autowire(),
-            OptionProvisioner::class => autowire(),
-            MenuProvisioner::class => autowire(),
-            PermalinkProvisioner::class => autowire(),
-            AgentStatusChecker::class => autowire(),
-            SetupSiteHandler::class => autowire(),
-            PaymentRepository::class => autowire(PaymentCptRepository::class),
-            ExpenseRepository::class => autowire(ExpenseCptRepository::class),
-            ServiceCostRepository::class => autowire(WpServiceCostRepository::class),
-            MarginCalculator::class => autowire(),
-            MonthlySummaryBuilder::class => autowire(),
-            GetMonthlyFinanceSummaryHandler::class => autowire(),
-            GetServiceMarginHandler::class => autowire(),
-            GetPaymentsHandler::class => autowire(),
-            RegisterPaymentHandler::class => autowire(),
-            GetExpensesHandler::class => autowire(),
-            AssignQsRoleHandler::class => autowire(),
-            GetUserPermissionsHandler::class => autowire(),
             MigrationRunner::class => autowire()->constructor(
                 $rootDir,
                 get(PluginVersion::class),
                 get(Logger::class)
             ),
             SystemController::class => autowire(),
-            BitacoraController::class => autowire(),
-            StaffController::class => autowire(),
-            ReservationsController::class => autowire(),
-            MuaAgendaController::class => autowire(),
-            ServicesController::class => autowire(),
-            FinanceController::class => autowire(),
-            ChatbotProfile::class => factory(static fn (): ChatbotProfile => ChatbotProfile::resolveDefault()),
-            QuickReplyMatcher::class => autowire(),
-            ChatbotGateway::class => autowire(),
-            IngestGateway::class => autowire(),
-            WhatsAppGateway::class => autowire(),
-            WpdbChatLogRepository::class => autowire(),
-            QdrantGateway::class => autowire(),
-            ChatbotFallbackResponder::class => autowire(),
-            ReindexContentHandler::class => autowire(),
-            ReindexAdminPage::class => autowire(),
-            ChatbotShortcode::class => autowire(),
-            ChatbotController::class => autowire(),
-            WhatsAppOptionsController::class => autowire(),
-            QsCommand::class => autowire(),
-            CliCommandRegistrar::class => autowire(),
-            ActivationSetupHooks::class => autowire(),
-            SetupController::class => autowire(),
         ];
     }
 }

@@ -7,8 +7,8 @@ namespace QS\Tests\Unit\Modules\IdentityAccess;
 use QS\Modules\IdentityAccess\Domain\Entity\QsUser;
 use QS\Modules\IdentityAccess\Domain\Policy\AccessPolicy;
 use QS\Modules\IdentityAccess\Domain\ValueObject\QsRole;
-use QS\Modules\IdentityAccess\Domain\ValueObject\UserId;
 use QS\Shared\Testing\TestCase;
+use QS\Shared\ValueObjects\UserId;
 
 final class AccessPolicyTest extends TestCase
 {

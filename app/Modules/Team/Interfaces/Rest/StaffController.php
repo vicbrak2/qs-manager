@@ -6,21 +6,18 @@ namespace QS\Modules\Team\Interfaces\Rest;
 
 use QS\Core\Security\CapabilityChecker;
 use QS\Core\Security\RequestSanitizer;
+use QS\Modules\Team\Application\DTO\StaffDTO;
 use QS\Modules\Team\Application\Query\GetAllStaff;
 use QS\Modules\Team\Application\Query\GetStaffAvailability;
 use QS\Modules\Team\Application\Query\GetStaffById;
-use QS\Modules\Team\Application\QueryHandler\GetAllStaffHandler;
-use QS\Modules\Team\Application\QueryHandler\GetStaffAvailabilityHandler;
-use QS\Modules\Team\Application\QueryHandler\GetStaffByIdHandler;
 use QS\Modules\Team\Domain\ValueObject\Specialty;
+use QS\Shared\Bus\QueryBus;
 use QS\Shared\DTO\RestResponse;
 
 final class StaffController
 {
     public function __construct(
-        private readonly GetAllStaffHandler $getAllStaffHandler,
-        private readonly GetStaffByIdHandler $getStaffByIdHandler,
-        private readonly GetStaffAvailabilityHandler $getStaffAvailabilityHandler,
+        private readonly QueryBus $queryBus,
         private readonly RequestSanitizer $requestSanitizer,
         private readonly CapabilityChecker $capabilityChecker
     ) {
@@ -30,7 +27,8 @@ final class StaffController
     {
         $specialty = Specialty::fromNullable($this->requestSanitizer->sanitizeNullableText($request->get_param('specialty')));
         $activeOnly = $this->requestSanitizer->sanitizeBool($request->get_param('active_only') ?? true);
-        $staff = $this->getAllStaffHandler->handle(new GetAllStaff($specialty, $activeOnly));
+        /** @var array<int, StaffDTO> $staff */
+        $staff = $this->queryBus->ask(new GetAllStaff($specialty, $activeOnly));
 
         return $this->respond(array_map(static fn ($dto): array => $dto->toArray(), $staff));
     }
@@ -43,7 +41,8 @@ final class StaffController
             return $this->notFound('Staff member not found.');
         }
 
-        $staff = $this->getStaffByIdHandler->handle(new GetStaffById($id));
+        /** @var StaffDTO|null $staff */
+        $staff = $this->queryBus->ask(new GetStaffById($id));
 
         if ($staff !== null) {
             return $this->respond($staff->toArray());
@@ -63,7 +62,8 @@ final class StaffController
         $date = $this->requestSanitizer->sanitizeNullableText($request->get_param('date')) ?? gmdate('Y-m-d');
         $startTime = $this->requestSanitizer->sanitizeNullableText($request->get_param('start_time'));
         $endTime = $this->requestSanitizer->sanitizeNullableText($request->get_param('end_time'));
-        $availability = $this->getStaffAvailabilityHandler->handle(new GetStaffAvailability($id, $date, $startTime, $endTime));
+        /** @var array<string, mixed>|null $availability */
+        $availability = $this->queryBus->ask(new GetStaffAvailability($id, $date, $startTime, $endTime));
 
         if ($availability === null) {
             return $this->notFound('Staff member not found.');
@@ -74,7 +74,8 @@ final class StaffController
 
     public function muas(\WP_REST_Request $request): \WP_REST_Response
     {
-        $staff = $this->getAllStaffHandler->handle(new GetAllStaff(Specialty::Mua, true));
+        /** @var array<int, StaffDTO> $staff */
+        $staff = $this->queryBus->ask(new GetAllStaff(Specialty::Mua, true));
 
         return $this->respond(array_map(static fn ($dto): array => $dto->toArray(), $staff));
     }

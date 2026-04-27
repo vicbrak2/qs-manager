@@ -15,8 +15,10 @@ use QS\Modules\Bitacora\Domain\Repository\BitacoraRepository;
 use QS\Modules\Bitacora\Domain\ValueObject\PickupPoint;
 use QS\Modules\Bitacora\Domain\ValueObject\ServiceAddress;
 use QS\Modules\Bitacora\Domain\ValueObject\TravelDuration;
+use QS\Shared\Bus\CommandHandlerInterface;
+use QS\Shared\Bus\CommandInterface;
 
-final class CreateBitacoraHandler
+final class CreateBitacoraHandler implements CommandHandlerInterface
 {
     public function __construct(
         private readonly BitacoraRepository $bitacoraRepository,
@@ -24,8 +26,10 @@ final class CreateBitacoraHandler
     ) {
     }
 
-    public function handle(CreateBitacora $command): BitacoraDTO
+    public function handle(CommandInterface $command): BitacoraDTO
     {
+        assert($command instanceof CreateBitacora);
+
         $now = new DateTimeImmutable('now');
         $bitacora = new Bitacora(
             null,

@@ -8,7 +8,7 @@ use QS\Modules\IdentityAccess\Domain\Entity\QsUser;
 use QS\Modules\IdentityAccess\Domain\Policy\AccessPolicy;
 use QS\Modules\IdentityAccess\Domain\Repository\UserRepository;
 use QS\Modules\IdentityAccess\Domain\ValueObject\QsRole;
-use QS\Modules\IdentityAccess\Domain\ValueObject\UserId;
+use QS\Shared\ValueObjects\UserId;
 
 final class WpUserRepository implements UserRepository
 {

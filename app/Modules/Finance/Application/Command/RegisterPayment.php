@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace QS\Modules\Finance\Application\Command;
 
 use QS\Modules\Finance\Domain\ValueObject\PaymentMethod;
+use QS\Shared\Bus\CommandInterface;
 
-final class RegisterPayment
+final class RegisterPayment implements CommandInterface
 {
     public function __construct(
         public readonly ?int $reservationId,

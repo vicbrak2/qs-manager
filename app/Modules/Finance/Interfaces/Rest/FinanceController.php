@@ -8,26 +8,24 @@ use InvalidArgumentException;
 use QS\Core\Security\CapabilityChecker;
 use QS\Core\Security\RequestSanitizer;
 use QS\Modules\Finance\Application\Command\RegisterPayment;
-use QS\Modules\Finance\Application\CommandHandler\RegisterPaymentHandler;
+use QS\Modules\Finance\Application\DTO\ExpenseDTO;
+use QS\Modules\Finance\Application\DTO\MonthlySummaryDTO;
+use QS\Modules\Finance\Application\DTO\PaymentDTO;
+use QS\Modules\Finance\Application\DTO\ServiceMarginDTO;
 use QS\Modules\Finance\Application\Query\GetExpenses;
 use QS\Modules\Finance\Application\Query\GetMonthlyFinanceSummary;
 use QS\Modules\Finance\Application\Query\GetPayments;
 use QS\Modules\Finance\Application\Query\GetServiceMargin;
-use QS\Modules\Finance\Application\QueryHandler\GetExpensesHandler;
-use QS\Modules\Finance\Application\QueryHandler\GetMonthlyFinanceSummaryHandler;
-use QS\Modules\Finance\Application\QueryHandler\GetPaymentsHandler;
-use QS\Modules\Finance\Application\QueryHandler\GetServiceMarginHandler;
 use QS\Modules\Finance\Domain\ValueObject\PaymentMethod;
+use QS\Shared\Bus\CommandBus;
+use QS\Shared\Bus\QueryBus;
 use QS\Shared\DTO\RestResponse;
 
 final class FinanceController
 {
     public function __construct(
-        private readonly GetMonthlyFinanceSummaryHandler $getMonthlyFinanceSummaryHandler,
-        private readonly GetServiceMarginHandler $getServiceMarginHandler,
-        private readonly GetPaymentsHandler $getPaymentsHandler,
-        private readonly RegisterPaymentHandler $registerPaymentHandler,
-        private readonly GetExpensesHandler $getExpensesHandler,
+        private readonly QueryBus $queryBus,
+        private readonly CommandBus $commandBus,
         private readonly RequestSanitizer $requestSanitizer,
         private readonly CapabilityChecker $capabilityChecker
     ) {
@@ -35,16 +33,18 @@ final class FinanceController
 
     public function monthlySummary(\WP_REST_Request $request): \WP_REST_Response
     {
-        $summary = $this->getMonthlyFinanceSummaryHandler->handle(
+        $summary = $this->queryBus->ask(
             new GetMonthlyFinanceSummary($this->normalizeMonth($request->get_param('month')))
         );
+        assert($summary instanceof MonthlySummaryDTO);
 
         return $this->respond($summary->toArray());
     }
 
     public function serviceMargin(\WP_REST_Request $request): \WP_REST_Response
     {
-        $margins = $this->getServiceMarginHandler->handle(
+        /** @var array<int, ServiceMarginDTO> $margins */
+        $margins = $this->queryBus->ask(
             new GetServiceMargin($this->normalizeMonth($request->get_param('month')))
         );
 
@@ -54,7 +54,8 @@ final class FinanceController
     public function payments(\WP_REST_Request $request): \WP_REST_Response
     {
         $month = $this->requestSanitizer->sanitizeNullableText($request->get_param('month'));
-        $payments = $this->getPaymentsHandler->handle(new GetPayments($month !== null ? $this->normalizeMonth($month) : null));
+        /** @var array<int, PaymentDTO> $payments */
+        $payments = $this->queryBus->ask(new GetPayments($month !== null ? $this->normalizeMonth($month) : null));
 
         return $this->respond(array_map(static fn ($dto): array => $dto->toArray(), $payments));
     }
@@ -64,7 +65,7 @@ final class FinanceController
         $payload = $this->payload($request);
 
         try {
-            $payment = $this->registerPaymentHandler->handle(
+            $payment = $this->commandBus->dispatch(
                 new RegisterPayment(
                     $this->requestSanitizer->sanitizeInt($payload['reservation_id'] ?? null),
                     $this->requestSanitizer->sanitizeNullableText($payload['concept'] ?? null),
@@ -75,6 +76,7 @@ final class FinanceController
                     $this->normalizeMonth($payload['closing_month'] ?? null)
                 )
             );
+            assert($payment instanceof PaymentDTO);
 
             return $this->respond($payment->toArray(), 201);
         } catch (InvalidArgumentException $exception) {
@@ -85,7 +87,8 @@ final class FinanceController
     public function expenses(\WP_REST_Request $request): \WP_REST_Response
     {
         $month = $this->requestSanitizer->sanitizeNullableText($request->get_param('month'));
-        $expenses = $this->getExpensesHandler->handle(new GetExpenses($month !== null ? $this->normalizeMonth($month) : null));
+        /** @var array<int, ExpenseDTO> $expenses */
+        $expenses = $this->queryBus->ask(new GetExpenses($month !== null ? $this->normalizeMonth($month) : null));
 
         return $this->respond(array_map(static fn ($dto): array => $dto->toArray(), $expenses));
     }

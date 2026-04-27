@@ -6,17 +6,16 @@ namespace QS\Modules\ServicesCatalog\Interfaces\Rest;
 
 use QS\Core\Security\CapabilityChecker;
 use QS\Core\Security\RequestSanitizer;
+use QS\Modules\ServicesCatalog\Application\DTO\ServiceDTO;
 use QS\Modules\ServicesCatalog\Application\Query\GetAllServices;
 use QS\Modules\ServicesCatalog\Application\Query\GetServiceById;
-use QS\Modules\ServicesCatalog\Application\QueryHandler\GetAllServicesHandler;
-use QS\Modules\ServicesCatalog\Application\QueryHandler\GetServiceByIdHandler;
+use QS\Shared\Bus\QueryBus;
 use QS\Shared\DTO\RestResponse;
 
 final class ServicesController
 {
     public function __construct(
-        private readonly GetAllServicesHandler $getAllServicesHandler,
-        private readonly GetServiceByIdHandler $getServiceByIdHandler,
+        private readonly QueryBus $queryBus,
         private readonly RequestSanitizer $requestSanitizer,
         private readonly CapabilityChecker $capabilityChecker
     ) {
@@ -25,7 +24,8 @@ final class ServicesController
     public function index(\WP_REST_Request $request): \WP_REST_Response
     {
         $activeOnly = $this->requestSanitizer->sanitizeBool($request->get_param('active_only') ?? true);
-        $services = $this->getAllServicesHandler->handle(new GetAllServices($activeOnly));
+        /** @var array<int, ServiceDTO> $services */
+        $services = $this->queryBus->ask(new GetAllServices($activeOnly));
 
         return $this->respond(array_map(static fn ($dto): array => $dto->toArray(), $services));
     }
@@ -38,7 +38,8 @@ final class ServicesController
             return $this->notFound('Service not found.');
         }
 
-        $service = $this->getServiceByIdHandler->handle(new GetServiceById($id));
+        /** @var ServiceDTO|null $service */
+        $service = $this->queryBus->ask(new GetServiceById($id));
 
         return $service !== null
             ? $this->respond($service->toArray())

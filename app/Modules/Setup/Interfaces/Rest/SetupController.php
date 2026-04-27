@@ -7,14 +7,14 @@ namespace QS\Modules\Setup\Interfaces\Rest;
 use QS\Core\Security\CapabilityChecker;
 use QS\Core\Security\RequestSanitizer;
 use QS\Modules\Setup\Application\Command\SetupSiteCommand;
-use QS\Modules\Setup\Application\CommandHandler\SetupSiteHandler;
 use QS\Modules\Setup\Infrastructure\Wordpress\AgentStatusChecker;
+use QS\Shared\Bus\CommandBus;
 use QS\Shared\DTO\RestResponse;
 
 final class SetupController
 {
     public function __construct(
-        private readonly SetupSiteHandler $setupSiteHandler,
+        private readonly CommandBus $commandBus,
         private readonly AgentStatusChecker $agentStatusChecker,
         private readonly RequestSanitizer $requestSanitizer,
         private readonly CapabilityChecker $capabilityChecker
@@ -25,7 +25,8 @@ final class SetupController
     {
         $payload = $this->payload($request);
         $command = SetupSiteCommand::fromInput($payload, SetupSiteCommand::defaults());
-        $result = $this->setupSiteHandler->handle($command);
+        /** @var array<string, mixed> $result */
+        $result = $this->commandBus->dispatch($command);
 
         return $this->respond($result);
     }

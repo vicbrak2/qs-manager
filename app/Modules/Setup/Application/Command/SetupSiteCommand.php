@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace QS\Modules\Setup\Application\Command;
 
-final class SetupSiteCommand
+use QS\Shared\Bus\CommandInterface;
+
+final class SetupSiteCommand implements CommandInterface
 {
     /**
      * @param array<int, array{slug: string, title: string, content: string, status: string}> $pages

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace QS\Modules\Bitacora\Application\Command;
 
-final class UpdateBitacora
+use QS\Shared\Bus\CommandInterface;
+
+final class UpdateBitacora implements CommandInterface
 {
     public function __construct(
         public readonly int $id,

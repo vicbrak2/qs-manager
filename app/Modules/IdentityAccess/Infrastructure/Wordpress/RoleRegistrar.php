@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace QS\Modules\IdentityAccess\Infrastructure\Wordpress;
 
 use QS\Core\Config\ConfigLoader;
+use QS\Core\Contracts\ActivationHookInterface;
 use QS\Core\Contracts\HookableInterface;
 
-final class RoleRegistrar implements HookableInterface
+final class RoleRegistrar implements HookableInterface, ActivationHookInterface
 {
     private ConfigLoader $configLoader;
 
@@ -21,6 +22,11 @@ final class RoleRegistrar implements HookableInterface
         if (function_exists('add_action')) {
             add_action('init', [$this, 'syncRoles']);
         }
+    }
+
+    public function run(): void
+    {
+        $this->syncRoles();
     }
 
     public function syncRoles(): void

@@ -10,8 +10,9 @@ use QS\Modules\Finance\Application\DTO\ServiceMarginDTO;
 use QS\Modules\Finance\Application\Query\GetServiceMargin;
 use QS\Modules\Finance\Domain\Repository\ServiceCostRepository;
 use QS\Modules\Finance\Domain\Service\MarginCalculator;
+use QS\Shared\Bus\QueryHandlerInterface;
 
-final class GetServiceMarginHandler
+final class GetServiceMarginHandler implements QueryHandlerInterface
 {
     public function __construct(
         private readonly ReservationRepository $reservationRepository,
@@ -23,8 +24,10 @@ final class GetServiceMarginHandler
     /**
      * @return array<int, ServiceMarginDTO>
      */
-    public function handle(GetServiceMargin $query): array
+    public function handle(object $query): array
     {
+        assert($query instanceof GetServiceMargin);
+
         $costMap = $this->serviceCostRepository->findAll();
         $grouped = [];
 

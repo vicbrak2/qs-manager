@@ -6,17 +6,14 @@ namespace QS\Core\Bootstrap;
 
 use DI\Container;
 use QS\Core\Container\ContainerBuilder;
+use QS\Core\Container\ServiceProvider;
+use QS\Core\Contracts\ActivationHookInterface;
+use QS\Core\Contracts\HookableInterface;
 use QS\Core\Errors\ErrorHandler;
 use QS\Core\Logging\Logger;
 use QS\Core\Versioning\MigrationRunner;
 use QS\Core\Wordpress\PostTypeRegistrar;
 use QS\Core\Wordpress\RestRouteRegistrar;
-use QS\Modules\Agents\Infrastructure\Wordpress\ChatbotShortcode;
-use QS\Modules\Agents\Infrastructure\Wordpress\ReindexAdminPage;
-use QS\Modules\IdentityAccess\Infrastructure\Wordpress\RoleRegistrar;
-use QS\Modules\IdentityAccess\Interfaces\Hooks\RoleHooks;
-use QS\Modules\Setup\Interfaces\Cli\CliCommandRegistrar;
-use QS\Modules\Setup\Interfaces\Hooks\ActivationSetupHooks;
 
 final class PluginBootstrapper
 {
@@ -47,15 +44,25 @@ final class PluginBootstrapper
         $container->get(ErrorHandler::class)->register();
         $container->get(MigrationRunner::class)->runIfNeeded();
         $container->get(ModuleRegistry::class);
-        $container->get(HookLoader::class)->register([
-            $container->get(RoleRegistrar::class),
-            $container->get(RoleHooks::class),
-            $container->get(PostTypeRegistrar::class),
-            $container->get(RestRouteRegistrar::class),
-            $container->get(ReindexAdminPage::class),
-            $container->get(ChatbotShortcode::class),
-            $container->get(CliCommandRegistrar::class),
-        ]);
+
+        /** @var HookableInterface $postTypeRegistrar */
+        $postTypeRegistrar = $container->get(PostTypeRegistrar::class);
+        /** @var HookableInterface $restRouteRegistrar */
+        $restRouteRegistrar = $container->get(RestRouteRegistrar::class);
+
+        $coreHookables = [
+            $postTypeRegistrar,
+            $restRouteRegistrar,
+        ];
+        $moduleHookables = [];
+
+        foreach (ServiceProvider::hookables() as $hookableClass) {
+            /** @var HookableInterface $hookable */
+            $hookable = $container->get($hookableClass);
+            $moduleHookables[] = $hookable;
+        }
+
+        $container->get(HookLoader::class)->register(array_merge($coreHookables, $moduleHookables));
     }
 
     public function activate(): void
@@ -63,9 +70,14 @@ final class PluginBootstrapper
         $container = $this->container();
 
         $container->get(MigrationRunner::class)->run();
-        $container->get(RoleRegistrar::class)->syncRoles();
         $container->get(PostTypeRegistrar::class)->registerPostTypes();
-        $container->get(ActivationSetupHooks::class)->run();
+
+        foreach (ServiceProvider::activationHooks() as $activationHookClass) {
+            /** @var ActivationHookInterface $activationHook */
+            $activationHook = $container->get($activationHookClass);
+            $activationHook->run();
+        }
+
         $container->get(Logger::class)->info('Plugin activated.');
     }
 

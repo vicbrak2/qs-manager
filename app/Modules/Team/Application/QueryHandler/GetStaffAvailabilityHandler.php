@@ -10,8 +10,9 @@ use QS\Modules\Team\Application\Query\GetStaffAvailability;
 use QS\Modules\Team\Domain\Repository\StaffRepository;
 use QS\Modules\Team\Domain\Service\AvailabilityChecker;
 use QS\Modules\Team\Domain\ValueObject\AvailabilityWindow;
+use QS\Shared\Bus\QueryHandlerInterface;
 
-final class GetStaffAvailabilityHandler
+final class GetStaffAvailabilityHandler implements QueryHandlerInterface
 {
     public function __construct(
         private readonly StaffRepository $staffRepository,
@@ -23,8 +24,10 @@ final class GetStaffAvailabilityHandler
     /**
      * @return array<string, mixed>|null
      */
-    public function handle(GetStaffAvailability $query): ?array
+    public function handle(object $query): ?array
     {
+        assert($query instanceof GetStaffAvailability);
+
         $staff = $this->staffRepository->findById($query->staffId);
 
         if ($staff === null) {

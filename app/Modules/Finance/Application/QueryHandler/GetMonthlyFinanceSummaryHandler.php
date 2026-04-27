@@ -12,8 +12,9 @@ use QS\Modules\Finance\Domain\Repository\ExpenseRepository;
 use QS\Modules\Finance\Domain\Repository\PaymentRepository;
 use QS\Modules\Finance\Domain\Repository\ServiceCostRepository;
 use QS\Modules\Finance\Domain\Service\MonthlySummaryBuilder;
+use QS\Shared\Bus\QueryHandlerInterface;
 
-final class GetMonthlyFinanceSummaryHandler
+final class GetMonthlyFinanceSummaryHandler implements QueryHandlerInterface
 {
     public function __construct(
         private readonly ReservationRepository $reservationRepository,
@@ -24,8 +25,10 @@ final class GetMonthlyFinanceSummaryHandler
     ) {
     }
 
-    public function handle(GetMonthlyFinanceSummary $query): MonthlySummaryDTO
+    public function handle(object $query): MonthlySummaryDTO
     {
+        assert($query instanceof GetMonthlyFinanceSummary);
+
         $reservations = $this->reservationsForMonth($query->month);
         $payments = $this->paymentRepository->findByMonth($query->month);
         $expenses = $this->expenseRepository->findByMonth($query->month);

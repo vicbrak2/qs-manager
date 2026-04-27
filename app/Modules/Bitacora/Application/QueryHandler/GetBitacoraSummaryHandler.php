@@ -6,8 +6,9 @@ namespace QS\Modules\Bitacora\Application\QueryHandler;
 
 use QS\Modules\Bitacora\Application\Query\GetBitacoraSummary;
 use QS\Modules\Bitacora\Domain\Repository\BitacoraRepository;
+use QS\Shared\Bus\QueryHandlerInterface;
 
-final class GetBitacoraSummaryHandler
+final class GetBitacoraSummaryHandler implements QueryHandlerInterface
 {
     public function __construct(private readonly BitacoraRepository $bitacoraRepository)
     {
@@ -16,8 +17,10 @@ final class GetBitacoraSummaryHandler
     /**
      * @return array<string, mixed>|null
      */
-    public function handle(GetBitacoraSummary $query): ?array
+    public function handle(object $query): ?array
     {
+        assert($query instanceof GetBitacoraSummary);
+
         $bitacora = $this->bitacoraRepository->findById($query->id);
 
         if ($bitacora === null) {

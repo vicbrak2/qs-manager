@@ -6,14 +6,15 @@ namespace QS\Modules\Booking\Interfaces\Rest;
 
 use QS\Core\Security\CapabilityChecker;
 use QS\Core\Security\RequestSanitizer;
+use QS\Modules\Booking\Application\DTO\ReservationDTO;
 use QS\Modules\Booking\Application\Query\GetMuaAgenda;
-use QS\Modules\Booking\Application\QueryHandler\GetMuaAgendaHandler;
+use QS\Shared\Bus\QueryBus;
 use QS\Shared\DTO\RestResponse;
 
 final class MuaAgendaController
 {
     public function __construct(
-        private readonly GetMuaAgendaHandler $getMuaAgendaHandler,
+        private readonly QueryBus $queryBus,
         private readonly RequestSanitizer $requestSanitizer,
         private readonly CapabilityChecker $capabilityChecker
     ) {
@@ -28,7 +29,8 @@ final class MuaAgendaController
         }
 
         $date = $this->requestSanitizer->sanitizeNullableText($request->get_param('date')) ?? gmdate('Y-m-d');
-        $agenda = $this->getMuaAgendaHandler->handle(new GetMuaAgenda($id, $date));
+        /** @var array<int, ReservationDTO> $agenda */
+        $agenda = $this->queryBus->ask(new GetMuaAgenda($id, $date));
 
         return new \WP_REST_Response(
             (new RestResponse(

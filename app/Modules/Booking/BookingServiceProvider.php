@@ -1,0 +1,66 @@
+<?php
+
+declare(strict_types=1);
+
+namespace QS\Modules\Booking;
+
+use function DI\autowire;
+
+use QS\Core\Contracts\ModuleServiceProviderInterface;
+use QS\Modules\Booking\Application\Query\GetAllReservations;
+use QS\Modules\Booking\Application\Query\GetMuaAgenda;
+use QS\Modules\Booking\Application\Query\GetReservationById;
+use QS\Modules\Booking\Application\Query\GetTodayReservations;
+use QS\Modules\Booking\Application\QueryHandler\GetAllReservationsHandler;
+use QS\Modules\Booking\Application\QueryHandler\GetMuaAgendaHandler;
+use QS\Modules\Booking\Application\QueryHandler\GetReservationByIdHandler;
+use QS\Modules\Booking\Application\QueryHandler\GetTodayReservationsHandler;
+use QS\Modules\Booking\Domain\Repository\ReservationRepository;
+use QS\Modules\Booking\Domain\Service\ReservationNormalizer;
+use QS\Modules\Booking\Infrastructure\Persistence\WpdbLatepointRepository;
+use QS\Modules\Booking\Infrastructure\Wordpress\LatepointTableMap;
+use QS\Modules\Booking\Interfaces\Rest\MuaAgendaController;
+use QS\Modules\Booking\Interfaces\Rest\ReservationsController;
+
+final class BookingServiceProvider implements ModuleServiceProviderInterface
+{
+    public static function definitions(): array
+    {
+        return [
+            LatepointTableMap::class => autowire(),
+            ReservationNormalizer::class => autowire(),
+            ReservationRepository::class => autowire(WpdbLatepointRepository::class),
+            GetAllReservationsHandler::class => autowire(),
+            GetTodayReservationsHandler::class => autowire(),
+            GetReservationByIdHandler::class => autowire(),
+            GetMuaAgendaHandler::class => autowire(),
+            ReservationsController::class => autowire(),
+            MuaAgendaController::class => autowire(),
+        ];
+    }
+
+    public static function commandHandlers(): array
+    {
+        return [];
+    }
+
+    public static function queryHandlers(): array
+    {
+        return [
+            GetAllReservations::class => GetAllReservationsHandler::class,
+            GetMuaAgenda::class => GetMuaAgendaHandler::class,
+            GetReservationById::class => GetReservationByIdHandler::class,
+            GetTodayReservations::class => GetTodayReservationsHandler::class,
+        ];
+    }
+
+    public static function hookables(): array
+    {
+        return [];
+    }
+
+    public static function activationHooks(): array
+    {
+        return [];
+    }
+}
