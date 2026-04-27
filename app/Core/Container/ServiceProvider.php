@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace QS\Core\Container;
 
 use function DI\autowire;
+
+use DI\Container as DiContainer;
+
 use function DI\factory;
 use function DI\get;
 
-use DI\Container as DiContainer;
 use Psr\Container\ContainerInterface;
 use QS\Core\Bootstrap\HookLoader;
 use QS\Core\Bootstrap\ModuleRegistry;

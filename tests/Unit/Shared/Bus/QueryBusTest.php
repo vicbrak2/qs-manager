@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace QS\Tests\Unit\Shared\Bus;
 
 use Psr\Container\ContainerInterface;
-use RuntimeException;
 use QS\Core\Errors\QsException;
 use QS\Shared\Bus\QueryBus;
 use QS\Shared\Bus\QueryHandlerInterface;
 use QS\Shared\Testing\TestCase;
+use RuntimeException;
 
 final class QueryBusTest extends TestCase
 {

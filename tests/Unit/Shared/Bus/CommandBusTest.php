@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace QS\Tests\Unit\Shared\Bus;
 
 use Psr\Container\ContainerInterface;
-use RuntimeException;
 use QS\Core\Errors\QsException;
 use QS\Shared\Bus\CommandBus;
 use QS\Shared\Bus\CommandHandlerInterface;
 use QS\Shared\Bus\CommandInterface;
 use QS\Shared\Testing\TestCase;
+use RuntimeException;
 
 final class CommandBusTest extends TestCase
 {
