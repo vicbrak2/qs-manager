@@ -21,8 +21,7 @@ final class ChatbotGateway
     private ChatbotProfile $profile;
 
     public function __construct(
-        /** @phpstan-ignore-next-line Constructor kept for DI backward-compatibility; QuickReplyMatcher bypass removed intentionally */
-        private readonly QuickReplyMatcher $quickReplyMatcher,
+        private readonly QuickReplyMatcher $quickReplyMatcher, // kept for DI backward-compatibility; bypass removed intentionally
         private readonly WhatsAppGateway $whatsAppGateway,
         ?ChatbotProfile $profile = null
     ) {
@@ -662,4 +661,3 @@ final class ChatbotGateway
         return '';
     }
 }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
