@@ -11,3 +11,8 @@ parameters:
     - phpstan-bootstrap.php
   scanFiles:
     - ../../vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+  ignoreErrors:
+    # QuickReplyMatcher se mantiene en el constructor por compatibilidad con el contenedor DI.
+    # El bypass fue eliminado intencionalmente — todas las consultas van ahora al LLM vía n8n.
+    - identifier: property.onlyWritten
+      path: ../../app/Modules/Agents/Infrastructure/N8n/ChatbotGateway.php
