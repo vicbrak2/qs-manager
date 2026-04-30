@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace QS\Modules\Agents\Infrastructure\N8n;
 
 use QS\Modules\Agents\Infrastructure\Chatbot\ChatbotProfile;
-use QS\Modules\Agents\Infrastructure\Chatbot\QuickReplyMatcher;
 use WP_Error;
 
 final class ChatbotGateway
@@ -21,7 +20,6 @@ final class ChatbotGateway
     private ChatbotProfile $profile;
 
     public function __construct(
-        private readonly QuickReplyMatcher $quickReplyMatcher, // kept for DI backward-compatibility; bypass removed intentionally
         private readonly WhatsAppGateway $whatsAppGateway,
         ?ChatbotProfile $profile = null
     ) {

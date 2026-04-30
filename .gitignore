@@ -51,6 +51,9 @@ var/backups/
 .claude/
 .php-cs-fixer.cache
 
+# Playwright CLI (logs y snapshots locales de automatización de browser)
+.playwright-cli/
+
 # IDE
 .vscode/
 .idea/
