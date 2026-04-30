@@ -31,7 +31,10 @@ final class QuickReplyMatcher
     ) {
         $this->profile = $profile ?? ChatbotProfile::resolveDefault();
         $this->threshold = $this->resolveThreshold();
-        $this->rules = array_merge($this->configuredRules(), $this->defaultRules());
+        // Nota: ya no cargamos defaultRules() — las respuestas informativas
+        // (servicios, precios, reservas) las maneja el LLM vía n8n con RAG.
+        // Solo se aplican reglas configuradas manualmente en el panel de WP.
+        $this->rules = $this->configuredRules();
     }
 
     public function match(string $message): ?string
@@ -365,103 +368,6 @@ final class QuickReplyMatcher
         $normalized = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $normalized) ?? $normalized;
 
         return trim((string) preg_replace('/\s+/', ' ', $normalized));
-    }
-
-    /**
-     * @return list<array{id: string, response: string, examples: list<string>, min_score: float|null}>
-     */
-    private function defaultRules(): array
-    {
-        $brandName = $this->profile->brandName();
-        $whatsappUrl = $this->profile->whatsappUrl();
-        $services = implode(', ', $this->profile->services());
-        $services = $services !== '' ? $services : 'los servicios principales';
-
-        return [
-            [
-                'id' => 'services',
-                'response' => sprintf('Trabajamos principalmente con %s. Deseas reservar?', $services),
-                'examples' => [
-                    'servicios',
-                    'que servicios tienen',
-                    'que servicios ofrecen',
-                    'cuales son los servicios',
-                    'lista de servicios',
-                    'me dices los servicios',
-                ],
-                'min_score' => null,
-            ],
-            [
-                'id' => 'bridal_services',
-                'response' => sprintf('Si, en %s podemos orientarte con servicios para novia. Deseas reservar?', $brandName),
-                'examples' => [
-                    'novia civil',
-                    'novia fiesta',
-                    'novia civil y novia fiesta',
-                    'diferencia entre novia civil y novia fiesta',
-                    'quiero maquillaje de novia',
-                    'servicio para novia',
-                ],
-                'min_score' => 0.85,
-            ],
-            [
-                'id' => 'prices',
-                'response' => sprintf('Los valores dependen del tipo de servicio y la logistica. Para cotizar te recomiendo escribirnos directo por WhatsApp: %s. Deseas reservar?', $whatsappUrl),
-                'examples' => [
-                    'precios',
-                    'precio',
-                    'valores',
-                    'cuanto sale',
-                    'cuanto cuesta',
-                    'quiero cotizar',
-                    'cotizacion',
-                    'precio maquillaje',
-                ],
-                'min_score' => null,
-            ],
-            [
-                'id' => 'reservations',
-                'response' => 'Para reservar se revisa disponibilidad y luego se bloquea la fecha con abono. Si quieres avanzar, dime si deseas reservar y te pido los datos paso a paso.',
-                'examples' => [
-                    'reservas',
-                    'reserva',
-                    'quiero reservar',
-                    'puedo reservar una hora',
-                    'agendar',
-                    'agenda',
-                    'disponibilidad',
-                    'tienen horas',
-                ],
-                'min_score' => null,
-            ],
-            [
-                'id' => 'still_here',
-                'response' => 'Sigo aqui. Si quieres, puedo ayudarte con servicios, precios o reservas.',
-                'examples' => [
-                    'que paso',
-                    'sigues ahi',
-                    'estas ahi',
-                    'hola?',
-                ],
-                'min_score' => 0.90,
-            ],
-            [
-                'id' => 'workshops',
-                'response' => sprintf('Para fechas disponibles y precios de nuestros talleres, por favor escribenos directo a WhatsApp: %s', $whatsappUrl),
-                'examples' => [
-                    'taller',
-                    'talleres',
-                    'precio taller',
-                    'precio del taller',
-                    'valor taller',
-                    'cuanto cuesta el taller',
-                    'fecha taller',
-                    'fechas de talleres',
-                    'proximo taller',
-                ],
-                'min_score' => 0.85,
-            ],
-        ];
     }
 
     private function renderResponse(string $response): string

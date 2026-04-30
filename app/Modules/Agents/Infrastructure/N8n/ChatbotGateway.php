@@ -21,6 +21,7 @@ final class ChatbotGateway
     private ChatbotProfile $profile;
 
     public function __construct(
+        /** @phpstan-ignore-next-line Constructor kept for DI backward-compatibility; QuickReplyMatcher bypass removed intentionally */
         private readonly QuickReplyMatcher $quickReplyMatcher,
         private readonly WhatsAppGateway $whatsAppGateway,
         ?ChatbotProfile $profile = null
@@ -37,28 +38,15 @@ final class ChatbotGateway
     {
         $message = $this->truncateInput($message);
 
+        // Booking flow: captura datos estructurados cuando el usuario confirma
+        // que quiere reservar usando una frase explícita de reserva.
+        // Las respuestas conversacionales y de información van siempre al LLM.
         $bookingFlowReply = $this->handleBookingFlow($message, $sessionId);
 
         if ($bookingFlowReply !== null) {
             $this->appendToHistory($sessionId, $message, $bookingFlowReply);
 
             return $bookingFlowReply;
-        }
-
-        $greetingReply = $this->greetingReply($message);
-
-        if ($greetingReply !== null) {
-            $this->appendToHistory($sessionId, $message, $greetingReply);
-
-            return $greetingReply;
-        }
-
-        $quickReply = $this->quickReplyMatcher->match($message);
-
-        if ($quickReply !== null) {
-            $this->appendToHistory($sessionId, $message, $quickReply);
-
-            return $quickReply;
         }
 
         $rewrittenMessage = $this->rewriteMessageForContext($message);
@@ -176,6 +164,7 @@ final class ChatbotGateway
             'whatsapp: ' . $profile['whatsapp_url'],
             'aliases: ' . implode(', ', $profile['aliases']),
             'servicios: ' . implode(', ', $profile['services']),
+            'detalle_servicios: ' . $this->formatServiceDetails($profile['service_details']),
             'campos_reserva: ' . implode(', ', $profile['booking_fields']),
             'restricciones: ' . implode(' ', $profile['restrictions']),
             '--- Fin perfil ---',
@@ -195,6 +184,31 @@ final class ChatbotGateway
     private function replyCacheKey(string $sessionId, string $message, string $history = ''): string
     {
         return 'qs_n8n_reply_' . md5($this->profile->siteId() . '|' . $sessionId . '|' . $message . '|' . $history);
+    }
+
+    /**
+     * @param array<string, string> $serviceDetails
+     */
+    private function formatServiceDetails(array $serviceDetails): string
+    {
+        if ($serviceDetails === []) {
+            return '';
+        }
+
+        $lines = [];
+
+        foreach ($serviceDetails as $service => $detail) {
+            $service = trim($service);
+            $detail = trim($detail);
+
+            if ($service === '' || $detail === '') {
+                continue;
+            }
+
+            $lines[] = $service . ': ' . $detail;
+        }
+
+        return implode(' | ', $lines);
     }
 
     private function historyKey(string $sessionId): string
@@ -443,25 +457,18 @@ final class ChatbotGateway
     {
         $normalized = $this->normalizeIntentText($message);
 
-        if (preg_match('/\b(quiero|deseo|necesito|me gustaria|voy a|si quiero|si deseo)\s+(reservar|agendar)\b/u', $normalized) === 1) {
+        // Solo activa el flujo PHP si la usuaria expresa explícitamente que quiere
+        // reservar/agendar. Las respuestas afirmativas solas ("si", "dale") van al LLM
+        // para que él decida el contexto y continúe la conversación naturalmente.
+        if (preg_match('/\b(quiero|deseo|necesito|me gustaria|voy a)\s+(reservar|agendar)\b/u', $normalized) === 1) {
             return true;
         }
 
-        if (preg_match('/\b(reservar una hora|agendar una hora|tomar una hora|hacer una reserva)\b/u', $normalized) === 1) {
+        if (preg_match('/\b(reservar una hora|agendar una hora|tomar una hora|hacer una reserva|quiero reservar ahora|quiero agendar ahora)\b/u', $normalized) === 1) {
             return true;
         }
 
-        return $this->isAffirmative($normalized) && $this->lastBotAskedBookingIntent($sessionId);
-    }
-
-    private function isAffirmative(string $normalized): bool
-    {
-        return preg_match('/^(si|sip|sii|si quiero|si por favor|dale|ok|ya|claro|confirmo|quiero reservar|quiero agendar)$/u', $normalized) === 1;
-    }
-
-    private function lastBotAskedBookingIntent(string $sessionId): bool
-    {
-        return str_contains($this->normalizeIntentText($this->getHistoryContext($sessionId)), 'deseas reservar');
+        return false;
     }
 
     private function bookingServicePrompt(): string
@@ -494,21 +501,6 @@ final class ChatbotGateway
         }
 
         return 'http://localhost:5678/webhook/wp-chatbot-rag';
-    }
-
-    private function greetingReply(string $message): ?string
-    {
-        $normalized = $this->normalizeText($message);
-
-        if ($normalized === '') {
-            return null;
-        }
-
-        if (! preg_match('/^(hola|hi|buenas|buenos dias|buenas tardes|buenas noches|hey|saludos)[[:space:]!,.?]*$/u', $normalized)) {
-            return null;
-        }
-
-        return 'Cuentame, te interesa ver servicios, precios o reservas?';
     }
 
     private function rewriteMessageForContext(string $message): string
@@ -670,3 +662,4 @@ final class ChatbotGateway
         return '';
     }
 }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
