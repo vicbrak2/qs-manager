@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QS\Modules\Booking\Interfaces\Rest;
 
 use DateTimeImmutable;
+use QS\Core\Logging\Logger;
 use QS\Core\Security\CapabilityChecker;
 use QS\Core\Security\RequestSanitizer;
 use QS\Modules\Booking\Application\Command\CreateReservation;
@@ -23,7 +24,7 @@ final class ReservationsController
         private readonly CommandBus $commandBus,
         private readonly RequestSanitizer $requestSanitizer,
         private readonly CapabilityChecker $capabilityChecker,
-        private readonly \QS\Core\Logging\Logger $logger
+        private readonly Logger $logger
     ) {
     }
 

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace QS\Modules\Booking\Infrastructure\N8n;
 
 use DateTimeImmutable;
-use QS\Modules\Booking\Domain\Service\CalendarGateway;
 use QS\Core\Logging\Logger;
+use QS\Modules\Booking\Domain\Service\CalendarGateway;
 use RuntimeException;
 
 final class N8nCalendarGateway implements CalendarGateway

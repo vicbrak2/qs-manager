@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QS\Modules\Booking\Application\CommandHandler;
 
+use QS\Core\Logging\Logger;
 use QS\Modules\Booking\Application\Command\CreateReservation;
 use QS\Modules\Booking\Domain\Entity\Reservation;
 use QS\Modules\Booking\Domain\Repository\ReservationRepository;
@@ -19,7 +20,7 @@ final class CreateReservationHandler implements CommandHandlerInterface
     public function __construct(
         private readonly ReservationRepository $reservationRepository,
         private readonly CalendarGateway $calendarGateway,
-        private readonly \QS\Core\Logging\Logger $logger
+        private readonly Logger $logger
     ) {
     }
 
