@@ -107,7 +107,6 @@ namespace QS\Tests\Unit\Modules\Agents {
 
     use QS\Core\Config\PluginConfig;
     use QS\Core\Logging\Logger;
-    use QS\Modules\Agents\Infrastructure\Chatbot\QuickReplyMatcher;
     use QS\Modules\Agents\Infrastructure\N8n\ChatbotGateway;
     use QS\Modules\Agents\Infrastructure\N8n\WhatsAppGateway;
     use QS\Shared\Testing\TestCase;
@@ -212,7 +211,7 @@ namespace QS\Tests\Unit\Modules\Agents {
                 'logging' => ['file' => 'test.log'],
             ])));
 
-            return new ChatbotGateway(new QuickReplyMatcher(), $whatsApp);
+            return new ChatbotGateway($whatsApp);
         }
 
         public function testCacheIsScopedPerSessionId(): void
