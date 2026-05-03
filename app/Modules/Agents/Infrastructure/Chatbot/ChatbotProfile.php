@@ -13,6 +13,7 @@ final class ChatbotProfile
     /**
      * @param list<string> $aliases
      * @param list<string> $services
+     * @param array<string, string> $serviceDetails
      * @param list<string> $bookingFields
      * @param list<string> $restrictions
      */
@@ -24,6 +25,7 @@ final class ChatbotProfile
         private readonly string $whatsappUrl,
         private readonly array $aliases,
         private readonly array $services,
+        private readonly array $serviceDetails,
         private readonly array $bookingFields,
         private readonly array $restrictions,
         private readonly string $vectorCollection,
@@ -48,6 +50,13 @@ final class ChatbotProfile
                 'Combo social maquillaje + peinado',
                 'Novia civil',
                 'Novia fiesta',
+            ]),
+            serviceDetails: self::mapValue($configured, 'service_details', [
+                'Maquillaje social' => 'Preparacion de piel y maquillaje para eventos, fotos, celebraciones o salidas especiales. Se adapta al estilo de la clienta y busca un acabado prolijo, favorecedor y duradero.',
+                'Peinado' => 'Peinado para eventos o sesiones, pensado para complementar el maquillaje, el vestuario y el tipo de ocasion. Puede orientarse a un look pulido, romantico, natural o mas producido.',
+                'Combo social maquillaje + peinado' => 'Servicio integral para quienes quieren resolver maquillaje y peinado en una misma experiencia. Es ideal para eventos donde se necesita un look completo y coherente.',
+                'Novia civil' => 'Servicio para ceremonias civiles o matrimonios mas intimos. El foco es un look elegante, luminoso y fotografiable, sin perder naturalidad ni comodidad.',
+                'Novia fiesta' => 'Servicio para celebraciones de matrimonio con mayor produccion. Considera un look mas completo para acompanar la duracion del evento, las fotos y el estilo elegido por la novia.',
             ]),
             bookingFields: self::listValue($configured, 'booking_fields', [
                 'servicio',
@@ -97,6 +106,14 @@ final class ChatbotProfile
         return $this->services;
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function serviceDetails(): array
+    {
+        return $this->serviceDetails;
+    }
+
     public function vectorCollection(): string
     {
         return $this->vectorCollection;
@@ -116,6 +133,7 @@ final class ChatbotProfile
      *     whatsapp_url: string,
      *     aliases: list<string>,
      *     services: list<string>,
+     *     service_details: array<string, string>,
      *     booking_fields: list<string>,
      *     restrictions: list<string>,
      *     vector_collection: string,
@@ -132,6 +150,7 @@ final class ChatbotProfile
             'whatsapp_url' => $this->whatsappUrl,
             'aliases' => $this->aliases,
             'services' => $this->services,
+            'service_details' => $this->serviceDetails,
             'booking_fields' => $this->bookingFields,
             'restrictions' => $this->restrictions,
             'vector_collection' => $this->vectorCollection,
@@ -267,6 +286,39 @@ final class ChatbotProfile
         }
 
         return $items !== [] ? array_values(array_unique($items)) : $default;
+    }
+
+    /**
+     * @param array<string, mixed> $source
+     * @param array<string, string> $default
+     * @return array<string, string>
+     */
+    private static function mapValue(array $source, string $key, array $default): array
+    {
+        $value = $source[$key] ?? null;
+
+        if (! is_array($value)) {
+            return $default;
+        }
+
+        $items = [];
+
+        foreach ($value as $itemKey => $itemValue) {
+            if (! is_string($itemKey) || ! is_string($itemValue)) {
+                continue;
+            }
+
+            $normalizedKey = trim($itemKey);
+            $normalizedValue = trim($itemValue);
+
+            if ($normalizedKey === '' || $normalizedValue === '') {
+                continue;
+            }
+
+            $items[$normalizedKey] = $normalizedValue;
+        }
+
+        return $items !== [] ? $items : $default;
     }
 
     /**

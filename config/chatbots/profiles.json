@@ -18,6 +18,13 @@
         "Novia civil",
         "Novia fiesta"
       ],
+      "service_details": {
+        "Maquillaje social": "Preparacion de piel y maquillaje para eventos, fotos, celebraciones o salidas especiales. Se adapta al estilo de la clienta y busca un acabado prolijo, favorecedor y duradero.",
+        "Peinado": "Peinado para eventos o sesiones, pensado para complementar el maquillaje, el vestuario y el tipo de ocasion. Puede orientarse a un look pulido, romantico, natural o mas producido.",
+        "Combo social maquillaje + peinado": "Servicio integral para quienes quieren resolver maquillaje y peinado en una misma experiencia. Es ideal para eventos donde se necesita un look completo y coherente.",
+        "Novia civil": "Servicio para ceremonias civiles o matrimonios mas intimos. El foco es un look elegante, luminoso y fotografiable, sin perder naturalidad ni comodidad.",
+        "Novia fiesta": "Servicio para celebraciones de matrimonio con mayor produccion. Considera un look mas completo para acompanar la duracion del evento, las fotos y el estilo elegido por la novia."
+      },
       "booking_fields": [
         "servicio",
         "comuna",
