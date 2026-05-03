@@ -24,4 +24,6 @@ interface ReservationRepository
      * @return array<int, Reservation>
      */
     public function findByStaffAndDate(int $staffId, string $date): array;
+
+    public function save(Reservation $reservation): Reservation;
 }

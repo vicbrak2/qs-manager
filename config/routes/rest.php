@@ -85,6 +85,14 @@ return [
     ],
     [
         'namespace' => 'qs/v1',
+        'route' => '/bookings',
+        'methods' => 'POST',
+        'controller' => \QS\Modules\Booking\Interfaces\Rest\ReservationsController::class,
+        'action' => 'store',
+        'permission_callback' => 'canManageBookings',
+    ],
+    [
+        'namespace' => 'qs/v1',
         'route' => '/bookings/today',
         'methods' => 'GET',
         'controller' => \QS\Modules\Booking\Interfaces\Rest\ReservationsController::class,
