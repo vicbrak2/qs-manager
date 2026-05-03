@@ -16,6 +16,11 @@ final class Logger
         $logFilename = (string) $config->get('logging.file', 'plugin.log');
 
         $this->logFile = rtrim($rootDir . '/' . trim($logDirectory, '/'), '/') . '/' . ltrim($logFilename, '/');
+
+        $fullLogDirectory = dirname($this->logFile);
+        if (! is_dir($fullLogDirectory)) {
+            @mkdir($fullLogDirectory, 0777, true);
+        }
     }
 
     public function debug(string $message): void
