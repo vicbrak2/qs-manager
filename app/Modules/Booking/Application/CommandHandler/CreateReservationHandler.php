@@ -27,7 +27,7 @@ final class CreateReservationHandler implements CommandHandlerInterface
     public function handle(CommandInterface $command): string
     {
         assert($command instanceof CreateReservation);
-        
+
         $this->logger->info('CreateReservationHandler: Starting process for ' . $command->clientName);
 
         $title = "Reserva: {$command->serviceName} - {$command->clientName}";
@@ -39,7 +39,7 @@ final class CreateReservationHandler implements CommandHandlerInterface
             $command->startTime,
             $command->endTime
         );
-        
+
         $this->logger->info('CreateReservationHandler: Calendar event creation result: ' . $googleEventId);
 
         $reservation = new Reservation(
@@ -65,7 +65,7 @@ final class CreateReservationHandler implements CommandHandlerInterface
         );
 
         $this->reservationRepository->save($reservation);
-        
+
         $this->logger->info('CreateReservationHandler: Reservation saved locally.');
 
         return $googleEventId;

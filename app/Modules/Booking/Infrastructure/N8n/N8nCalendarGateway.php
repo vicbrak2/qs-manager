@@ -46,7 +46,7 @@ final class N8nCalendarGateway implements CalendarGateway
 
         $body = wp_remote_retrieve_body($response);
         $statusCode = wp_remote_retrieve_response_code($response);
-        
+
         $this->logger->info("N8nCalendarGateway: Availability response (Code $statusCode): " . $body);
 
         $data = json_decode($body, true);
