@@ -309,18 +309,22 @@ namespace QS\Tests\Unit\Modules\Agents {
             self::assertCount(0, ChatbotGatewayWordpressStubs::remotePosts());
         }
 
-        public function testAffirmativeReplyStartsBookingFlowOnlyAfterBotAskedReservationIntent(): void
+        public function testAffirmativeReplyAloneDoesNotStartBookingFlow(): void
         {
+            // "si" sola no activa el flujo de reserva — va al LLM.
+            // El flujo PHP solo se activa con frases explícitas como "quiero reservar".
             $gateway = $this->makeChatbotGateway();
 
-            $reply = $gateway->ask('precios', 'session-price');
-            $confirmation = $gateway->ask('si', 'session-price');
+            ChatbotGatewayWordpressStubs::queueRemoteResponse([
+                'response' => ['code' => 200],
+                'body' => '{"output":"respuesta del llm"}',
+            ]);
+
+            $reply = $gateway->ask('si', 'session-affirmative');
 
             self::assertIsString($reply);
-            self::assertIsString($confirmation);
-            self::assertStringContainsString('Deseas reservar?', $reply);
-            self::assertStringContainsString('Primero dime que servicio necesitas', $confirmation);
-            self::assertCount(0, ChatbotGatewayWordpressStubs::remotePosts());
+            // "si" sola debe ir al LLM — no al booking flow PHP
+            self::assertCount(1, ChatbotGatewayWordpressStubs::remotePosts());
         }
     }
 
