@@ -305,7 +305,28 @@ namespace QS\Tests\Unit\Modules\Agents {
             self::assertStringContainsString('direccion', $third);
             self::assertStringContainsString('telefono', $fourth);
             self::assertStringContainsString('fecha', $fifth);
-            self::assertStringContainsString('ya tengo los datos base', $sixth);
+            self::assertStringContainsString('¡Listo!', $sixth);
+            self::assertCount(0, ChatbotGatewayWordpressStubs::remotePosts());
+        }
+
+        public function testHandoffBlocksBotAfterBookingComplete(): void
+        {
+            $gateway = $this->makeChatbotGateway();
+
+            // Complete the booking flow
+            $gateway->ask('quiero reservar una hora', 'session-handoff');
+            $gateway->ask('Maquillaje social', 'session-handoff');
+            $gateway->ask('Providencia', 'session-handoff');
+            $gateway->ask('Los Leones 123', 'session-handoff');
+            $gateway->ask('+56912345678', 'session-handoff');
+            $gateway->ask('20 de abril', 'session-handoff');
+
+            // After booking is complete, any further message must return the handoff message
+            $reply = $gateway->ask('y cuánto cuesta?', 'session-handoff');
+
+            self::assertIsString($reply);
+            self::assertStringContainsString('Tu consulta ya fue enviada', $reply);
+            // LLM must NOT be called after handoff
             self::assertCount(0, ChatbotGatewayWordpressStubs::remotePosts());
         }
 

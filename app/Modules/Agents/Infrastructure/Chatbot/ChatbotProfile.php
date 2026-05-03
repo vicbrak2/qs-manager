@@ -41,7 +41,7 @@ final class ChatbotProfile
             siteId: self::stringValue($configured, 'site_id', 'qamiluna'),
             brandName: self::stringValue($configured, 'brand_name', 'Qamiluna Studio'),
             locale: self::stringValue($configured, 'locale', 'es-CL'),
-            tone: self::stringValue($configured, 'tone', 'cercano, claro y resolutivo'),
+            tone: self::stringValue($configured, 'tone', 'cercano, cálido y conciso — respuestas de 2-3 líneas máximo, usa emojis con moderación, markdown consistente'),
             whatsappUrl: self::stringValue($configured, 'whatsapp_url', self::fallbackWhatsappUrl()),
             aliases: self::listValue($configured, 'aliases', ['Qamiluna', 'Qami Luna', 'Cami Luna']),
             services: self::listValue($configured, 'services', [

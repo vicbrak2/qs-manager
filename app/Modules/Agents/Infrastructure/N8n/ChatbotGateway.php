@@ -15,6 +15,7 @@ final class ChatbotGateway
     private const HISTORY_CACHE_TTL = 3600; // 1 hour
     private const HISTORY_MAX_TURNS = 5;
     private const BOOKING_FLOW_TTL = 3600; // 1 hour
+    private const HANDOFF_TTL      = 7200; // 2 hours — session blocked after booking sent
 
     private string $webhookUrl;
     private ChatbotProfile $profile;
@@ -34,6 +35,12 @@ final class ChatbotGateway
     public function ask(string $message, string $sessionId, string $channel = 'web'): string|WP_Error
     {
         $message = $this->truncateInput($message);
+
+        // Human handoff: once a booking WhatsApp has been sent, the session is
+        // transferred to a human operator. The bot stops responding entirely.
+        if ($this->isHandoffActive($sessionId)) {
+            return '✋ Tu consulta ya fue enviada a nuestro equipo. Una persona te contactará pronto por WhatsApp para confirmar los detalles. 😊';
+        }
 
         // Booking flow: captura datos estructurados cuando el usuario confirma
         // que quiere reservar usando una frase explícita de reserva.
@@ -165,6 +172,14 @@ final class ChatbotGateway
             'campos_reserva: ' . implode(', ', $profile['booking_fields']),
             'restricciones: ' . implode(' ', $profile['restrictions']),
             '--- Fin perfil ---',
+            '--- Instrucciones de formato ---',
+            'IMPORTANTE: Sigue estas reglas de formato en TODAS tus respuestas:',
+            '1. Respuestas cortas y directas. Máximo 3-4 líneas por respuesta.',
+            '2. Usa emojis relevantes (1-2 por respuesta) para dar calidez.',
+            '3. Formato consistente: si usas *negrita*, úsala en todos los datos clave.',
+            '4. Nunca bloques de texto densos. Separa ideas en líneas cortas.',
+            '5. Cierra siempre con una pregunta o invitación a continuar.',
+            '--- Fin instrucciones ---',
         ];
 
         if ($history !== '') {
@@ -216,6 +231,21 @@ final class ChatbotGateway
     private function bookingFlowKey(string $sessionId): string
     {
         return 'qs_booking_flow_' . md5($this->profile->siteId() . '|' . $sessionId);
+    }
+
+    private function handoffKey(string $sessionId): string
+    {
+        return 'qs_handoff_' . md5($this->profile->siteId() . '|' . $sessionId);
+    }
+
+    private function activateHandoff(string $sessionId): void
+    {
+        set_transient($this->handoffKey($sessionId), '1', self::HANDOFF_TTL);
+    }
+
+    private function isHandoffActive(string $sessionId): bool
+    {
+        return get_transient($this->handoffKey($sessionId)) === '1';
     }
 
     private function appendToHistory(string $sessionId, string $userMsg, string $botReply): void
@@ -346,8 +376,9 @@ final class ChatbotGateway
         $this->clearBookingFlowState($sessionId);
 
         $this->sendBookingWhatsApp($data, $sessionId);
+        $this->activateHandoff($sessionId);
 
-        return 'Listo, ya tengo los datos base para revisar tu reserva. El equipo confirma disponibilidad y siguientes pasos antes de bloquear la fecha.';
+        return "✅ ¡Listo! Ya envié los datos de tu reserva a nuestro equipo.\n\nUna persona te contactará pronto por WhatsApp para confirmar disponibilidad y los próximos pasos. ¡Hasta pronto! 🌸";
     }
 
     /**
