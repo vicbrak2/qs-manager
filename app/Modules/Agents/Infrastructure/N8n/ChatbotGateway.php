@@ -410,8 +410,23 @@ final class ChatbotGateway
         $phone    = $data['phone']   ?? 'No entregado';
         $date     = $data['date']    ?? 'No especificada';
 
+        // Determinar estado de la reserva
+        $dateNormalized = mb_strtolower(trim($date));
+        $isPendingDate  = preg_match('/\b(no|aun|todav[ií]a|sin|definir|definido|sé|se|pend|por definir)\b/u', $dateNormalized) === 1
+            || $dateNormalized === ''
+            || strlen($dateNormalized) < 4;
+
+        $estado = $isPendingDate ? '⏳ *FECHA PENDIENTE*' : '📅 *FECHA TENTATIVA*';
+
+        // Link de WhatsApp directo al cliente si compartió número
+        $clientPhone  = preg_replace('/[^0-9]/', '', $phone);
+        $whatsappLink = strlen($clientPhone) >= 8
+            ? 'https://wa.me/' . $clientPhone
+            : null;
+
         $lines = [
             "📋 *Nueva solicitud de reserva — {$brand}*",
+            $estado,
             '',
             "• *Servicio:* {$service}",
             "• *Fecha:* {$date}",
@@ -419,6 +434,10 @@ final class ChatbotGateway
             "• *Dirección:* {$address}",
             "• *Teléfono cliente:* {$phone}",
         ];
+
+        if ($whatsappLink !== null) {
+            $lines[] = "• *Contactar cliente:* {$whatsappLink}";
+        }
 
         $history = $this->getHistoryContext($sessionId);
 
@@ -658,4 +677,45 @@ final class ChatbotGateway
 
         return '';
     }
+}
+y_key($key, $body)) {
+                continue;
+            }
+
+            $text = $this->extractTextValue($body[$key]);
+
+            if ($text !== '') {
+                return $text;
+            }
+        }
+
+        return '';
+    }
+
+    private function extractTextValue(mixed $value): string
+    {
+        if (is_string($value)) {
+            return trim($value);
+        }
+
+        if (! is_array($value)) {
+            return '';
+        }
+
+        foreach (['texto', 'text', 'output', 'content'] as $key) {
+            if (! array_key_exists($key, $value)) {
+                continue;
+            }
+
+            $nested = $this->extractTextValue($value[$key]);
+
+            if ($nested !== '') {
+                return $nested;
+            }
+        }
+
+        return '';
+    }
+}
+
 }
