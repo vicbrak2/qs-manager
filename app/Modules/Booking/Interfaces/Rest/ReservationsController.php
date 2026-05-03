@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QS\Modules\Booking\Interfaces\Rest;
 
+use DateTimeImmutable;
 use QS\Core\Security\CapabilityChecker;
 use QS\Core\Security\RequestSanitizer;
 use QS\Modules\Booking\Application\Command\CreateReservation;
@@ -14,7 +15,6 @@ use QS\Modules\Booking\Application\Query\GetTodayReservations;
 use QS\Shared\Bus\CommandBus;
 use QS\Shared\Bus\QueryBus;
 use QS\Shared\DTO\RestResponse;
-use DateTimeImmutable;
 
 final class ReservationsController
 {

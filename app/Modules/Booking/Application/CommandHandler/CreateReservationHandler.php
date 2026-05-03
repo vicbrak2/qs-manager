@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace QS\Modules\Booking\Application\CommandHandler;
 
 use QS\Modules\Booking\Application\Command\CreateReservation;
-use QS\Modules\Booking\Domain\Service\CalendarGateway;
 use QS\Modules\Booking\Domain\Entity\Reservation;
+use QS\Modules\Booking\Domain\Repository\ReservationRepository;
+use QS\Modules\Booking\Domain\Service\CalendarGateway;
 use QS\Modules\Booking\Domain\ValueObject\ReservationId;
 use QS\Modules\Booking\Domain\ValueObject\ReservationStatus;
 use QS\Modules\Booking\Domain\ValueObject\ReservationTimeRange;
-use QS\Modules\Booking\Domain\Repository\ReservationRepository;
 
 final class CreateReservationHandler
 {
