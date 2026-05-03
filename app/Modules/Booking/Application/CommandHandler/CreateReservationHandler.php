@@ -12,6 +12,7 @@ use QS\Modules\Booking\Domain\ValueObject\ReservationId;
 use QS\Modules\Booking\Domain\ValueObject\ReservationStatus;
 use QS\Modules\Booking\Domain\ValueObject\ReservationTimeRange;
 use QS\Shared\Bus\CommandHandlerInterface;
+use QS\Shared\Bus\CommandInterface;
 
 final class CreateReservationHandler implements CommandHandlerInterface
 {
@@ -21,8 +22,9 @@ final class CreateReservationHandler implements CommandHandlerInterface
     ) {
     }
 
-    public function handle(CreateReservation $command): string
+    public function handle(CommandInterface $command): string
     {
+        assert($command instanceof CreateReservation);
         $title = "Reserva: {$command->serviceName} - {$command->clientName}";
         $description = "Email: {$command->clientEmail}\nTel: {$command->clientPhone}";
 
