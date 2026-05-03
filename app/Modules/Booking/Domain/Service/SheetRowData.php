@@ -2,29 +2,27 @@
 
 declare(strict_types=1);
 
-namespace QS\Modules\Booking\Application\Command;
+namespace QS\Modules\Booking\Domain\Service;
 
 use DateTimeImmutable;
-use QS\Shared\Bus\CommandInterface;
 
-final class CreateReservation implements CommandInterface
+/**
+ * Value object que encapsula todos los campos necesarios para insertar
+ * una fila en la hoja de cálculo de Qamiluna Studio.
+ */
+final class SheetRowData
 {
     public function __construct(
-        // Datos del cliente
+        public readonly string $encargada,
         public readonly string $clientName,
         public readonly string $clientEmail,
         public readonly string $clientPhone,
-        // Datos del servicio
         public readonly string $serviceName,
         public readonly DateTimeImmutable $startTime,
         public readonly DateTimeImmutable $endTime,
-        // Profesional asignada (nombre o email — se incluye como asistente en GCal vía Sheet)
-        public readonly string $encargada,
-        // Logística
         public readonly string $direccion,
         public readonly string $comuna,
         public readonly string $traslado,
-        // Finanzas
         public readonly string $valorServicio,
         public readonly int $cantidad,
         public readonly bool $abono,

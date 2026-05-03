@@ -13,6 +13,7 @@ use QS\Modules\Booking\Application\DTO\ReservationDTO;
 use QS\Modules\Booking\Application\Query\GetAllReservations;
 use QS\Modules\Booking\Application\Query\GetReservationById;
 use QS\Modules\Booking\Application\Query\GetTodayReservations;
+use QS\Modules\Booking\Domain\Exception\BookingConflictException;
 use QS\Shared\Bus\CommandBus;
 use QS\Shared\Bus\QueryBus;
 use QS\Shared\DTO\RestResponse;
@@ -78,26 +79,51 @@ final class ReservationsController
         try {
             $data = $request->get_json_params();
 
-            $this->logger->info('ReservationsController: Incoming request. Data: ' . (string) wp_json_encode($data));
+            $this->logger->info('ReservationsController: Incoming store request. Data: ' . (string) wp_json_encode($data));
 
             $command = new CreateReservation(
-                $this->requestSanitizer->sanitizeText($data['clientName'] ?? ''),
-                $this->requestSanitizer->sanitizeEmail($data['clientEmail'] ?? '') ?? '',
-                $this->requestSanitizer->sanitizeText($data['clientPhone'] ?? ''),
-                $this->requestSanitizer->sanitizeText($data['serviceName'] ?? ''),
-                new DateTimeImmutable($data['startTime']),
-                new DateTimeImmutable($data['endTime'])
+                clientName:    $this->requestSanitizer->sanitizeText($data['clientName'] ?? ''),
+                clientEmail:   $this->requestSanitizer->sanitizeEmail($data['clientEmail'] ?? '') ?? '',
+                clientPhone:   $this->requestSanitizer->sanitizeText($data['clientPhone'] ?? ''),
+                serviceName:   $this->requestSanitizer->sanitizeText($data['serviceName'] ?? ''),
+                startTime:     new DateTimeImmutable($data['startTime']),
+                endTime:       new DateTimeImmutable($data['endTime']),
+                encargada:     $this->requestSanitizer->sanitizeText($data['encargada'] ?? ''),
+                direccion:     $this->requestSanitizer->sanitizeText($data['direccion'] ?? ''),
+                comuna:        $this->requestSanitizer->sanitizeText($data['comuna'] ?? ''),
+                traslado:      $this->requestSanitizer->sanitizeText($data['traslado'] ?? 'No'),
+                valorServicio: $this->requestSanitizer->sanitizeText($data['valorServicio'] ?? ''),
+                cantidad:      (int) ($data['cantidad'] ?? 1),
+                abono:         (bool) ($data['abono'] ?? false),
+                montoAbono:    $this->requestSanitizer->sanitizeText($data['montoAbono'] ?? ''),
+                fechaAbono:    $this->requestSanitizer->sanitizeText($data['fechaAbono'] ?? ''),
             );
 
-            $eventId = $this->commandBus->dispatch($command);
+            $sheetName = $this->commandBus->dispatch($command);
 
-            $this->logger->info('ReservationsController: Success. Event ID: ' . $eventId);
+            $this->logger->info('ReservationsController: Reserva creada en hoja → ' . $sheetName);
 
-            return $this->respond(['google_event_id' => $eventId, 'message' => 'Reservation created']);
+            return $this->respond([
+                'sheet_name' => $sheetName,
+                'message'    => 'Reserva registrada. El evento en Google Calendar será creado automáticamente por la planilla.',
+            ]);
+        } catch (BookingConflictException $e) {
+            $this->logger->warning('ReservationsController: Conflicto de horario → ' . $e->getMessage());
+
+            return new \WP_REST_Response(
+                (new RestResponse('error', [
+                    'message'           => $e->getMessage(),
+                    'conflicting_event' => $e->getConflictingEvent(),
+                ]))->toArray(),
+                409
+            );
         } catch (\Throwable $e) {
-            $this->logger->error('ReservationsController: Error. ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            $this->logger->error('ReservationsController: Error → ' . $e->getMessage() . "\n" . $e->getTraceAsString());
 
-            return new \WP_REST_Response((new RestResponse('error', ['message' => $e->getMessage()]))->toArray(), 400);
+            return new \WP_REST_Response(
+                (new RestResponse('error', ['message' => $e->getMessage()]))->toArray(),
+                400
+            );
         }
     }
 
