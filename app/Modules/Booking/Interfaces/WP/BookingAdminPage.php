@@ -15,13 +15,14 @@ final class BookingAdminPage implements HookableInterface
 
     public function addMenuPage(): void
     {
-        add_submenu_page(
-            'qs-manager',
+        add_menu_page(
             'Agendar Reserva',
             'Agendar Reserva',
             'manage_options',
             'qs-booking-admin',
-            [$this, 'renderPage']
+            [$this, 'renderPage'],
+            'dashicons-calendar-alt',
+            26
         );
     }
 
