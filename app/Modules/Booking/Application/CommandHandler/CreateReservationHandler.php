@@ -47,7 +47,7 @@ final class CreateReservationHandler
             null,
             new ReservationTimeRange($command->startTime, $command->endTime),
             null,
-            "Google Event ID: " . $googleEventId
+            'Google Event ID: ' . $googleEventId
         );
 
         $this->reservationRepository->save($reservation);
