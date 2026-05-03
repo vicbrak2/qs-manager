@@ -24,7 +24,7 @@ final class CreateReservationHandler
     {
         $title = "Reserva: {$command->serviceName} - {$command->clientName}";
         $description = "Email: {$command->clientEmail}\nTel: {$command->clientPhone}";
-        
+
         $googleEventId = $this->calendarGateway->createEvent(
             $title,
             $description,

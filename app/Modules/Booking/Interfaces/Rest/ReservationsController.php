@@ -75,7 +75,7 @@ final class ReservationsController
     {
         try {
             $data = $request->get_json_params();
-            
+
             $command = new CreateReservation(
                 $this->requestSanitizer->sanitizeString($data['clientName'] ?? ''),
                 $this->requestSanitizer->sanitizeEmail($data['clientEmail'] ?? ''),
