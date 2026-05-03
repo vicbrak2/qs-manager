@@ -313,11 +313,17 @@ function ftp_put_with_retry(FTP\Connection $connection, string $remotePath, stri
             return true;
         }
 
+        $error = error_get_last();
+        $errorMessage = $error['message'] ?? 'Unknown error';
+
         if ($attempt < $maxAttempts) {
-            echo "Upload attempt {$attempt} failed for {$remotePath}, retrying...\n";
+            echo "Upload attempt {$attempt} failed for {$remotePath}: {$errorMessage}. Retrying...\n";
             sleep(2 ** ($attempt - 1));
         }
     }
+
+    $error = error_get_last();
+    echo "Final upload failure for {$remotePath}: " . ($error['message'] ?? 'Unknown error') . "\n";
 
     return false;
 }
