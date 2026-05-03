@@ -77,10 +77,10 @@ final class ReservationsController
             $data = $request->get_json_params();
 
             $command = new CreateReservation(
-                $this->requestSanitizer->sanitizeString($data['clientName'] ?? ''),
-                $this->requestSanitizer->sanitizeEmail($data['clientEmail'] ?? ''),
-                $this->requestSanitizer->sanitizeString($data['clientPhone'] ?? ''),
-                $this->requestSanitizer->sanitizeString($data['serviceName'] ?? ''),
+                $this->requestSanitizer->sanitizeText($data['clientName'] ?? ''),
+                $this->requestSanitizer->sanitizeEmail($data['clientEmail'] ?? '') ?? '',
+                $this->requestSanitizer->sanitizeText($data['clientPhone'] ?? ''),
+                $this->requestSanitizer->sanitizeText($data['serviceName'] ?? ''),
                 new DateTimeImmutable($data['startTime']),
                 new DateTimeImmutable($data['endTime'])
             );

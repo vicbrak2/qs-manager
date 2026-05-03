@@ -10,6 +10,8 @@ interface CalendarGateway
 {
     /**
      * Retorna un arreglo de horarios ocupados o disponibles para una fecha dada.
+     *
+     * @return array<int|string, mixed>
      */
     public function getAvailabilityForDate(DateTimeImmutable $date): array;
 

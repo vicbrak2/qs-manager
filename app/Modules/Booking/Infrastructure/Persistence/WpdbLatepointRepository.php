@@ -139,4 +139,25 @@ final class WpdbLatepointRepository implements ReservationRepository
             $rows
         );
     }
+
+    public function save(Reservation $reservation): Reservation
+    {
+        $table = $this->wpdb->prefix . 'qs_bookings';
+        $this->wpdb->insert(
+            $table,
+            [
+                'client_name' => $reservation->clientName(),
+                'client_phone' => $reservation->clientPhone(),
+                'client_email' => $reservation->clientEmail(),
+                'service_name' => $reservation->serviceName(),
+                'start_time' => $reservation->timeRange()->serviceDate() . ' ' . $reservation->timeRange()->startTime(),
+                'end_time' => $reservation->timeRange()->serviceDate() . ' ' . $reservation->timeRange()->endTime(),
+                'status' => $reservation->status()->value,
+                'google_event_id' => str_replace('Google Event ID: ', '', $reservation->notes() ?? ''),
+            ],
+            ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
+        );
+
+        return $reservation;
+    }
 }

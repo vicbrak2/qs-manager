@@ -8,7 +8,7 @@ use QS\Core\Contracts\HookableInterface;
 
 final class BookingAdminPage implements HookableInterface
 {
-    public function registerHooks(): void
+    public function register(): void
     {
         add_action('admin_menu', [$this, 'addMenuPage']);
     }

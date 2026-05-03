@@ -11,8 +11,9 @@ use QS\Modules\Booking\Domain\Service\CalendarGateway;
 use QS\Modules\Booking\Domain\ValueObject\ReservationId;
 use QS\Modules\Booking\Domain\ValueObject\ReservationStatus;
 use QS\Modules\Booking\Domain\ValueObject\ReservationTimeRange;
+use QS\Shared\Bus\CommandHandlerInterface;
 
-final class CreateReservationHandler
+final class CreateReservationHandler implements CommandHandlerInterface
 {
     public function __construct(
         private ReservationRepository $reservationRepository,
@@ -43,9 +44,13 @@ final class CreateReservationHandler
             $command->clientName,
             $command->clientEmail,
             $command->clientPhone,
-            ReservationStatus::APPROVED,
+            ReservationStatus::Approved,
             null,
-            new ReservationTimeRange($command->startTime, $command->endTime),
+            new ReservationTimeRange(
+                $command->startTime->format('Y-m-d'),
+                $command->startTime->format('H:i:s'),
+                $command->endTime->format('H:i:s')
+            ),
             null,
             'Google Event ID: ' . $googleEventId
         );

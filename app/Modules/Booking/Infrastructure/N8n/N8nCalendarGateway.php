@@ -20,14 +20,17 @@ final class N8nCalendarGateway implements CalendarGateway
         $this->createEventWebhookUrl = get_option('qs_n8n_calendar_create_url', 'https://n8n.qamilunastudio.com/webhook/calendar/create');
     }
 
+    /**
+     * @return array<int|string, mixed>
+     */
     public function getAvailabilityForDate(DateTimeImmutable $date): array
     {
         $response = wp_remote_post($this->checkAvailabilityWebhookUrl, [
             'headers' => ['Content-Type' => 'application/json'],
-            'body' => wp_json_encode([
-                'date' => $date->format('Y-m-d')
+            'body' => (string) wp_json_encode([
+                'date' => $date->format('Y-m-d'),
             ]),
-            'timeout' => 10
+            'timeout' => 10,
         ]);
 
         if (is_wp_error($response)) {
@@ -48,13 +51,13 @@ final class N8nCalendarGateway implements CalendarGateway
     ): string {
         $response = wp_remote_post($this->createEventWebhookUrl, [
             'headers' => ['Content-Type' => 'application/json'],
-            'body' => wp_json_encode([
+            'body' => (string) wp_json_encode([
                 'title' => $title,
                 'description' => $description,
                 'start_time' => $startTime->format('c'),
-                'end_time' => $endTime->format('c')
+                'end_time' => $endTime->format('c'),
             ]),
-            'timeout' => 15
+            'timeout' => 15,
         ]);
 
         if (is_wp_error($response)) {
