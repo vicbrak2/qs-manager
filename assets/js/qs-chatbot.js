@@ -35,7 +35,7 @@
 
             div.appendChild(bubble);
 
-            if (role === 'bot' && meta && Number.isInteger(meta.turnIndex) && meta.turnIndex > 0) {
+            if (role === 'bot' && meta && Number.isInteger(meta.turnIndex) && meta.turnIndex > 0 && !meta.isBookingStep) {
                 div.appendChild(buildFeedback(meta.turnIndex, sessionId));
             }
 
@@ -97,6 +97,7 @@
                 appendMessage(data.response || '...', 'bot', {
                     blocks: Array.isArray(data.response_blocks) ? data.response_blocks : [],
                     turnIndex: Number.parseInt(data.turn_index, 10),
+                    isBookingStep: data.is_booking_step === true,
                 });
             } catch (err) {
                 setTyping(false);

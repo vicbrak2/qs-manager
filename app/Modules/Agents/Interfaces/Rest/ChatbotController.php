@@ -60,15 +60,17 @@ final class ChatbotController
             return $reply;
         }
 
+        $isBookingStep = $this->gateway->isInBookingFlow($sessionId) || $this->gateway->isHandoffActive($sessionId);
         $turnMeta = $this->logTurn($sessionId, $message, $reply, false, null);
 
         return new WP_REST_Response([
-            'success'  => true,
-            'response' => $reply,
+            'success'         => true,
+            'response'        => $reply,
             'response_blocks' => $this->buildResponseBlocks($reply),
             'response_format' => 'blocks',
-            'session_id' => $sessionId,
-            'turn_index' => $turnMeta['turn_index'],
+            'session_id'      => $sessionId,
+            'turn_index'      => $turnMeta['turn_index'],
+            'is_booking_step' => $isBookingStep,
         ], 200);
     }
 

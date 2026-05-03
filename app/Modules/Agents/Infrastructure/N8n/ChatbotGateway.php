@@ -133,6 +133,11 @@ final class ChatbotGateway
         return $this->profile;
     }
 
+    public function isInBookingFlow(string $sessionId): bool
+    {
+        return $this->getBookingFlowState($sessionId) !== null;
+    }
+
     private function truncateInput(string $message): string
     {
         $trimmed = trim($message);
@@ -243,7 +248,7 @@ final class ChatbotGateway
         set_transient($this->handoffKey($sessionId), '1', self::HANDOFF_TTL);
     }
 
-    private function isHandoffActive(string $sessionId): bool
+    public function isHandoffActive(string $sessionId): bool
     {
         return get_transient($this->handoffKey($sessionId)) === '1';
     }
