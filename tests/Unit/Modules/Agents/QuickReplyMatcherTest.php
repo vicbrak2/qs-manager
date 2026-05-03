@@ -10,38 +10,18 @@ use QS\Shared\Testing\TestCase;
 
 final class QuickReplyMatcherTest extends TestCase
 {
-    public function testMatchesBuiltInServicesRule(): void
+    public function testReturnsNullWithoutConfiguredRules(): void
     {
+        // defaultRules() fue eliminado — sin reglas configuradas el matcher no intercepta nada.
+        // Las respuestas informativas van al LLM vía n8n.
         $matcher = new QuickReplyMatcher();
 
-        $reply = $matcher->match('que servicios tienen?');
-
-        self::assertNotNull($reply);
-        self::assertStringContainsString('Maquillaje social', $reply);
+        self::assertNull($matcher->match('que servicios tienen?'));
+        self::assertNull($matcher->match('puedo reservar una hora?'));
+        self::assertNull($matcher->match('novia civil'));
     }
 
-    public function testMatchesReservationRuleUsingFuzzySimilarity(): void
-    {
-        $matcher = new QuickReplyMatcher();
-
-        $reply = $matcher->match('puedo reservar una hora?');
-
-        self::assertNotNull($reply);
-        self::assertStringContainsString('datos paso a paso', $reply);
-    }
-
-    public function testMatchesBridalRuleForLongQuestion(): void
-    {
-        $matcher = new QuickReplyMatcher();
-
-        $reply = $matcher->match('Cual es la diferencia entre novia civil y novia fiesta si quiero maquillarme con ustedes en Santiago?');
-
-        self::assertNotNull($reply);
-        self::assertStringContainsString('servicios para novia', $reply);
-        self::assertStringContainsString('Deseas reservar?', $reply);
-    }
-
-    public function testConfiguredRulesCanOverrideDefaults(): void
+    public function testConfiguredRulesMatchCorrectly(): void
     {
         $json = (string) json_encode([
             [
@@ -54,6 +34,25 @@ final class QuickReplyMatcherTest extends TestCase
         $matcher = new QuickReplyMatcher($json, '0.80');
 
         self::assertSame('Respuesta local custom para precios.', $matcher->match('precios?'));
+    }
+
+    public function testConfiguredRulesMatchBridalQuestion(): void
+    {
+        $json = (string) json_encode([
+            [
+                'id' => 'novia',
+                'response' => 'Tenemos servicios para novia civil y novia fiesta.',
+                'examples' => ['novia civil', 'novia fiesta', 'diferencia novia civil fiesta'],
+                'min_score' => 0.75,
+            ],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        $matcher = new QuickReplyMatcher($json, '0.75');
+
+        $reply = $matcher->match('novia civil');
+
+        self::assertNotNull($reply);
+        self::assertStringContainsString('novia civil', $reply);
     }
 
     public function testCustomThresholdCanBlockLooseMatches(): void
