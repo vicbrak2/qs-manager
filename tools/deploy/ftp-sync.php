@@ -242,26 +242,34 @@ function ensure_remote_directory(FTP\Connection $connection, string $directory, 
         $current[] = $part;
         $currentPath = implode('/', $current);
         if (isset($ensuredDirectories[$currentPath])) {
+            if (! @ftp_chdir($connection, $part)) {
+                throw new RuntimeException("Unable to enter already ensured remote directory {$currentPath}.");
+            }
             continue;
         }
 
         if (@ftp_chdir($connection, $part)) {
+            // echo "Entered existing directory: {$currentPath}\n";
             $ensuredDirectories[$currentPath] = true;
             continue;
         }
 
-        if (! @ftp_mkdir($connection, $part) && ! @ftp_chdir($connection, $part)) {
-            throw new RuntimeException("Unable to create remote directory {$currentPath}.");
+        if (! @ftp_mkdir($connection, $part)) {
+            $error = error_get_last();
+            throw new RuntimeException("Unable to create remote directory {$currentPath}: " . ($error['message'] ?? 'Unknown error'));
         }
 
         if (! @ftp_chdir($connection, $part)) {
-            throw new RuntimeException("Unable to enter remote directory {$currentPath}.");
+            throw new RuntimeException("Unable to enter newly created remote directory {$currentPath}.");
         }
 
+        // echo "Created and entered directory: {$currentPath}\n";
         $ensuredDirectories[$currentPath] = true;
     }
 
-    @ftp_chdir($connection, $rootDirectory);
+    if (! @ftp_chdir($connection, $rootDirectory)) {
+        throw new RuntimeException("Unable to return to root directory {$rootDirectory} after ensuring {$directory}.");
+    }
 }
 
 /**
