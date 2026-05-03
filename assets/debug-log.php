@@ -1,21 +1,16 @@
 <?php
 /**
- * Temporary debug script to list files.
+ * Temporary debug script to read plugin logs.
  */
 
-$root = dirname(__DIR__);
+$logFile = dirname(__DIR__) . '/var/logs/qs-core.log';
 
-function list_dir($dir, $level = 0) {
-    $files = scandir($dir);
-    foreach ($files as $file) {
-        if ($file === '.' || $file === '..') continue;
-        echo str_repeat("  ", $level) . $file . (is_dir($dir . '/' . $file) ? '/' : '') . "\n";
-        if (is_dir($dir . '/' . $file) && $level < 2) {
-            list_dir($dir . '/' . $file, $level + 1);
-        }
-    }
+if (!file_exists($logFile)) {
+    die("Log file not found at: $logFile");
 }
 
 header('Content-Type: text/plain');
-echo "Listing for: $root\n";
-list_dir($root);
+// Read last 100 lines
+$lines = file($logFile);
+$lastLines = array_slice($lines, -100);
+echo implode("", $lastLines);
