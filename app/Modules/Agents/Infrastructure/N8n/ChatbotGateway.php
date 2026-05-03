@@ -419,7 +419,7 @@ final class ChatbotGateway
         $estado = $isPendingDate ? '⏳ *FECHA PENDIENTE*' : '📅 *FECHA TENTATIVA*';
 
         // Link de WhatsApp directo al cliente si compartió número
-        $clientPhone  = preg_replace('/[^0-9]/', '', $phone);
+        $clientPhone  = (string) preg_replace('/[^0-9]/', '', $phone);
         $whatsappLink = strlen($clientPhone) >= 8
             ? 'https://wa.me/' . $clientPhone
             : null;
