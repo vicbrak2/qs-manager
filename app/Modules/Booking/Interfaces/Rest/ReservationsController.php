@@ -22,7 +22,8 @@ final class ReservationsController
         private readonly QueryBus $queryBus,
         private readonly CommandBus $commandBus,
         private readonly RequestSanitizer $requestSanitizer,
-        private readonly CapabilityChecker $capabilityChecker
+        private readonly CapabilityChecker $capabilityChecker,
+        private readonly \QS\Core\Logging\Logger $logger
     ) {
     }
 
@@ -75,6 +76,8 @@ final class ReservationsController
     {
         try {
             $data = $request->get_json_params();
+            
+            $this->logger->info('ReservationsController: Incoming request. Data: ' . (string) wp_json_encode($data));
 
             $command = new CreateReservation(
                 $this->requestSanitizer->sanitizeText($data['clientName'] ?? ''),
@@ -86,9 +89,13 @@ final class ReservationsController
             );
 
             $eventId = $this->commandBus->dispatch($command);
+            
+            $this->logger->info('ReservationsController: Success. Event ID: ' . $eventId);
 
             return $this->respond(['google_event_id' => $eventId, 'message' => 'Reservation created']);
         } catch (\Throwable $e) {
+            $this->logger->error('ReservationsController: Error. ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            
             return new \WP_REST_Response((new RestResponse('error', ['message' => $e->getMessage()]))->toArray(), 400);
         }
     }

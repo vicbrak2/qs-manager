@@ -17,14 +17,18 @@ use QS\Shared\Bus\CommandInterface;
 final class CreateReservationHandler implements CommandHandlerInterface
 {
     public function __construct(
-        private ReservationRepository $reservationRepository,
-        private CalendarGateway $calendarGateway
+        private readonly ReservationRepository $reservationRepository,
+        private readonly CalendarGateway $calendarGateway,
+        private readonly \QS\Core\Logging\Logger $logger
     ) {
     }
 
     public function handle(CommandInterface $command): string
     {
         assert($command instanceof CreateReservation);
+        
+        $this->logger->info('CreateReservationHandler: Starting process for ' . $command->clientName);
+
         $title = "Reserva: {$command->serviceName} - {$command->clientName}";
         $description = "Email: {$command->clientEmail}\nTel: {$command->clientPhone}";
 
@@ -34,6 +38,8 @@ final class CreateReservationHandler implements CommandHandlerInterface
             $command->startTime,
             $command->endTime
         );
+        
+        $this->logger->info('CreateReservationHandler: Calendar event creation result: ' . $googleEventId);
 
         $reservation = new Reservation(
             new ReservationId(0),
@@ -58,6 +64,8 @@ final class CreateReservationHandler implements CommandHandlerInterface
         );
 
         $this->reservationRepository->save($reservation);
+        
+        $this->logger->info('CreateReservationHandler: Reservation saved locally.');
 
         return $googleEventId;
     }
