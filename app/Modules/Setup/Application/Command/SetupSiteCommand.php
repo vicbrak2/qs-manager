@@ -67,7 +67,7 @@ final class SetupSiteCommand implements CommandInterface
             'primary',
             'home',
             $force,
-            ''  // syncSecret — provided explicitly when setting the secret
+            ''
         );
     }
 
@@ -137,4 +137,17 @@ final class SetupSiteCommand implements CommandInterface
     private static function toBool(mixed $value): bool
     {
         if (is_bool($value)) {
-            return 
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value === 1;
+        }
+
+        if (is_string($value)) {
+            return in_array(strtolower(trim($value)), ['1', 'true', 'yes', 'on'], true);
+        }
+
+        return false;
+    }
+}

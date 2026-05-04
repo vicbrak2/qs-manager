@@ -71,4 +71,14 @@ final class SetupSiteHandler implements CommandHandlerInterface
             'completed_at' => $completedAt,
             'site' => [
                 'name' => $command->siteName,
-                'description' => $co
+                'description' => $command->siteDescription,
+            ],
+            'front_page_id' => $frontPageId > 0 ? $frontPageId : null,
+            'pages' => array_values($pageResult['pages']),
+            'options' => $optionsResult,
+            'menu' => $menuResult,
+            'permalinks' => $permalinkResult,
+            'sync_secret_set' => $command->syncSecret !== '',
+        ];
+    }
+}
