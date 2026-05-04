@@ -77,8 +77,14 @@ final class SheetEventsController
             return $this->error('qs_sync_secret no configurado en WordPress.', 500);
         }
 
-        $body       = $request->get_json_params();
-        $bodySecret = (string) ($body['secret'] ?? '');
+        /** @var mixed $body */
+        $body = $request->get_json_params();
+
+        if (! is_array($body)) {
+            return $this->error('Invalid JSON body.', 422);
+        }
+
+        $bodySecret = isset($body['secret']) && is_string($body['secret']) ? $body['secret'] : '';
 
         if (! hash_equals($secret, $bodySecret)) {
             $this->logger->warning('SheetEventsController: upsert rechazado — secret inválido.');
@@ -86,20 +92,22 @@ final class SheetEventsController
             return $this->error('Unauthorized.', 401);
         }
 
-        $rows = $body['rows'] ?? [];
+        $rawRows = $body['rows'] ?? [];
 
-        if (! is_array($rows) || count($rows) === 0) {
+        if (! is_array($rawRows) || count($rawRows) === 0) {
             return $this->error('No rows provided.', 422);
         }
 
         $events  = [];
         $skipped = 0;
 
-        foreach ($rows as $row) {
+        foreach ($rawRows as $row) {
             if (! is_array($row)) {
                 $skipped++;
                 continue;
             }
+
+            /** @var array<string, mixed> $row */
 
             $event = $this->hydrateRow($row);
 
@@ -154,7 +162,7 @@ final class SheetEventsController
             encargada:          (string) ($row['encargada'] ?? ''),
             dia:                (string) ($row['dia'] ?? ''),
             fechaServicio:      $this->parseChileanDate((string) ($row['fecha'] ?? '')),
-            horaInicio:         $row['hora'] !== '' ? (string) ($row['hora'] ?? null) : null,
+            horaInicio:         isset($row['hora']) && is_string($row['hora']) && $row['hora'] !== '' ? $row['hora'] : null,
             servicio:           (string) ($row['servicio'] ?? ''),
             cantidad:           max(1, (int) ($row['cantidad'] ?? 1)),
             clientaNombre:      (string) ($row['clienta'] ?? ''),
@@ -201,14 +209,4 @@ final class SheetEventsController
      */
     private function ok(array $data, int $status = 200): \WP_REST_Response
     {
-        return new \WP_REST_Response((new RestResponse('ok', $data))->toArray(), $status);
-    }
-
-    private function error(string $message, int $status): \WP_REST_Response
-    {
-        return new \WP_REST_Response(
-            (new RestResponse('error', ['message' => $message]))->toArray(),
-            $status
-        );
-    }
-}
+        return new \WP_REST_Response((new RestResponse('ok', $data

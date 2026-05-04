@@ -147,13 +147,13 @@ final class WpdbSheetEventRepository implements SheetEventRepository
             encargada:          (string) $row['encargada'],
             dia:                (string) $row['dia'],
             fechaServicio:      $this->parseDate((string) ($row['fecha_servicio'] ?? '')),
-            horaInicio:         $row['hora_inicio'] !== null ? (string) $row['hora_inicio'] : null,
+            horaInicio:         isset($row['hora_inicio']) && is_string($row['hora_inicio']) ? $row['hora_inicio'] : null,
             servicio:           (string) $row['servicio'],
             cantidad:           (int) $row['cantidad'],
             clientaNombre:      (string) $row['clienta_nombre'],
-            telefono:           $row['telefono'] !== null ? (string) $row['telefono'] : null,
-            direccion:          $row['direccion'] !== null ? (string) $row['direccion'] : null,
-            comuna:             $row['comuna'] !== null ? (string) $row['comuna'] : null,
+            telefono:           isset($row['telefono']) && is_string($row['telefono']) ? $row['telefono'] : null,
+            direccion:          isset($row['direccion']) && is_string($row['direccion']) ? $row['direccion'] : null,
+            comuna:             isset($row['comuna']) && is_string($row['comuna']) ? $row['comuna'] : null,
             traslado:           (string) $row['traslado'],
             abonoClp:           (int) $row['abono_clp'],
             fechaAbono:         $this->parseDate((string) ($row['fecha_abono'] ?? '')),
@@ -162,7 +162,7 @@ final class WpdbSheetEventRepository implements SheetEventRepository
             totalPorPagarClp:   (int) $row['total_por_pagar_clp'],
             accion:             (string) $row['accion'],
             estadoEvento:       (string) $row['estado_evento'],
-            idEventoGcal:       $row['id_evento_gcal'] !== null ? (string) $row['id_evento_gcal'] : null,
+            idEventoGcal:       isset($row['id_evento_gcal']) && is_string($row['id_evento_gcal']) ? $row['id_evento_gcal'] : null,
             origen:             (string) $row['origen'],
             syncedAt:           new DateTimeImmutable((string) $row['synced_at']),
             createdAt:          new DateTimeImmutable((string) $row['created_at']),
@@ -217,9 +217,4 @@ final class WpdbSheetEventRepository implements SheetEventRepository
         }
 
         try {
-            return new DateTimeImmutable($value);
-        } catch (\Throwable) {
-            return null;
-        }
-    }
-}
+            retu
