@@ -136,7 +136,7 @@ final class WpdbSheetEventRepository implements SheetEventRepository
     }
 
     /**
-     * @param array<string, mixed> $row
+     * @param array<array-key, mixed> $row
      */
     private function hydrate(array $row): SheetEvent
     {
@@ -217,4 +217,4 @@ final class WpdbSheetEventRepository implements SheetEventRepository
         }
 
         try {
-            retu
+            r
