@@ -217,4 +217,9 @@ final class WpdbSheetEventRepository implements SheetEventRepository
         }
 
         try {
-            r
+            return new DateTimeImmutable($value);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+}
