@@ -244,11 +244,4 @@ return [
         'permission_callback' => 'canManage',
     ],
     [
-        'namespace' => 'qs/v1',
-        'route' => '/agents/whatsapp-options',
-        'methods' => 'POST',
-        'controller' => \QS\Modules\Agents\Interfaces\Rest\WhatsAppOptionsController::class,
-        'action' => 'update',
-        'permission_callback' => 'canManage',
-    ],
-];
+       

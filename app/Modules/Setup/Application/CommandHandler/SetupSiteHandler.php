@@ -56,6 +56,12 @@ final class SetupSiteHandler implements CommandHandlerInterface
                 'site_name' => $command->siteName,
                 'front_page_id' => $frontPageId,
             ], false);
+
+            // Persist sync secret if provided (used by n8n → WP upsert endpoint)
+            if ($command->syncSecret !== '') {
+                update_option('qs_sync_secret', $command->syncSecret, false);
+                $this->logger->info('SetupSiteHandler: qs_sync_secret actualizado.');
+            }
         }
 
         $this->logger->info('QS site setup completed.');
@@ -65,13 +71,4 @@ final class SetupSiteHandler implements CommandHandlerInterface
             'completed_at' => $completedAt,
             'site' => [
                 'name' => $command->siteName,
-                'description' => $command->siteDescription,
-            ],
-            'front_page_id' => $frontPageId > 0 ? $frontPageId : null,
-            'pages' => array_values($pageResult['pages']),
-            'options' => $optionsResult,
-            'menu' => $menuResult,
-            'permalinks' => $permalinkResult,
-        ];
-    }
-}
+                'description' => $co

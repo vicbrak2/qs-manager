@@ -19,7 +19,8 @@ final class SetupSiteCommand implements CommandInterface
         public readonly string $menuName = 'Menu Principal',
         public readonly string $menuLocation = 'primary',
         public readonly string $frontPageSlug = 'home',
-        public readonly bool $force = false
+        public readonly bool $force = false,
+        public readonly string $syncSecret = ''
     ) {
     }
 
@@ -36,7 +37,8 @@ final class SetupSiteCommand implements CommandInterface
         $menuName = trim((string) self::pick($input, ['menu_name', 'menu-name'], $base->menuName));
         $menuLocation = trim((string) self::pick($input, ['menu_location', 'menu-location'], $base->menuLocation));
         $frontPageSlug = trim((string) self::pick($input, ['front_page_slug', 'front-page-slug'], $base->frontPageSlug));
-        $force = self::toBool(self::pick($input, ['force'], $base->force));
+        $force      = self::toBool(self::pick($input, ['force'], $base->force));
+        $syncSecret = trim((string) self::pick($input, ['sync_secret', 'sync-secret'], $base->syncSecret));
 
         return new self(
             $siteName !== '' ? $siteName : $base->siteName,
@@ -46,7 +48,8 @@ final class SetupSiteCommand implements CommandInterface
             $menuName !== '' ? $menuName : $base->menuName,
             $menuLocation !== '' ? $menuLocation : $base->menuLocation,
             $frontPageSlug !== '' ? $frontPageSlug : $base->frontPageSlug,
-            $force
+            $force,
+            $syncSecret
         );
     }
 
@@ -63,7 +66,8 @@ final class SetupSiteCommand implements CommandInterface
             'Menu Principal',
             'primary',
             'home',
-            $force
+            $force,
+            ''  // syncSecret — provided explicitly when setting the secret
         );
     }
 
@@ -133,17 +137,4 @@ final class SetupSiteCommand implements CommandInterface
     private static function toBool(mixed $value): bool
     {
         if (is_bool($value)) {
-            return $value;
-        }
-
-        if (is_numeric($value)) {
-            return (int) $value === 1;
-        }
-
-        if (is_string($value)) {
-            return in_array(strtolower(trim($value)), ['1', 'true', 'yes', 'on'], true);
-        }
-
-        return false;
-    }
-}
+            return 
