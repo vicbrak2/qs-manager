@@ -108,7 +108,6 @@ final class SheetEventsController
             }
 
             /** @var array<string, mixed> $row */
-
             $event = $this->hydrateRow($row);
 
             if ($event === null) {
@@ -209,4 +208,4 @@ final class SheetEventsController
      */
     private function ok(array $data, int $status = 200): \WP_REST_Response
     {
-        return new \WP_REST_Response((new RestResponse('ok', $data
+        return new \WP_REST_Response((new RestResponse('ok', $data)
