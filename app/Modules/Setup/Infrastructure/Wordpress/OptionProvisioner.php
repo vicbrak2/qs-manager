@@ -29,4 +29,23 @@ final class OptionProvisioner
             // Only change the front page if forced, or if no static front page is set yet.
             // Never silently override an already-configured static homepage (e.g. Elementor).
             $hasStaticFrontPage = $currentShowOnFront === 'page' && $currentFrontPageId > 0;
-      
+            if ($force || !$hasStaticFrontPage) {
+                update_option('show_on_front', 'page');
+                update_option('page_on_front', $frontPageId);
+                $currentShowOnFront = 'page';
+                $currentFrontPageId = $frontPageId;
+                $frontPageChanged = true;
+            }
+        }
+
+        $this->logger->info('QS option provisioning completed.');
+
+        return [
+            'blogname' => $siteName,
+            'blogdescription' => $siteDescription,
+            'show_on_front' => $currentShowOnFront,
+            'page_on_front' => $currentFrontPageId > 0 ? $currentFrontPageId : null,
+            'front_page_changed' => $frontPageChanged,
+        ];
+    }
+}
