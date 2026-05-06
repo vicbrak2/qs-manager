@@ -14,9 +14,9 @@ use QS\Shared\DTO\RestResponse;
 /**
  * Endpoints para la tabla qs_sheet_events:
  *
- * GET  /qs/v1/sheet-events              → listar todos
- * GET  /qs/v1/sheet-events?sheet=Mayo   → filtrar por mes
- * POST /qs/v1/sheet-events/upsert       → upsert masivo desde n8n (sin auth WP, usa secret)
+ * GET  /qs/v1/sheet-events              -> listar todos
+ * GET  /qs/v1/sheet-events?sheet=Mayo   -> filtrar por mes
+ * POST /qs/v1/sheet-events/upsert       -> upsert masivo desde n8n (sin auth WP, usa secret)
  */
 final class SheetEventsController
 {
@@ -59,7 +59,7 @@ final class SheetEventsController
      *       "encargada": "Camila", "dia": "Lunes",
      *       "fecha": "05/05/2026", "hora": "10:00",
      *       "servicio": "Maquillaje Social", "cantidad": 1,
-     *       "clienta": "María González", "telefono": "...",
+     *       "clienta": "Maria Gonzalez", "telefono": "...",
      *       "direccion": "...", "comuna": "...", "traslado": "No",
      *       "abono": 10000, "fecha_abono": "01/05/2026",
      *       "valor_servicio": 35000, "total_servicio": 35000,
@@ -87,7 +87,7 @@ final class SheetEventsController
         $bodySecret = isset($body['secret']) && is_string($body['secret']) ? $body['secret'] : '';
 
         if (! hash_equals($secret, $bodySecret)) {
-            $this->logger->warning('SheetEventsController: upsert rechazado — secret inválido.');
+            $this->logger->warning('SheetEventsController: upsert rechazado — secret invalido.');
 
             return $this->error('Unauthorized.', 401);
         }
@@ -185,7 +185,7 @@ final class SheetEventsController
     }
 
     /**
-     * Parsea fecha chilena "d/m/Y" → DateTimeImmutable|null.
+     * Parsea fecha chilena "d/m/Y" -> DateTimeImmutable|null.
      */
     private function parseChileanDate(string $value): ?DateTimeImmutable
     {
@@ -208,4 +208,14 @@ final class SheetEventsController
      */
     private function ok(array $data, int $status = 200): \WP_REST_Response
     {
-        return new \WP_REST_Response((new RestResponse('ok', $data)
+        return new \WP_REST_Response((new RestResponse('ok', $data))->toArray(), $status);
+    }
+
+    private function error(string $message, int $status): \WP_REST_Response
+    {
+        return new \WP_REST_Response(
+            (new RestResponse('error', ['message' => $message]))->toArray(),
+            $status
+        );
+    }
+}
