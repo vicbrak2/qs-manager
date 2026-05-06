@@ -32,12 +32,22 @@ final class SetupSiteHandler implements CommandHandlerInterface
         assert($command instanceof SetupSiteCommand);
 
         $pageResult = $this->pageProvisioner->provision($command->pages, $command->force);
-        $frontPageId = (int) ($pageResult['pages'][$command->frontPageSlug]['id'] ?? 0);
+        $frontPage = $pageResult['pages'][$command->frontPageSlug] ?? null;
+
+        // Only set a new front page if the page already existed (state='existing').
+        // Never override the front page with a freshly created page — that would
+        // destroy any Elementor/custom homepage already configured in production.
+        $frontPageId = is_array($frontPage)
+            && ($frontPage['state'] ?? '') === 'existing'
+            && ($frontPage['status'] ?? '') === 'publish'
+            ? (int) ($frontPage['id'] ?? 0)
+            : 0;
 
         $optionsResult = $this->optionProvisioner->provision(
             $command->siteName,
             $command->siteDescription,
-            $frontPageId > 0 ? $frontPageId : null
+            $frontPageId > 0 ? $frontPageId : null,
+            $command->force
         );
 
         $menuResult = $this->menuProvisioner->provision(
@@ -68,17 +78,4 @@ final class SetupSiteHandler implements CommandHandlerInterface
 
         return [
             'completed' => true,
-            'completed_at' => $completedAt,
-            'site' => [
-                'name' => $command->siteName,
-                'description' => $command->siteDescription,
-            ],
-            'front_page_id' => $frontPageId > 0 ? $frontPageId : null,
-            'pages' => array_values($pageResult['pages']),
-            'options' => $optionsResult,
-            'menu' => $menuResult,
-            'permalinks' => $permalinkResult,
-            'sync_secret_set' => $command->syncSecret !== '',
-        ];
-    }
-}
+            'completed_at' => $c
