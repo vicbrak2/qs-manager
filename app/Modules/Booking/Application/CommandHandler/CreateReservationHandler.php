@@ -89,7 +89,7 @@ final class CreateReservationHandler implements CommandHandlerInterface
         $totalPorPagar = $totalServicio - $montoAbonoNum;
 
         $diasSemana = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'];
-        $dia        = $diasSemana[(int) $command->startTime->format('N')] ?? '';
+        $dia        = $diasSemana[(int) $command->startTime->format('N')];
 
         $fechaAbono = $command->abono && $command->fechaAbono !== ''
             ? DateTimeImmutable::createFromFormat('Y-m-d', $command->fechaAbono) ?: null
