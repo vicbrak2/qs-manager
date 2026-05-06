@@ -5,7 +5,7 @@ param(
     [string] $EnvFile = '',
     [string] $RootEnvFile = '',
     [string] $AlertWebhookUrl = '',
-    [int] $EvolutionRetries = 3,
+    [int] $EvolutionRetries = 2,
     [int] $EvolutionRetryDelaySeconds = 15,
     [switch] $Json
 )
@@ -52,10 +52,10 @@ try {
             $current = ''
             for ($attempt = 1; $attempt -le [Math]::Max(1, $EvolutionRetries); $attempt++) {
                 try {
-                    $state = Invoke-RestMethod -Method Get -Uri "$($ctx.EvolutionBaseUrl)/instance/connectionState/$($ctx.EvolutionInstanceName)" -Headers $headers -TimeoutSec 30
+                    $state = Invoke-RestMethod -Method Get -Uri "$($ctx.EvolutionBaseUrl)/instance/connectionState/$($ctx.EvolutionInstanceName)" -Headers $headers -TimeoutSec 60
                     $current = [string]$state.instance.state
                 } catch {
-                    $instances = Invoke-RestMethod -Method Get -Uri "$($ctx.EvolutionBaseUrl)/instance/fetchInstances" -Headers $headers -TimeoutSec 30
+                    $instances = Invoke-RestMethod -Method Get -Uri "$($ctx.EvolutionBaseUrl)/instance/fetchInstances" -Headers $headers -TimeoutSec 60
                     $instance = @($instances) | Where-Object { [string]$_.name -eq $ctx.EvolutionInstanceName } | Select-Object -First 1
                     if ($instance) {
                         $current = [string]$instance.connectionStatus
