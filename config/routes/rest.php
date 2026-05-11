@@ -244,4 +244,31 @@ return [
         'permission_callback' => 'canManage',
     ],
     [
-       
+        'namespace' => 'qs/v1',
+        'route' => '/agents/whatsapp-options',
+        'methods' => 'POST',
+        'controller' => \QS\Modules\Agents\Interfaces\Rest\WhatsAppOptionsController::class,
+        'action' => 'update',
+        'permission_callback' => 'canManage',
+    ],
+
+    // -------------------------------------------------------------------------
+    // Sheet Events — bitácora unificada sincronizada con Google Sheets
+    // -------------------------------------------------------------------------
+    [
+        'namespace' => 'qs/v1',
+        'route' => '/sheet-events',
+        'methods' => 'GET',
+        'controller' => \QS\Modules\Booking\Interfaces\Rest\SheetEventsController::class,
+        'action' => 'index',
+        'permission_callback' => 'canView',
+    ],
+    [
+        'namespace' => 'qs/v1',
+        'route' => '/sheet-events/upsert',
+        'methods' => 'POST',
+        'controller' => \QS\Modules\Booking\Interfaces\Rest\SheetEventsController::class,
+        'action' => 'upsert',
+        'permission_callback' => 'allowUpsert',
+    ],
+];

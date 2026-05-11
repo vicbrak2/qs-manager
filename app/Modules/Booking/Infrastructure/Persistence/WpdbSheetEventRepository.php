@@ -40,8 +40,7 @@ final class WpdbSheetEventRepository implements SheetEventRepository
     public function findBySheetName(string $sheetName): array
     {
         $rows = $this->wpdb->get_results(
-            $this->wpdb->prepare(
-                // @phpstan-ignore-next-line argument.type
+            $this->wpdb->prepare( // @phpstan-ignore argument.type
                 "SELECT * FROM {$this->table} WHERE sheet_name = %s ORDER BY row_index ASC",
                 $sheetName
             ),
@@ -57,8 +56,7 @@ final class WpdbSheetEventRepository implements SheetEventRepository
     public function findBySheetAndRow(string $sheetName, int $rowIndex): ?SheetEvent
     {
         $row = $this->wpdb->get_row(
-            $this->wpdb->prepare(
-                // @phpstan-ignore-next-line argument.type
+            $this->wpdb->prepare( // @phpstan-ignore argument.type
                 "SELECT * FROM {$this->table} WHERE sheet_name = %s AND row_index = %d",
                 $sheetName,
                 $rowIndex
@@ -127,8 +125,7 @@ final class WpdbSheetEventRepository implements SheetEventRepository
     private function findById(int $id): ?SheetEvent
     {
         $row = $this->wpdb->get_row(
-            $this->wpdb->prepare(
-                // @phpstan-ignore-next-line argument.type
+            $this->wpdb->prepare( // @phpstan-ignore argument.type
                 "SELECT * FROM {$this->table} WHERE id = %d",
                 $id
             ),

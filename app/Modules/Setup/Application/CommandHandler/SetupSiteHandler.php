@@ -35,7 +35,7 @@ final class SetupSiteHandler implements CommandHandlerInterface
         $frontPage = $pageResult['pages'][$command->frontPageSlug] ?? null;
 
         // Only set a new front page if the page already existed (state='existing').
-        // Never override the front page with a freshly created page -- that would
+        // Never override the front page with a freshly created page — that would
         // destroy any Elementor/custom homepage already configured in production.
         $frontPageId = is_array($frontPage)
             && ($frontPage['state'] ?? '') === 'existing'
@@ -78,17 +78,4 @@ final class SetupSiteHandler implements CommandHandlerInterface
 
         return [
             'completed' => true,
-            'completed_at' => $completedAt,
-            'site' => [
-                'name' => $command->siteName,
-                'description' => $command->siteDescription,
-            ],
-            'front_page_id' => $frontPageId > 0 ? $frontPageId : null,
-            'pages' => array_values($pageResult['pages']),
-            'options' => $optionsResult,
-            'menu' => $menuResult,
-            'permalinks' => $permalinkResult,
-            'sync_secret_set' => $command->syncSecret !== '',
-        ];
-    }
-}
+            'completed_at' => $c

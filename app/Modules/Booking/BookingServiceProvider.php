@@ -37,21 +37,21 @@ final class BookingServiceProvider implements ModuleServiceProviderInterface
     public static function definitions(): array
     {
         return [
-            LatepointTableMap::class          => autowire(),
-            ReservationNormalizer::class       => autowire(),
-            ReservationRepository::class       => autowire(WpdbLatepointRepository::class),
-            SheetEventRepository::class        => autowire(WpdbSheetEventRepository::class),
-            CalendarGateway::class             => autowire(N8nCalendarGateway::class),
-            SheetsSyncGateway::class           => autowire(N8nSheetsSyncGateway::class),
-            CreateReservationHandler::class    => autowire(),
-            GetAllReservationsHandler::class   => autowire(),
+            LatepointTableMap::class         => autowire(),
+            ReservationNormalizer::class      => autowire(),
+            ReservationRepository::class      => autowire(WpdbLatepointRepository::class),
+            SheetEventRepository::class       => autowire(WpdbSheetEventRepository::class),
+            CalendarGateway::class            => autowire(N8nCalendarGateway::class),
+            SheetsSyncGateway::class          => autowire(N8nSheetsSyncGateway::class),
+            CreateReservationHandler::class   => autowire(),
+            GetAllReservationsHandler::class  => autowire(),
             GetTodayReservationsHandler::class => autowire(),
-            GetReservationByIdHandler::class   => autowire(),
-            GetMuaAgendaHandler::class         => autowire(),
-            ReservationsController::class      => autowire(),
-            MuaAgendaController::class         => autowire(),
-            SheetEventsController::class       => autowire(),
-            BookingAdminPage::class            => autowire(),
+            GetReservationByIdHandler::class  => autowire(),
+            GetMuaAgendaHandler::class        => autowire(),
+            ReservationsController::class     => autowire(),
+            MuaAgendaController::class        => autowire(),
+            SheetEventsController::class      => autowire(),
+            BookingAdminPage::class           => autowire(),
         ];
     }
 
@@ -65,9 +65,9 @@ final class BookingServiceProvider implements ModuleServiceProviderInterface
     public static function queryHandlers(): array
     {
         return [
-            GetAllReservations::class   => GetAllReservationsHandler::class,
-            GetMuaAgenda::class         => GetMuaAgendaHandler::class,
-            GetReservationById::class   => GetReservationByIdHandler::class,
+            GetAllReservations::class  => GetAllReservationsHandler::class,
+            GetMuaAgenda::class        => GetMuaAgendaHandler::class,
+            GetReservationById::class  => GetReservationByIdHandler::class,
             GetTodayReservations::class => GetTodayReservationsHandler::class,
         ];
     }

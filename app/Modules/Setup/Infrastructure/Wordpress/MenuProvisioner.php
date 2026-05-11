@@ -14,7 +14,7 @@ final class MenuProvisioner
     }
 
     /**
-     * @param array<string, array{id: int, slug: string, title: string, state: string}> $pages
+     * @param array<string, array{id: int, slug: string, title: string, status: string, state: string}> $pages
      * @return array<string, mixed>
      */
     public function provision(string $menuName, string $menuLocation, array $pages): array
@@ -50,11 +50,17 @@ final class MenuProvisioner
 
         $addedPages = [];
         $existingPages = [];
+        $skippedPages = [];
 
         foreach ($pages as $page) {
             $pageId = $page['id'];
 
             if ($pageId <= 0) {
+                continue;
+            }
+
+            if (($page['status'] ?? '') !== 'publish') {
+                $skippedPages[] = $page['slug'];
                 continue;
             }
 
@@ -105,6 +111,7 @@ final class MenuProvisioner
             'assigned' => $assigned,
             'added_pages' => $addedPages,
             'existing_pages' => $existingPages,
+            'skipped_pages' => $skippedPages,
             'warnings' => $warnings,
         ];
     }

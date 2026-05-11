@@ -20,6 +20,7 @@ secrets.json
 config.json
 credentials.json
 .credentials
+client_secret*.json
 
 # Sistema operativo
 .DS_Store

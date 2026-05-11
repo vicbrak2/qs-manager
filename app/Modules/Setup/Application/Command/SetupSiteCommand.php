@@ -67,7 +67,7 @@ final class SetupSiteCommand implements CommandInterface
             'primary',
             'home',
             $force,
-            ''
+            ''  // syncSecret — provided explicitly when setting the secret
         );
     }
 
@@ -81,31 +81,31 @@ final class SetupSiteCommand implements CommandInterface
                 'slug' => 'home',
                 'title' => 'Inicio',
                 'content' => sprintf("Bienvenida a %s.\n\nEste espacio centraliza la informacion principal del estudio.", $siteName),
-                'status' => 'publish',
+                'status' => 'draft',
             ],
             [
                 'slug' => 'about',
                 'title' => 'Nosotras',
                 'content' => 'Presenta el equipo, la propuesta del estudio y la experiencia que ofrece QS.',
-                'status' => 'publish',
+                'status' => 'draft',
             ],
             [
                 'slug' => 'services',
                 'title' => 'Servicios',
                 'content' => 'Resume servicios, paquetes y diferenciadores principales.',
-                'status' => 'publish',
+                'status' => 'draft',
             ],
             [
                 'slug' => 'contact',
                 'title' => 'Contacto',
                 'content' => 'Canales de contacto, ubicacion, horarios y formulario principal.',
-                'status' => 'publish',
+                'status' => 'draft',
             ],
             [
                 'slug' => 'chatbot',
                 'title' => 'Chatbot',
                 'content' => 'Pagina reservada para integrar el asistente conversacional de QS.',
-                'status' => 'publish',
+                'status' => 'draft',
             ],
         ];
     }

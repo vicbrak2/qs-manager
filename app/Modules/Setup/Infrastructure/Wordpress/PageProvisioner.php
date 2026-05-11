@@ -15,7 +15,7 @@ final class PageProvisioner
 
     /**
      * @param array<int, array{slug: string, title: string, content: string, status: string}> $pages
-     * @return array{pages: array<string, array{id: int, slug: string, title: string, state: string}>}
+     * @return array{pages: array<string, array{id: int, slug: string, title: string, status: string, state: string}>}
      */
     public function provision(array $pages, bool $force = false): array
     {
@@ -35,6 +35,7 @@ final class PageProvisioner
 
             if ($existing instanceof \WP_Post) {
                 $pageId = (int) $existing->ID;
+                $resolvedStatus = (string) $existing->post_status;
                 $state = 'existing';
 
                 if ($force) {
@@ -43,7 +44,7 @@ final class PageProvisioner
                         'post_title' => $title,
                         'post_name' => $slug,
                         'post_content' => $content,
-                        'post_status' => $status,
+                        'post_status' => $resolvedStatus,
                         'post_type' => 'page',
                     ], true);
 
@@ -68,6 +69,7 @@ final class PageProvisioner
                 }
 
                 $pageId = (int) $insertedId;
+                $resolvedStatus = $status;
                 $state = 'created';
             }
 
@@ -75,6 +77,7 @@ final class PageProvisioner
                 'id' => $pageId,
                 'slug' => $slug,
                 'title' => $title,
+                'status' => $resolvedStatus,
                 'state' => $state,
             ];
         }
