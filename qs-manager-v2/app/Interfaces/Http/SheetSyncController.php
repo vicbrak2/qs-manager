@@ -23,6 +23,7 @@ final class SheetSyncController
     {
         $app->get('/api/v1/sync/sheets/status', [$this, 'status']);
         $app->post('/api/v1/sync/sheets/import', [$this, 'import']);
+        $app->get('/api/v1/sync/sheets/runs/{id}', [$this, 'getRun']);
     }
 
     public function status(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
@@ -64,11 +65,54 @@ final class SheetSyncController
             ], 202);
         }
 
-        $result = $this->importer->importAll();
+        $statement = $this->connection->prepare(
+            "INSERT INTO qs_sync_runs (status, mode, triggered_by) VALUES ('queued', 'read_only', :triggered_by) RETURNING id"
+        );
+        $statement->execute(['triggered_by' => 'api']);
+        $runId = $statement->fetchColumn();
 
         return $this->json($response, [
-            'sync' => $result->toArray(),
-        ]);
+            'run_id' => $runId,
+            'status' => 'queued',
+            'message' => 'Sync enqueued successfully.',
+        ], 202);
+    }
+
+    public function getRun(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $id = $args['id'] ?? null;
+        
+        if ($id === 'last') {
+            $statement = $this->connection->query('SELECT id FROM qs_sync_runs ORDER BY started_at DESC NULLS LAST LIMIT 1');
+            $id = $statement->fetchColumn();
+            if (!$id) {
+                return $this->json($response, ['error' => 'No runs found'], 404);
+            }
+        } elseif (!$id) {
+            return $this->json($response, ['error' => 'Missing run ID'], 400);
+        }
+
+        $statement = $this->connection->prepare(
+            'SELECT * FROM qs_sync_runs WHERE id = :id'
+        );
+        $statement->execute(['id' => $id]);
+        $run = $statement->fetch(PDO::FETCH_ASSOC);
+
+        if (!$run) {
+            return $this->json($response, ['error' => 'Run not found'], 404);
+        }
+
+        $sourcesStmt = $this->connection->prepare(
+            'SELECT s.sheet_name, s.purpose, r.status, r.rows_seen, r.rows_imported, r.duration_ms, r.error_message
+             FROM qs_sheet_import_runs r
+             JOIN qs_sheet_sources s ON s.id = r.source_id
+             WHERE r.sync_run_id = :id
+             ORDER BY r.id ASC'
+        );
+        $sourcesStmt->execute(['id' => $id]);
+        $run['sources'] = $sourcesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return $this->json($response, $run);
     }
 
     private function json(ResponseInterface $response, array $payload, int $status = 200): ResponseInterface

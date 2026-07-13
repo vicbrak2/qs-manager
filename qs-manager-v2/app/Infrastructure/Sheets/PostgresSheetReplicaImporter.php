@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QSManager\Infrastructure\Sheets;
 
 use PDO;
+use QSManager\Application\Sheets\SheetCsvReader;
 use QSManager\Application\Sheets\SheetReplicaImporter;
 use QSManager\Application\Sheets\SheetSyncResult;
 
@@ -20,126 +21,152 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
             'gid' => 901001001,
             'purpose' => 'services_master',
             'handler' => 'importServicesMaster',
+            'is_critical' => true,
         ],
         'Valores' => [
             'spreadsheet_id' => self::AGENDA_2026_SPREADSHEET_ID,
             'gid' => 0,
             'purpose' => 'agenda_values',
             'handler' => 'importAgendaValues',
+            'is_critical' => true,
         ],
         'Talleres' => [
             'spreadsheet_id' => self::AGENDA_2026_SPREADSHEET_ID,
             'gid' => 1004626842,
             'purpose' => 'workshops',
             'handler' => 'importWorkshops',
+            'is_critical' => false,
         ],
         'Enero' => [
             'spreadsheet_id' => self::AGENDA_2026_SPREADSHEET_ID,
             'gid' => 1600012026,
             'purpose' => 'agenda_month',
             'handler' => 'importAgendaMonth',
+            'is_critical' => true,
         ],
         'Febrero' => [
             'spreadsheet_id' => self::AGENDA_2026_SPREADSHEET_ID,
             'gid' => 297232105,
             'purpose' => 'agenda_month',
             'handler' => 'importAgendaMonth',
+            'is_critical' => true,
         ],
         'Marzo' => [
             'spreadsheet_id' => self::AGENDA_2026_SPREADSHEET_ID,
             'gid' => 817931728,
             'purpose' => 'agenda_month',
             'handler' => 'importAgendaMonth',
+            'is_critical' => true,
         ],
         'Abril' => [
             'spreadsheet_id' => self::AGENDA_2026_SPREADSHEET_ID,
             'gid' => 1913010066,
             'purpose' => 'agenda_month',
             'handler' => 'importAgendaMonth',
+            'is_critical' => true,
         ],
         'Mayo' => [
             'spreadsheet_id' => self::AGENDA_2026_SPREADSHEET_ID,
             'gid' => 2068172479,
             'purpose' => 'agenda_month',
             'handler' => 'importAgendaMonth',
+            'is_critical' => true,
         ],
         'Junio' => [
             'spreadsheet_id' => self::AGENDA_2026_SPREADSHEET_ID,
             'gid' => 544909107,
             'purpose' => 'agenda_month',
             'handler' => 'importAgendaMonth',
+            'is_critical' => true,
         ],
         'Julio' => [
             'spreadsheet_id' => self::AGENDA_2026_SPREADSHEET_ID,
             'gid' => 2073502017,
             'purpose' => 'agenda_month',
             'handler' => 'importAgendaMonth',
+            'is_critical' => true,
         ],
         'Agosto' => [
             'spreadsheet_id' => self::AGENDA_2026_SPREADSHEET_ID,
             'gid' => 301380220,
             'purpose' => 'agenda_month',
             'handler' => 'importAgendaMonth',
+            'is_critical' => true,
         ],
         'Septiembre' => [
             'spreadsheet_id' => self::AGENDA_2026_SPREADSHEET_ID,
             'gid' => 2086235780,
             'purpose' => 'agenda_month',
             'handler' => 'importAgendaMonth',
+            'is_critical' => true,
         ],
         'Octubre' => [
             'spreadsheet_id' => self::AGENDA_2026_SPREADSHEET_ID,
             'gid' => 1600102026,
             'purpose' => 'agenda_month',
             'handler' => 'importAgendaMonth',
+            'is_critical' => true,
         ],
         'Noviembre' => [
             'spreadsheet_id' => self::AGENDA_2026_SPREADSHEET_ID,
             'gid' => 1600112026,
             'purpose' => 'agenda_month',
             'handler' => 'importAgendaMonth',
+            'is_critical' => true,
         ],
         'Diciembre' => [
             'spreadsheet_id' => self::AGENDA_2026_SPREADSHEET_ID,
             'gid' => 1600122026,
             'purpose' => 'agenda_month',
             'handler' => 'importAgendaMonth',
+            'is_critical' => true,
         ],
         'Servicios' => [
             'spreadsheet_id' => self::MAIN_SPREADSHEET_ID,
             'gid' => 839064078,
             'purpose' => 'service_catalog',
             'handler' => 'importServices',
+            'is_critical' => true,
         ],
         'Seguimiento Caja' => [
             'spreadsheet_id' => self::MAIN_SPREADSHEET_ID,
             'gid' => 513021861,
             'purpose' => 'cash_tracking',
             'handler' => 'importCashTracking',
+            'is_critical' => false,
         ],
         'Gastos Operativos' => [
             'spreadsheet_id' => self::MAIN_SPREADSHEET_ID,
             'gid' => 1642061717,
             'purpose' => 'operational_expenses',
             'handler' => 'importOperationalExpenses',
+            'is_critical' => false,
         ],
         'Bitácora QS — Servicios' => [
             'spreadsheet_id' => self::BITACORA_SPREADSHEET_ID,
             'gid' => 1880538608,
             'purpose' => 'bitacora',
             'handler' => 'importBitacora',
+            'is_critical' => true,
         ],
     ];
 
     public function __construct(
         private readonly PDO $connection,
-        private readonly GoogleSheetsCsvReader $reader,
+        private readonly SheetCsvReader $reader,
     ) {
     }
 
-    public function importAll(): SheetSyncResult
+    public function importAll(?int $syncRunId = null): SheetSyncResult
     {
-        $results = [];
+        $lockAcquired = $this->connection->query("SELECT pg_try_advisory_lock(987654321)")->fetchColumn();
+        if (!$lockAcquired) {
+            throw new \RuntimeException('Sync is already running concurrently.');
+        }
+
+        try {
+            $results = [];
+            $allCriticalSucceeded = true;
 
         foreach (self::SOURCES as $sheetName => $source) {
             $runId = null;
@@ -150,16 +177,20 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
 
             try {
                 $sourceId = $this->sourceId($sheetName, $source);
-                $runId = $this->startRun($sourceId);
+                $runId = $this->startRun($sourceId, $syncRunId);
                 
                 $this->connection->beginTransaction();
                 
-                $rows = $this->reader->read($source['spreadsheet_id'], $source['gid']);
+                $start = microtime(true);
+                $rows = $this->reader->read($source['spreadsheet_id'], $source['gid'], $sheetName);
+                $duration = (int) ((microtime(true) - $start) * 1000);
+                
                 $rowsSeen = count($rows);
                 $rowsImported = $this->{$source['handler']}($runId, $sheetName, $rows);
                 
                 $this->connection->commit();
             } catch (\Throwable $exception) {
+                $duration = isset($start) ? (int) ((microtime(true) - $start) * 1000) : null;
                 if ($this->connection->inTransaction()) {
                     $this->connection->rollBack();
                 }
@@ -167,7 +198,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
                 $message = $exception->getMessage();
             } finally {
                 if ($runId !== null) {
-                    $this->finishRun($runId, $status, $rowsSeen, $rowsImported, $message);
+                    $this->finishRun($runId, $status, $rowsSeen, $rowsImported, $message, $duration ?? null);
                 }
             }
 
@@ -177,11 +208,31 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
                 'status' => $status,
                 'message' => $message,
             ];
+            
+            if ($source['is_critical'] ?? false) {
+                if ($status === 'failed') {
+                    $allCriticalSucceeded = false;
+                }
+            }
         }
 
-        $this->reconcileOperationalProjections();
+        if ($allCriticalSucceeded) {
+            $this->connection->beginTransaction();
+            try {
+                $this->reconcileOperationalProjections();
+                $this->connection->commit();
+            } catch (\Throwable $exception) {
+                if ($this->connection->inTransaction()) {
+                    $this->connection->rollBack();
+                }
+                throw $exception;
+            }
+        }
 
         return new SheetSyncResult($results);
+        } finally {
+            $this->connection->exec("SELECT pg_advisory_unlock(987654321)");
+        }
     }
 
     private function importServices(int $runId, string $sheetName, array $rows): int
@@ -1002,20 +1053,21 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
         return (int) $statement->fetchColumn();
     }
 
-    private function startRun(int $sourceId): int
+    private function startRun(int $sourceId, ?int $syncRunId = null): int
     {
         $statement = $this->connection->prepare(
-            'insert into qs_sheet_import_runs (source_id, status) values (:source_id, :status) returning id'
+            'insert into qs_sheet_import_runs (source_id, sync_run_id, status) values (:source_id, :sync_run_id, :status) returning id'
         );
         $statement->execute([
             'source_id' => $sourceId,
+            'sync_run_id' => $syncRunId,
             'status' => 'running',
         ]);
 
         return (int) $statement->fetchColumn();
     }
 
-    private function finishRun(int $runId, string $status, int $rowsSeen, int $rowsImported, ?string $message): void
+    private function finishRun(int $runId, string $status, int $rowsSeen, int $rowsImported, ?string $message, ?int $durationMs = null): void
     {
         $this->connection->prepare(
             'update qs_sheet_import_runs
@@ -1023,6 +1075,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
                  rows_seen = :rows_seen,
                  rows_imported = :rows_imported,
                  error_message = :error_message,
+                 duration_ms = :duration_ms,
                  finished_at = now()
              where id = :id'
         )->execute([
@@ -1031,6 +1084,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
             'rows_seen' => $rowsSeen,
             'rows_imported' => $rowsImported,
             'error_message' => $message,
+            'duration_ms' => $durationMs,
         ]);
     }
 

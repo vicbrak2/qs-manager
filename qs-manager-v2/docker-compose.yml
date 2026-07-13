@@ -47,6 +47,30 @@ services:
       timeout: 5s
       retries: 10
 
+  worker:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    container_name: qs-manager-v2-worker
+    working_dir: /var/www/app
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: qs_manager_v2
+      DB_USER: qs_user
+      DB_PASSWORD: qs_password
+      EXTERNAL_SERVICES_ENABLED: "false"
+      SHEETS_READ_SYNC_ENABLED: "true"
+    volumes:
+      - ./:/var/www/app
+      - qs_manager_v2_vendor:/var/www/app/vendor
+    depends_on:
+      db:
+        condition: service_healthy
+    command: php tools/sync-worker.php
+
 volumes:
   qs_manager_v2_pgdata:
   qs_manager_v2_vendor:
