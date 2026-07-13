@@ -5,11 +5,20 @@ declare(strict_types=1);
 namespace QSManager\Infrastructure\Sheets;
 
 use QSManager\Application\Sheets\SheetCsvReader;
+use QSManager\Infrastructure\Http\HttpClient;
+use QSManager\Infrastructure\Http\CurlHttpClient;
 
 final class GoogleSheetsCsvReader implements SheetCsvReader
 {
     private const MAX_ATTEMPTS = 3;
     private const BACKOFF_MS = [500, 1000, 2000];
+    
+    private HttpClient $httpClient;
+
+    public function __construct(?HttpClient $httpClient = null)
+    {
+        $this->httpClient = $httpClient ?? new CurlHttpClient();
+    }
 
     /**
      * @return list<list<string>>
@@ -55,25 +64,19 @@ final class GoogleSheetsCsvReader implements SheetCsvReader
      */
     private function tryRead(string $url, string $spreadsheetId, int $gid, string $sheetName, int $attempt): array
     {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5); // 5 seconds to connect
-        curl_setopt($ch, CURLOPT_TIMEOUT, 15);       // 15 seconds max to read
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: text/csv']);
+        $response = $this->httpClient->get($url, [
+            'connect_timeout' => 5,
+            'timeout' => 15,
+            'headers' => ['Accept: text/csv'],
+        ]);
         
-        $contents = curl_exec($ch);
-        
-        if ($contents === false) {
-            $error = curl_error($ch);
-            curl_close($ch);
-            throw new \RuntimeException(sprintf('cURL error on attempt %d: %s', $attempt, $error));
+        if ($response['contents'] === false) {
+            throw new \RuntimeException(sprintf('HTTP client error on attempt %d: %s', $attempt, $response['error'] ?? 'Unknown error'));
         }
         
-        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE) ?: '';
-        curl_close($ch);
+        $statusCode = $response['statusCode'];
+        $contentType = $response['contentType'];
+        $contents = $response['contents'];
         
         if ($statusCode !== 200) {
             throw new \RuntimeException(sprintf('HTTP %d on attempt %d.', $statusCode, $attempt));
