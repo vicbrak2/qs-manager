@@ -157,7 +157,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
     ) {
     }
 
-    public function importAll(?int $runId = null, ?callable $onSourceCompleted = null): SheetSyncResult
+    public function importAll(?int $syncRunId = null, ?callable $onSourceCompleted = null): SheetSyncResult
     {
         $lockAcquired = $this->connection->query("SELECT pg_try_advisory_lock(987654321)")->fetchColumn();
         if (!$lockAcquired) {
@@ -295,6 +295,10 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
 
     private function importServicesMaster(int $runId, string $sheetName, array $rows): int
     {
+        // Clear previous mappings for this sheet to prevent unique constraint violations when row numbers shift
+        $this->connection->prepare('update qs_services set source_row = null, source_sheet = null where source_sheet = :sheet')
+            ->execute(['sheet' => $sheetName]);
+
         [$headerIndex, $headers] = $this->findHeader($rows, ['service_id', 'nombre_canonico']);
         $imported = 0;
 
@@ -712,7 +716,12 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
                  margin_status = :margin_status,
                  source_sheet = :source_sheet,
                  source_row = :source_row
-             where lower(trim(name)) = lower(trim(:name))
+             where id = (
+                 select id from qs_services 
+                 where lower(trim(name)) = lower(trim(:name))
+                 order by case when source_sheet = :source_sheet then 0 else 1 end, id asc
+                 limit 1
+             )
              returning id'
         );
 
@@ -741,7 +750,16 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
             ) values (
                 :sheet_external_id, :name, :category, null, :active, :sale_price, :total_cost,
                 :utility, :margin_percent, :margin_status, :source_sheet, :source_row
-            )'
+            ) on conflict (source_sheet, source_row) where source_sheet is not null and source_row is not null do update set
+                sheet_external_id = excluded.sheet_external_id,
+                name = excluded.name,
+                category = excluded.category,
+                active = excluded.active,
+                sale_price = excluded.sale_price,
+                total_cost = excluded.total_cost,
+                utility = excluded.utility,
+                margin_percent = excluded.margin_percent,
+                margin_status = excluded.margin_status'
         )->execute([
             'sheet_external_id' => $serviceId,
             'name' => $serviceName,

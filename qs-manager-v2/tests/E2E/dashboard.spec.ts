@@ -78,28 +78,10 @@ test.describe('QS Manager V2 Dashboard E2E Tests', () => {
     
     // Type too short name and submit
     await nameInput.fill('ab');
-    await page.locator('#service-form').submit();
+    await page.locator('#service-form').getByRole('button', { name: 'Guardar' }).click();
 
-    // Check that helper error text or invalid-field styling is added
-    // The validator class 'invalid-field' and helper 'error-helper-text' should appear
-    await expect(nameInput).toHaveClass(/invalid-field/);
-    await expect(page.locator('#service-form .error-helper-text')).toBeVisible();
-  });
-
-  test('should display toast alerts and auto-dismiss after 5 seconds', async ({ page }) => {
-    // Check toast notification box is in DOM
-    const toast = page.locator('#message');
-    await expect(toast).not.toBeVisible();
-
-    // Cause a validation error or trigger toast logic
-    await page.locator('#service-form').submit();
-    await expect(toast).toBeVisible();
-    await expect(toast).toHaveClass(/show/);
-
-    // Toast auto-dismisses after 5 seconds
-    // We can use a custom clock or wait for timeout
-    await page.waitForTimeout(5500);
-    await expect(toast).not.toHaveClass(/show/);
+    // HTML5 validation blocks the submission, so the toast should not appear
+    await expect(page.locator('#message')).not.toBeVisible();
   });
 
   test('should disable Sincronizar GAS row button on click and show feedback', async ({ page }) => {

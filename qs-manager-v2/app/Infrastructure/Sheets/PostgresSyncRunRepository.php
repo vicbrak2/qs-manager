@@ -18,38 +18,45 @@ final class PostgresSyncRunRepository
             $this->pdo->beginTransaction();
         }
 
-        $stmt = $this->pdo->prepare("
-            SELECT id FROM qs_sync_runs 
-            WHERE status = 'queued' 
-               OR (status = 'running' AND heartbeat_at < now() - CAST(:timeout || ' minutes' AS INTERVAL))
-            ORDER BY created_at ASC 
-            LIMIT 1 
-            FOR UPDATE SKIP LOCKED
-        ");
-        $stmt->execute(['timeout' => $leaseTimeoutMinutes]);
-        $runId = $stmt->fetchColumn();
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT id FROM qs_sync_runs 
+                WHERE status = 'queued' 
+                   OR (status = 'running' AND heartbeat_at < now() - CAST(:timeout || ' minutes' AS INTERVAL))
+                ORDER BY created_at ASC 
+                LIMIT 1 
+                FOR UPDATE SKIP LOCKED
+            ");
+            $stmt->execute(['timeout' => $leaseTimeoutMinutes]);
+            $runId = $stmt->fetchColumn();
 
-        if ($runId === false) {
+            if ($runId === false) {
+                $this->pdo->commit();
+                return null;
+            }
+
+            $update = $this->pdo->prepare("
+                UPDATE qs_sync_runs 
+                SET status = 'running',
+                    worker_id = :worker_id,
+                    started_at = COALESCE(started_at, now()),
+                    heartbeat_at = now(),
+                    attempt_count = attempt_count + 1
+                WHERE id = :id
+            ");
+            $update->execute([
+                'worker_id' => $workerId,
+                'id' => $runId
+            ]);
+
             $this->pdo->commit();
-            return null;
+            return (int) $runId;
+        } catch (\Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
         }
-
-        $update = $this->pdo->prepare("
-            UPDATE qs_sync_runs 
-            SET status = 'running',
-                worker_id = :worker_id,
-                started_at = COALESCE(started_at, now()),
-                heartbeat_at = now(),
-                attempt_count = attempt_count + 1
-            WHERE id = :id
-        ");
-        $update->execute([
-            'worker_id' => $workerId,
-            'id' => $runId
-        ]);
-
-        $this->pdo->commit();
-        return (int) $runId;
     }
 
     public function heartbeat(int $runId): void
