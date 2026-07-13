@@ -65,16 +65,38 @@ final class SheetSyncController
             ], 202);
         }
 
+        $this->connection->beginTransaction();
+        
+        $this->connection->query("SELECT pg_advisory_xact_lock(1122334455)");
+        
+        $statement = $this->connection->query(
+            "SELECT id, status FROM qs_sync_runs WHERE status IN ('queued', 'running') ORDER BY id ASC LIMIT 1"
+        );
+        $existing = $statement->fetch(PDO::FETCH_ASSOC);
+
+        if ($existing) {
+            $this->connection->commit();
+            return $this->json($response, [
+                'run_id' => $existing['id'],
+                'status' => $existing['status'],
+                'message' => 'Sync already in progress or queued.',
+                'reused' => true,
+            ], 200);
+        }
+
         $statement = $this->connection->prepare(
             "INSERT INTO qs_sync_runs (status, mode, triggered_by) VALUES ('queued', 'read_only', :triggered_by) RETURNING id"
         );
         $statement->execute(['triggered_by' => 'api']);
         $runId = $statement->fetchColumn();
 
+        $this->connection->commit();
+
         return $this->json($response, [
             'run_id' => $runId,
             'status' => 'queued',
             'message' => 'Sync enqueued successfully.',
+            'reused' => false,
         ], 202);
     }
 

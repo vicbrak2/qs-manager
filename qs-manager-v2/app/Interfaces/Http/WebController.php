@@ -1171,16 +1171,33 @@ final class WebController
         const runId = result.run_id;
         
         let finalRun = null;
-        while (true) {
+        let attempts = 0;
+        const maxAttempts = 150; // 5 minutes total (150 * 2s)
+
+        while (attempts < maxAttempts) {
+            attempts++;
             await new Promise(resolve => setTimeout(resolve, 2000));
-            const poll = await api(`/api/v1/sync/sheets/runs/${runId}`);
-            if (poll.status === 'completed' || poll.status === 'partial' || poll.status === 'failed') {
-                finalRun = poll;
-                break;
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const poll = await api(`/api/v1/sync/sheets/runs/${runId}`, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                
+                if (poll.status === 'completed' || poll.status === 'partial' || poll.status === 'failed') {
+                    finalRun = poll;
+                    break;
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') console.error('Polling error:', err);
             }
         }
 
         await Promise.all([loadHealth(), loadSyncStatus(), loadServices(), loadStaff(), loadBookings()]);
+
+        if (!finalRun) {
+            toast.update('La sincronización continúa en segundo plano.', 'success', 8000);
+            return;
+        }
 
         if (finalRun.status === 'completed') {
             toast.update(`Sincronización completa: ${finalRun.total_rows_imported} filas importadas.`, 'success', 5000);
