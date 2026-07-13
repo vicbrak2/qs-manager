@@ -228,6 +228,7 @@ final class WebController
       border: 1px solid var(--line);
       border-radius: var(--radius);
       overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
     }
 
     .panel-head {
@@ -436,9 +437,13 @@ final class WebController
     .badge.danger { background: var(--danger-soft); color: var(--danger); }
 
     .empty {
-      padding: 20px;
+      padding: 40px 20px;
       color: var(--muted);
       text-align: center;
+      background: var(--soft);
+      border-radius: var(--radius);
+      border: 1px dashed var(--line);
+      margin: 10px;
     }
 
     .message {
@@ -578,8 +583,78 @@ final class WebController
 
     .hidden { display: none; }
 
+    dialog.modal {
+      border: none;
+      background: transparent;
+      padding: 0;
+      max-width: 100vw;
+      max-height: 100vh;
+    }
+    dialog.modal::backdrop {
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(2px);
+    }
+
+    .booking-filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      border-top: 1px solid var(--line);
+    }
+    .modal-panel {
+      max-width: 700px;
+      margin: 2rem auto;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 2rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      color: var(--text);
+    }
+    .modal-body {
+      padding: 1.5rem;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .modal-footer {
+      padding: 1rem;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.9em;
+      text-align: center;
+    }
+
+    label:has(input[required])::after,
+    label:has(select[required])::after {
+      content: " *";
+      color: var(--danger);
+    }
+
+    button.btn-sm {
+      min-height: 28px;
+      padding: 4px 8px;
+      font-size: var(--font-size-sm);
+    }
+
+    button.sync-gas-btn.btn-sm {
+      width: 28px;
+      padding: 0;
+    }
+
     @media (max-width: 1080px) {
-      .workspace { grid-template-columns: 1fr; }
+      .workspace { display: flex; flex-direction: column-reverse; gap: 14px; }
+      .panel, .side { width: 100%; }
       .side { position: static; }
       .table-wrap { max-height: none; }
     }
@@ -719,7 +794,7 @@ final class WebController
             <button type="button" id="new-booking">Nueva</button>
           </div>
         </div>
-        <div class="filters" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; padding: 12px; border-bottom: 1px solid var(--line);">
+        <div class="booking-filters">
           <label>Buscar
             <input id="booking-filter-text" placeholder="Cliente, comuna, telefono">
           </label>
@@ -757,7 +832,7 @@ final class WebController
           </table>
           <div id="bookings-empty" class="empty">Sin reservas para mostrar.</div>
         </div>
-        <div class="pagination-controls" style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-top: 1px solid var(--line);">
+        <div class="pagination-controls">
           <div>
             <label style="display: inline-flex; align-items: center; gap: 8px;">
               Filas por página:
@@ -850,6 +925,20 @@ final class WebController
         </form>
       </aside>
     </section>
+    <dialog id="sync-modal" class="modal">
+      <div class="panel modal-panel">
+        <div class="panel-head">
+          <h2>Resumen de Sincronización</h2>
+          <button type="button" id="close-sync-modal" class="modal-close">&times;</button>
+        </div>
+        <div id="sync-modal-body" class="modal-body">
+          <p>Cargando información...</p>
+        </div>
+        <div class="modal-footer">
+          🔒 <strong>Garantía:</strong> Modo de solo lectura. No modifica Sheets.
+        </div>
+      </div>
+    </dialog>
   </main>
   <script>
     const state = {
@@ -1071,25 +1160,38 @@ final class WebController
       button.disabled = true;
       button.setAttribute('aria-busy', 'true');
       label.textContent = 'Sincronizando...';
-      const toast = notify('Importando todas las planillas a la base local...', 'loading', 0);
+      const toast = notify('Sincronización encolada. Consultando estado...', 'loading', 0);
 
       try {
         const result = await api('/api/v1/sync/sheets/import', { method: 'POST' });
-        if (!result.sync) {
-          throw new Error(result.error || 'La sincronización de Sheets está desactivada.');
+        if (result.error) {
+          throw new Error(result.error);
         }
 
-        const sources = Object.values(result.sync.sources || {});
-        const failed = sources.filter((source) => source.status !== 'completed');
-        const imported = sources.reduce((total, source) => total + Number(source.rows_imported || 0), 0);
+        const runId = result.run_id;
+        
+        let finalRun = null;
+        while (true) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            const poll = await api(`/api/v1/sync/sheets/runs/${runId}`);
+            if (poll.status === 'completed' || poll.status === 'partial' || poll.status === 'failed') {
+                finalRun = poll;
+                break;
+            }
+        }
 
         await Promise.all([loadHealth(), loadSyncStatus(), loadServices(), loadStaff(), loadBookings()]);
 
-        if (failed.length > 0) {
-          toast.update(`Sincronización parcial: ${imported} filas importadas y ${failed.length} fuente(s) con error.`, 'error', 7000);
+        if (finalRun.status === 'completed') {
+            toast.update(`Sincronización completa: ${finalRun.total_rows_imported} filas importadas.`, 'success', 5000);
+        } else if (finalRun.status === 'partial') {
+            toast.update(`Sincronización parcial: ${finalRun.failed_sources} fuentes fallaron.`, 'error', 8000);
         } else {
-          toast.update(`Sincronización completa: ${imported} filas importadas.`, 'success', 5000);
+            toast.update(`Error en la sincronización.`, 'error', 8000);
         }
+        
+        renderSyncModal(finalRun);
+
       } catch (error) {
         toast.update(error.message, 'error', 7000);
       } finally {
@@ -1098,6 +1200,61 @@ final class WebController
         label.textContent = 'Sincronizar todo';
       }
     }
+
+    function renderSyncModal(run) {
+      const modal = $('#sync-modal');
+      const body = $('#sync-modal-body');
+      
+      let html = `<div style="margin-bottom: 1.5rem;">
+        <p><strong>Estado Global:</strong> ${badge(run.status, run.status === 'completed' ? 'ok' : (run.status === 'failed' ? 'error' : 'warn'))}</p>
+        <p><strong>Iniciado:</strong> ${toDateTimeLocal(run.started_at).replace('T', ' ')}</p>
+        <p><strong>Terminado:</strong> ${run.finished_at ? toDateTimeLocal(run.finished_at).replace('T', ' ') : '-'}</p>
+        <p><strong>Resumen:</strong> ${run.completed_sources}/${run.total_sources} fuentes. ${run.total_rows_imported}/${run.total_rows_seen} filas importadas.</p>
+      </div>`;
+      
+      const groups = {
+        'Servicios': ['services_master', 'service_catalog', 'agenda_values'],
+        'Reservas': ['bitacora', 'agenda_month'],
+        'Talleres': ['workshops'],
+        'Finanzas': ['cash_tracking', 'operational_expenses']
+      };
+      
+      for (const [groupName, purposes] of Object.entries(groups)) {
+        const groupSources = (run.sources || []).filter(s => purposes.includes(s.purpose));
+        if (groupSources.length === 0) continue;
+        
+        html += `<h3 style="margin-top: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">${groupName}</h3>`;
+        html += `<div class="table-wrap" style="margin-top: 0.5rem;"><table>
+          <thead><tr><th>Hoja</th><th>Estado</th><th>Filas</th><th>Tiempo</th><th>Mensaje</th></tr></thead>
+          <tbody>`;
+        
+        for (const s of groupSources) {
+          html += `<tr>
+            <td>${escapeHtml(s.sheet_name)}</td>
+            <td>${badge(s.status, s.status === 'completed' ? 'ok' : 'error')}</td>
+            <td>${s.rows_imported}/${s.rows_seen}</td>
+            <td>${s.duration_ms ? s.duration_ms + 'ms' : '-'}</td>
+            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(s.error_message || '')}">${escapeHtml(s.error_message || '')}</td>
+          </tr>`;
+        }
+        html += `</tbody></table></div>`;
+      }
+      
+      body.innerHTML = html;
+      modal.showModal();
+    }
+    
+    $('#metric-sync').parentElement.style.cursor = 'pointer';
+    $('#metric-sync').parentElement.addEventListener('click', async () => {
+      try {
+        const run = await api('/api/v1/sync/sheets/runs/last');
+        if (!run.error) renderSyncModal(run);
+      } catch (e) {
+        notify('No hay sincronizaciones previas o la base de datos está vacía.', 'error', 3000);
+      }
+    });
+    
+    $('#close-sync-modal')?.addEventListener('click', () => $('#sync-modal').close());
 
     function serviceMatches(service) {
       const query = $('#service-filter-text').value.trim().toLowerCase();
@@ -1125,7 +1282,7 @@ final class WebController
           <td>${percent(service.margin_percent)}</td>
           <td>${badge(sourceLabel(service), service.source_sheet ? 'warn' : 'muted')}</td>
           <td>${badge(service.active ? 'activo' : 'inactivo', service.active ? 'ok' : 'muted')}</td>
-          <td><button class="secondary" type="button" data-edit-service="${service.id}">Editar</button></td>
+          <td><button class="secondary btn-sm" type="button" data-edit-service="${service.id}">Editar</button></td>
         </tr>
       `).join('');
     }
@@ -1215,8 +1372,8 @@ final class WebController
             <td>${badge(sourceLabel(booking), booking.source_sheet ? 'warn' : 'muted')}<br>${badge(syncStatusLabel, syncStatusKind)}</td>
             <td>
               <div style="display: flex; gap: 6px; align-items: center;">
-                <button class="secondary" type="button" data-edit-booking="${booking.id}">Editar</button>
-                <button class="sync-gas-btn btn-sync-gas-row" type="button" data-sync-booking-id="${booking.id}" title="${escapeHtml(booking.gas_last_sync_message || 'Sincronizar GAS')}">
+                <button class="secondary btn-sm" type="button" data-edit-booking="${booking.id}">Editar</button>
+                <button class="sync-gas-btn btn-sm btn-sync-gas-row" type="button" data-sync-booking-id="${booking.id}" title="${escapeHtml(booking.gas_last_sync_message || 'Sincronizar GAS')}">
                   <span class="sync-icon ${syncStatusClass}">↻</span>
                 </button>
               </div>
