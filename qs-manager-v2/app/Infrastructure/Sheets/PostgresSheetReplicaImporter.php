@@ -157,7 +157,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
     ) {
     }
 
-    public function importAll(?int $syncRunId = null): SheetSyncResult
+    public function importAll(?int $runId = null, ?callable $onSourceCompleted = null): SheetSyncResult
     {
         $lockAcquired = $this->connection->query("SELECT pg_try_advisory_lock(987654321)")->fetchColumn();
         if (!$lockAcquired) {
@@ -213,6 +213,10 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
                 if ($status === 'failed') {
                     $allCriticalSucceeded = false;
                 }
+            }
+
+            if ($onSourceCompleted) {
+                $onSourceCompleted();
             }
         }
 

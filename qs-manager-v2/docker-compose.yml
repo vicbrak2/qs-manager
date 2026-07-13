@@ -70,6 +70,12 @@ services:
       db:
         condition: service_healthy
     command: php tools/sync-worker.php
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep '[p]hp tools/sync-worker.php' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   qs_manager_v2_pgdata:

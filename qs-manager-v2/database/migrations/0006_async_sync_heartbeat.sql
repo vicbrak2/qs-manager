@@ -1,0 +1,5 @@
+ALTER TABLE qs_sync_runs
+ADD COLUMN created_at TIMESTAMP DEFAULT now() NOT NULL,
+ADD COLUMN heartbeat_at TIMESTAMP,
+ADD COLUMN worker_id VARCHAR(100),
+ADD COLUMN attempt_count INT DEFAULT 0 NOT NULL;

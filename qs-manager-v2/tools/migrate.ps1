@@ -1,15 +1,8 @@
-param(
-    [string] $Container = "qs-manager-v2-db",
-    [string] $Database = "qs_manager_v2",
-    [string] $User = "qs_user"
-)
-
 $ErrorActionPreference = "Stop"
 
-$root = Split-Path -Parent $PSScriptRoot
-$migrations = Get-ChildItem -Path (Join-Path $root "database/migrations") -Filter "*.sql" | Sort-Object Name
+Write-Host "Running pending migrations..." -ForegroundColor Cyan
 
-foreach ($migration in $migrations) {
-    Write-Host "Applying $($migration.Name)"
-    Get-Content -Path $migration.FullName | docker exec -i $Container psql -U $User -d $Database
-}
+# Run the 0006 migration which alters the existing qs_sync_runs table
+docker compose exec -T db psql -U qs_user -d qs_manager_v2 -f /docker-entrypoint-initdb.d/0006_async_sync_heartbeat.sql
+
+Write-Host "Migrations completed." -ForegroundColor Green

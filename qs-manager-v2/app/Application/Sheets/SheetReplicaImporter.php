@@ -6,5 +6,5 @@ namespace QSManager\Application\Sheets;
 
 interface SheetReplicaImporter
 {
-    public function importAll(): SheetSyncResult;
+    public function importAll(?int $runId = null, ?callable $onSourceCompleted = null): SheetSyncResult;
 }
