@@ -37,7 +37,12 @@ final class HttpGasBookingGateway implements BookingGasGateway
             ],
         ]);
 
-        $rawResponse = @file_get_contents($this->webAppUrl, false, $context);
+        try {
+            $rawResponse = @file_get_contents($this->webAppUrl, false, $context);
+        } catch (\Throwable $exception) {
+            $rawResponse = false;
+        }
+        
         if ($rawResponse === false) {
             return GasSyncResult::failed($payload, 'Failed to call GAS web app.');
         }

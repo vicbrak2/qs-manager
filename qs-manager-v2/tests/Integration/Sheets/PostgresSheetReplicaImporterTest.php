@@ -37,7 +37,7 @@ final class PostgresSheetReplicaImporterTest extends TestCase
         $pdo2->exec('SELECT pg_advisory_lock(987654321)');
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Sync is already running concurrently');
+        $this->expectExceptionMessage('Sync is already running concurrently.');
 
         try {
             $importer->importAll();
@@ -50,8 +50,8 @@ final class PostgresSheetReplicaImporterTest extends TestCase
     {
         $mockReader = $this->createMock(SheetCsvReader::class);
         $mockReader->method('read')->willReturn([
-            ['service_id', 'nombre_canonico', 'duracion', 'requiere_evaluacion', 'categoria', 'precio_venta'],
-            ['S-001', 'Corte Hombre', '30', 'no', 'Peluquería', '15000'],
+            ['service_id', 'nombre_canonico', 'duracion', 'requiere_evaluacion', 'categoria', 'precio_venta', 'servicio', 'valor', 'fecha', 'nombre', 'pago', 'encargada', 'clienta', 'dia', 'hora', 'cantidad', 'telefono', 'direccion', 'comuna', 'fecha prueba', 'hora prueba', 'estado prueba', 'traslado', 'abono', 'fecha abono', 'valor servicio', 'total servicio', 'total por pagar', 'accion', 'estado evento', 'id evento', 'estado pago', 'precio venta', 'activo', 'pago mua', 'pago estilista', 'prueba mua', 'prueba estilista', 'materiales', 'traslado / logistica', 'valor traslado', 'otros costos', 'costo total', 'utilidad', 'margen %', 'estado', 'observaciones', 'id servicios', 'servicio(s)', 'abono reserva', 'total servicios', 'saldo por cobrar', 'gastos operativos', 'estado servicios', 'concepto', 'monto gasto ($)', 'seleccionar servicio', 'id', 'id contrato', 'tipo de servicio', 'fecha gasto', 'estado gasto', 'tipo', 'forma de pago', 'id calendar', 'referencia agenda', 'hito', 'grupo caja', 'estado contrato', 'reserva contrato'],
+            ['S-001', 'Corte Hombre', '30', 'no', 'Peluquería', '15000', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
         ]);
         
         $importer = new PostgresSheetReplicaImporter($this->connection, $mockReader);
