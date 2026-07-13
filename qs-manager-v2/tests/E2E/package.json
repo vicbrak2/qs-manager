@@ -1,0 +1,12 @@
+{
+  "name": "qs-manager-e2e",
+  "version": "1.0.0",
+  "description": "E2E tests using Playwright for QS Manager V2",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "test": "playwright test"
+  }
+}

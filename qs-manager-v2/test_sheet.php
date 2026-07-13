@@ -1,0 +1,1 @@
+<?php $url = 'https://docs.google.com/spreadsheets/d/1cXOd9imvZGA5oj-Hlk8QHwB48cbx5hNptnGi0HdjMWE/export?format=csv&gid=901001001'; $context = stream_context_create(['http' => ['ignore_errors' => true]]); $res = file_get_contents($url, false, $context); echo substr($res, 0, 500);

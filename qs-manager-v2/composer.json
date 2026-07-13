@@ -1,0 +1,29 @@
+{
+  "name": "qamilunastudio/qs-manager-v2",
+  "description": "QS Manager V2 standalone local-first application",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": "^8.3",
+    "slim/slim": "^4.14",
+    "slim/psr7": "^1.7"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "QSManager\\": "app/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "QSManager\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "serve": "php -S 0.0.0.0:8080 -t public public/index.php",
+    "test": "phpunit"
+  }
+}
+

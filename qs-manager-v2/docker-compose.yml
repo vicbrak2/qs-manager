@@ -1,0 +1,52 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    container_name: qs-manager-v2-app
+    working_dir: /var/www/app
+    ports:
+      - "8080:8080"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_NAME: "QS Manager V2"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: qs_manager_v2
+      DB_USER: qs_user
+      DB_PASSWORD: qs_password
+      EXTERNAL_SERVICES_ENABLED: "false"
+      LLM_ENABLED: "false"
+      QDRANT_ENABLED: "false"
+      WHATSAPP_ENABLED: "false"
+      GAS_WEBAPP_URL: ""
+      SHEETS_READ_SYNC_ENABLED: "true"
+    volumes:
+      - ./:/var/www/app
+      - qs_manager_v2_vendor:/var/www/app/vendor
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    container_name: qs-manager-v2-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: qs_manager_v2
+      POSTGRES_USER: qs_user
+      POSTGRES_PASSWORD: qs_password
+    volumes:
+      - qs_manager_v2_pgdata:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qs_user -d qs_manager_v2"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  qs_manager_v2_pgdata:
+  qs_manager_v2_vendor:

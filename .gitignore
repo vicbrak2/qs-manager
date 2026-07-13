@@ -51,6 +51,14 @@ var/cache/
 var/backups/
 .claude/
 .php-cs-fixer.cache
+.phpunit.result.cache
+
+# Codex / multi-agent local working artifacts
+.agents/
+
+# Graphify generated cache; keep report/html/json decisions explicit outside cache
+graphify-out/cache/
+**/graphify-out/cache/
 
 # Playwright CLI (logs y snapshots locales de automatización de browser)
 .playwright-cli/

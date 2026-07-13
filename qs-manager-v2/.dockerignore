@@ -1,0 +1,6 @@
+.git
+vendor
+var
+docker-compose.override.yml
+.env
+.env.*

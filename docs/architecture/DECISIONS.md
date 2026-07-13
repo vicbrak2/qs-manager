@@ -15,3 +15,4 @@ Este documento centraliza las decisiones arquitectónicas fundamentales del proy
 | 009 | Reglas de Arquitectura | Las reglas de capa y acceso a WordPress se verifican con tests de arquitectura. |
 | 010 | Automatización n8n | La automatización operativa se delega a n8n self-hosted con webhooks desde `qs-core`. |
 | 011 | Boilerplate Genérico | Implementación de estructura base modular para plugins de WordPress. |
+| 012 | Visión General QS Manager | `qs-core` opera como centro modular de gestión, atención, reservas, IA y automatización para Qamiluna Studio. |
