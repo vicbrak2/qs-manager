@@ -5,4 +5,7 @@
             <directory>tests</directory>
         </testsuite>
     </testsuites>
+    <php>
+        <env name="DB_NAME" value="qs_manager_v2_test" force="true"/>
+    </php>
 </phpunit>

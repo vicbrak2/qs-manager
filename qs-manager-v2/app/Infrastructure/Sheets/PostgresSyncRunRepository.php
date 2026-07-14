@@ -6,7 +6,9 @@ namespace QSManager\Infrastructure\Sheets;
 
 use PDO;
 
-final class PostgresSyncRunRepository
+use QSManager\Application\Sheets\SyncRunRepository;
+
+final class PostgresSyncRunRepository implements SyncRunRepository
 {
     public function __construct(private readonly PDO $pdo)
     {

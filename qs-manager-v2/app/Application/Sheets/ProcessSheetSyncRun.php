@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace QSManager\Application\Sheets;
 
-use QSManager\Infrastructure\Sheets\PostgresSyncRunRepository;
+use QSManager\Application\Sheets\SyncRunRepository;
 
 final class ProcessSheetSyncRun
 {
     public function __construct(
         private readonly SheetReplicaImporter $importer,
-        private readonly PostgresSyncRunRepository $repository,
+        private readonly SyncRunRepository $repository,
         private readonly string $workerId,
     ) {
     }

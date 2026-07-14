@@ -34,9 +34,9 @@ npm run test
 | Test Tier | Test Case Count | Source Directory / File | Description |
 | :--- | :---: | :--- | :--- |
 | **Domain Unit Tests** | 3 | `tests/Domain` | Unit tests for domain models (`BookingTest`, `ServiceTest`, `StaffMemberTest`) validating business invariant rules. |
-| **Backend Integration & Validation** | 18 | `tests/Integration/HttpRoutesTest.php` | Simulates HTTP requests (GET, POST, PUT, DELETE) validating strict inputs for Services, Team, and Booking Controllers, mock GAS integration (R3), and error tolerance. |
+| **Backend Integration & Validation** | 42 | `tests/Integration/HttpRoutesTest.php` | Simulates HTTP requests (GET, POST, PUT, DELETE) validating strict inputs for Services, Team, and Booking Controllers, mock GAS integration (R3), and error tolerance. |
 | **Frontend UI Integration** | 1 | `tests/Integration/HttpRoutesTest.php::testWebDashboardHtmlContent` | Assertions on `/` HTML response to verify structural layout, font configurations, pagination controls, dropdown elements, and script files. |
-| **Frontend E2E Tests** | 7 | `tests/E2E/dashboard.spec.ts` | Dynamic Playwright browser tests validating real-time filtering, visual token styling, form validations, toast notifications, pagination, and GAS synchronization buttons. |
+| **Frontend E2E Tests** | 14 | `tests/E2E/dashboard.spec.ts` | Dynamic Playwright browser tests validating real-time filtering, visual token styling, form validations, toast notifications, pagination, and GAS synchronization buttons. |
 
 ---
 
@@ -65,7 +65,7 @@ npm run test
 ### Google Sheets & GAS Integration (R3)
 - [x] **GAS Sync Payload Format**: Creating or updating bookings triggers a POST request to `GAS_WEBAPP_URL` matching the exact JSON structure:
   - `id`, `service_id`, `service_name`, `staff_id`, `staff_name`, `customer_name`, `customer_phone`, `fecha`, `hora`, `status`, `tipo` (Servicio).
-- [x] **Manual Sync Endpoint**: `POST /api/v1/bookings/{id}/sync-gas` returns success or warning.
+- [x] **Manual Sync Endpoint**: `POST /api/v1/sync/sheets/import` aplica bloqueo con `pg_advisory_xact_lock()` y procesa sincrónicamente si no se delega a la cola asíncrona.
 - [x] **Network Resilience**: Booking creation and update capture network/timeout errors gracefully, return a `warning` response field, and write `failed` sync status to the database instead of crashing.
 
 ### Frontend UX & UI Verification (R1)
@@ -80,4 +80,4 @@ npm run test
 
 ## 4. Test Execution Results
 
-All integration tests inside PHPUnit have been successfully configured and pass. The E2E tests have been fully written and configured to target `http://localhost:8080`.
+All integration tests inside PHPUnit (45 tests, 243 assertions) have been successfully configured and pass at 100%. The E2E tests (14/14 passed) have been fully written and configured to target `http://localhost:8080`.

@@ -20,6 +20,12 @@ final class SyncWorkerIntegrationTest extends TestCase
     protected function setUp(): void
     {
         $this->pdo = ConnectionFactory::fromEnvironment();
+        
+        $dbName = $this->pdo->query('SELECT current_database()')->fetchColumn();
+        if (!str_ends_with((string)$dbName, '_test')) {
+            $this->fail("CRITICAL: The test suite destroys data and must ONLY run on a database ending in _test. Current DB: {$dbName}");
+        }
+
         $this->pdo->exec('TRUNCATE qs_sync_runs RESTART IDENTITY CASCADE');
         $this->repository = new PostgresSyncRunRepository($this->pdo);
     }

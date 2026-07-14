@@ -11,4 +11,4 @@
 - [x] 9. Crear suite Playwright E2E (Desktop/Mobile) con API mockeada.
 - [x] 10. Validar sync real de extremo a extremo (19/19 fuentes, 255 filas, 0 fallos; 2026-07-13).
 - [x] 11. Organizar documentación en `docs/` con evidencia.
-- [ ] 12. Revisar árbol limpio, whitespace y *commits* segregados.
+- [x] 12. Revisar árbol limpio, whitespace y *commits* segregados.
