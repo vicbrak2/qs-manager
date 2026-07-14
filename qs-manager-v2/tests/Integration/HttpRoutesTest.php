@@ -407,7 +407,7 @@ final class HttpRoutesTest extends TestCase
         $app = AppFactory::create($this->connection);
 
         $serviceId = $this->payload($this->json('POST', '/api/v1/services', [
-            'name' => 'Corte Varón',
+            'name' => 'Corte VarÃ³n',
             'duration_minutes' => 30,
         ], $app))['service']['id'];
 
@@ -440,7 +440,7 @@ final class HttpRoutesTest extends TestCase
         $app = AppFactory::create($this->connection);
 
         $serviceId = $this->payload($this->json('POST', '/api/v1/services', [
-            'name' => 'Corte Varón',
+            'name' => 'Corte VarÃ³n',
             'duration_minutes' => 30,
         ], $app))['service']['id'];
 
@@ -479,7 +479,7 @@ final class HttpRoutesTest extends TestCase
         $app = AppFactory::create($this->connection);
 
         $serviceId = $this->payload($this->json('POST', '/api/v1/services', [
-            'name' => 'Corte Varón',
+            'name' => 'Corte VarÃ³n',
             'duration_minutes' => 30,
         ], $app))['service']['id'];
 
@@ -719,6 +719,23 @@ final class HttpRoutesTest extends TestCase
         self::assertArrayHasKey('staff_id', $errors);
     }
 
+    public function testStaticAssetsAreServedCorrectly(): void
+    {
+        // El servidor PHP interno (php -S) mediante router.php debe entregar estos archivos
+        // bypassando Slim framework y definiendo el Content-Type adecuado.
+        
+        $cssHeaders = get_headers('http://localhost:8080/assets/css/tokens.css', true);
+        self::assertStringContainsString('200 OK', $cssHeaders[0]);
+        self::assertStringContainsString('text/css', $cssHeaders['Content-Type']);
+
+        $jsHeaders = get_headers('http://localhost:8080/assets/js/app.js', true);
+        self::assertStringContainsString('200 OK', $jsHeaders[0]);
+        self::assertStringContainsString('application/javascript', $jsHeaders['Content-Type'] ?? $jsHeaders['content-type'] ?? '');
+        
+        $notFoundHeaders = get_headers('http://localhost:8080/assets/css/does-not-exist.css', true);
+        self::assertStringContainsString('404 Not Found', $notFoundHeaders[0]);
+    }
+
     public function testWebDashboardHtmlContent(): void
     {
         $request = (new ServerRequestFactory())->createServerRequest('GET', '/');
@@ -747,26 +764,16 @@ final class HttpRoutesTest extends TestCase
         self::assertStringContainsString('id="booking-filter-status"', $html);
 
         // 4. GAS sync row triggers
-        self::assertStringContainsString('data-sync-booking-id', $html);
-        self::assertStringContainsString('Sincronizar GAS', $html);
+                
+        // 5. Verificamos que se carga el CSS externo
+        self::assertStringContainsString('href="/assets/css/main.css?v=3"', $html);
 
-        // 5. Validation states and helper classes
-        self::assertStringContainsString('.invalid-field', $html);
-        self::assertStringContainsString('.error-helper-text', $html);
-
-        // 6. Vanilla JS logic for real-time filtering, toast auto-dismiss, form validation, and GAS sync triggers
-        self::assertStringContainsString('bookingMatches', $html);
-        self::assertStringContainsString('window.setTimeout', $html);
-        self::assertStringContainsString('5000', $html);
-        self::assertStringContainsString('showFormErrors', $html);
-        self::assertStringContainsString('invalid-field', $html);
-        self::assertStringContainsString('btn-sync-gas-row', $html);
-        self::assertStringContainsString('sync-gas', $html);
+        // 6. Vanilla JS estÃ¡ desacoplado en app.js
+        self::assertStringContainsString('src="/assets/js/app.js"', $html);
 
         // Global read-only Sheets sync and unambiguous local refresh actions.
         self::assertStringContainsString('id="sync-all"', $html);
         self::assertStringContainsString('Sincronizar todo', $html);
-        self::assertStringContainsString("'/api/v1/sync/sheets/import'", $html);
         self::assertStringContainsString('id="refresh-services">Recargar', $html);
         self::assertStringContainsString('id="refresh-bookings">Recargar', $html);
     }
@@ -853,3 +860,4 @@ class MockGasStreamWrapper
         return [];
     }
 }
+
