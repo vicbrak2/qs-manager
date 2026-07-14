@@ -72,7 +72,7 @@ services:
     command: php tools/sync-worker.php
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "ps aux | grep '[p]hp tools/sync-worker.php' || exit 1"]
+      test: ["CMD-SHELL", "test -f /tmp/qs-sync-worker.heartbeat && find /tmp/qs-sync-worker.heartbeat -mmin -1 | grep -q ."]
       interval: 10s
       timeout: 5s
       retries: 3

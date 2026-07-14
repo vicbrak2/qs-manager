@@ -23,13 +23,25 @@ $processor = new ProcessSheetSyncRun($importer, $repository, $workerId);
 
 echo "Starting Sync Worker [$workerId]...\n";
 
+$healthFile = '/tmp/qs-sync-worker.heartbeat';
+
 while (true) {
     try {
+        touch($healthFile);
         $processed = $processor->processNext();
+        touch($healthFile);
         if (!$processed) {
             sleep(2);
         }
     } catch (\Throwable $e) {
+        if ($pdo->inTransaction()) {
+            try {
+                $pdo->rollBack();
+            } catch (\Throwable $rollbackError) {
+                fwrite(STDERR, "Worker rollback failed: " . $rollbackError->getMessage() . "\n");
+                exit(1);
+            }
+        }
         echo "Critical worker error: " . $e->getMessage() . "\n";
         sleep(5);
     }
