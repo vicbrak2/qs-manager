@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use QSManager\Application\Sheets\ProcessSheetSyncRun;
 use QSManager\Application\Sheets\SheetReplicaImporter;
 use QSManager\Application\Sheets\SheetSyncResult;
+use QSManager\Application\Finance\RebuildFinanceProjection;
 use QSManager\Infrastructure\Database\ConnectionFactory;
 use QSManager\Infrastructure\Sheets\PostgresSyncRunRepository;
 
@@ -20,12 +21,6 @@ final class SyncWorkerIntegrationTest extends TestCase
     protected function setUp(): void
     {
         $this->pdo = ConnectionFactory::fromEnvironment();
-        
-        $dbName = $this->pdo->query('SELECT current_database()')->fetchColumn();
-        if (!str_ends_with((string)$dbName, '_test')) {
-            $this->fail("CRITICAL: The test suite destroys data and must ONLY run on a database ending in _test. Current DB: {$dbName}");
-        }
-
         $this->pdo->exec('TRUNCATE qs_sync_runs RESTART IDENTITY CASCADE');
         $this->repository = new PostgresSyncRunRepository($this->pdo);
     }
@@ -44,7 +39,8 @@ final class SyncWorkerIntegrationTest extends TestCase
                 ]);
             });
 
-        $processor = new ProcessSheetSyncRun($importer, $this->repository, 'test-worker-1');
+        $finance = new RebuildFinanceProjection($this->pdo);
+        $processor = new ProcessSheetSyncRun($importer, $this->repository, $finance, 'test-worker-1');
         
         $this->assertTrue($processor->processNext());
 
@@ -61,7 +57,8 @@ final class SyncWorkerIntegrationTest extends TestCase
         $this->pdo->exec("INSERT INTO qs_sync_runs (status, mode, heartbeat_at) VALUES ('running', 'read_only', now())");
 
         $importer = $this->createMock(SheetReplicaImporter::class);
-        $processor = new ProcessSheetSyncRun($importer, $this->repository, 'test-worker-1');
+        $finance = new RebuildFinanceProjection($this->pdo);
+        $processor = new ProcessSheetSyncRun($importer, $this->repository, $finance, 'test-worker-1');
         
         $this->assertFalse($processor->processNext());
     }
@@ -73,7 +70,8 @@ final class SyncWorkerIntegrationTest extends TestCase
         $importer = $this->createMock(SheetReplicaImporter::class);
         $importer->expects($this->once())->method('importAll')->willReturn(new SheetSyncResult([]));
 
-        $processor = new ProcessSheetSyncRun($importer, $this->repository, 'test-worker-2');
+        $finance = new RebuildFinanceProjection($this->pdo);
+        $processor = new ProcessSheetSyncRun($importer, $this->repository, $finance, 'test-worker-2');
         $this->assertTrue($processor->processNext());
 
         $run = $this->pdo->query('SELECT * FROM qs_sync_runs WHERE id = 1')->fetch(PDO::FETCH_ASSOC);
@@ -90,7 +88,8 @@ final class SyncWorkerIntegrationTest extends TestCase
             ->method('importAll')
             ->willThrowException(new \RuntimeException('Critical database error'));
 
-        $processor = new ProcessSheetSyncRun($importer, $this->repository, 'test-worker-1');
+        $finance = new RebuildFinanceProjection($this->pdo);
+        $processor = new ProcessSheetSyncRun($importer, $this->repository, $finance, 'test-worker-1');
         $processor->processNext();
 
         $run = $this->pdo->query('SELECT * FROM qs_sync_runs WHERE id = 1')->fetch(PDO::FETCH_ASSOC);

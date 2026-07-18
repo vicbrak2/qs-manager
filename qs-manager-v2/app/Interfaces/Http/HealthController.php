@@ -30,8 +30,14 @@ final class HealthController
             $dbStatus = 'error';
         }
 
+        $sheetsStatus = 'disabled';
+        $sheetsEnabled = getenv('SHEETS_READ_SYNC_ENABLED') === 'true';
+        if ($sheetsEnabled) {
+            $sheetsStatus = 'ok';
+        }
+
         $payload = [
-            'status' => $dbStatus === 'ok' ? 'ok' : 'degraded',
+            'status' => ($dbStatus === 'ok' && $sheetsStatus !== 'degraded' && str_starts_with($sheetsStatus, 'error') === false) ? 'ok' : 'degraded',
             'app' => getenv('APP_NAME') ?: 'QS Manager V2',
             'environment' => getenv('APP_ENV') ?: 'local',
             'database' => $dbStatus,
@@ -40,7 +46,7 @@ final class HealthController
                 'llm' => false,
                 'qdrant' => false,
                 'whatsapp' => false,
-                'sheets_read_sync' => getenv('SHEETS_READ_SYNC_ENABLED') === 'true',
+                'sheets_read_sync' => $sheetsStatus,
                 'sheets_write_sync' => false,
             ],
         ];

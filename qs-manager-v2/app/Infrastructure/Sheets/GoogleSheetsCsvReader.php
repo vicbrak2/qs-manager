@@ -25,9 +25,10 @@ final class GoogleSheetsCsvReader implements SheetCsvReader
      */
     public function read(string $spreadsheetId, int $gid, string $sheetName = 'Unknown'): array
     {
+        $cacheBust = (string) hrtime(true);
         $urls = [
-            sprintf('https://docs.google.com/spreadsheets/d/%s/export?format=csv&gid=%d', rawurlencode($spreadsheetId), $gid),
-            sprintf('https://docs.google.com/spreadsheets/d/%s/gviz/tq?tqx=out:csv&gid=%d', rawurlencode($spreadsheetId), $gid),
+            sprintf('https://docs.google.com/spreadsheets/d/%s/export?format=csv&gid=%d&cachebust=%s', rawurlencode($spreadsheetId), $gid, $cacheBust),
+            sprintf('https://docs.google.com/spreadsheets/d/%s/gviz/tq?tqx=out:csv&gid=%d&cachebust=%s', rawurlencode($spreadsheetId), $gid, $cacheBust),
         ];
 
         $lastException = null;
@@ -67,7 +68,7 @@ final class GoogleSheetsCsvReader implements SheetCsvReader
         $response = $this->httpClient->get($url, [
             'connect_timeout' => 5,
             'timeout' => 15,
-            'headers' => ['Accept: text/csv'],
+            'headers' => ['Accept: text/csv', 'Cache-Control: no-cache', 'Pragma: no-cache'],
         ]);
         
         if ($response['contents'] === false) {
@@ -108,4 +109,3 @@ final class GoogleSheetsCsvReader implements SheetCsvReader
         return $rows;
     }
 }
-

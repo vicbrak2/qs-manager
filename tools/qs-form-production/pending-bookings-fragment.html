@@ -1,0 +1,156 @@
+<!-- Add inside Cotizador.html, before </body>. -->
+<section class="pending-bookings" id="pending-bookings" aria-labelledby="pending-bookings-title">
+  <div class="pending-bookings__heading">
+    <div>
+      <p class="pending-bookings__eyebrow">Agenda operativa</p>
+      <h2 id="pending-bookings-title">Agendamientos pendientes</h2>
+      <p>Reservas futuras registradas en Agenda 2026.</p>
+    </div>
+    <button class="pending-bookings__refresh" id="pending-refresh" type="button">
+      <span aria-hidden="true">↻</span> Actualizar
+    </button>
+  </div>
+
+  <div class="pending-bookings__status" id="pending-status" role="status" aria-live="polite">
+    Presiona Actualizar para consultar Agenda 2026.
+  </div>
+  <div class="pending-bookings__list" id="pending-list"></div>
+</section>
+
+<dialog class="pending-cancel" id="pending-cancel-dialog" aria-labelledby="pending-cancel-title">
+  <form method="dialog" id="pending-cancel-form">
+    <h3 id="pending-cancel-title">Cancelar agendamiento</h3>
+    <p id="pending-cancel-summary"></p>
+    <label for="pending-cancel-reason">Motivo de cancelación</label>
+    <textarea id="pending-cancel-reason" minlength="5" maxlength="240" required
+      placeholder="Ej. La clienta solicitó cancelar la reserva."></textarea>
+    <p class="pending-cancel__note">
+      Se cancelará el evento y el registro quedará visible en la auditoría. V2 se actualizará con la próxima sincronización.
+    </p>
+    <div class="pending-cancel__actions">
+      <button value="close" type="button" id="pending-cancel-close">Volver</button>
+      <button value="confirm" type="submit" class="pending-cancel__confirm">Confirmar cancelación</button>
+    </div>
+  </form>
+</dialog>
+
+<style>
+  .pending-bookings { margin: 24px auto; max-width: 1110px; padding: 24px; background: #fff; border: 1px solid #eadce8; box-shadow: 0 12px 30px rgba(38, 22, 36, .08); }
+  .pending-bookings__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+  .pending-bookings__heading h2 { margin: 2px 0 6px; color: #1d1720; }
+  .pending-bookings__heading p { margin: 0; color: #665b68; }
+  .pending-bookings__eyebrow { color: #9b4777 !important; font-size: 12px; font-weight: 800; text-transform: uppercase; }
+  .pending-bookings__refresh { min-height: 44px; padding: 0 16px; border: 1px solid #d8c7d5; background: #fff; color: #201820; font-weight: 700; cursor: pointer; }
+  .pending-bookings__refresh:disabled { cursor: wait; opacity: .55; }
+  .pending-bookings__status { min-height: 24px; margin-top: 18px; color: #665b68; }
+  .pending-bookings__list { display: grid; gap: 10px; margin-top: 12px; }
+  .pending-booking { display: grid; grid-template-columns: minmax(130px,.7fr) minmax(220px,1.5fr) minmax(160px,1fr) auto; align-items: center; gap: 16px; padding: 16px; border: 1px solid #eadfe8; background: #fffafd; }
+  .pending-booking__date { color: #4a3947; font-weight: 800; }
+  .pending-booking__service { color: #1d1720; font-weight: 800; }
+  .pending-booking__meta { margin-top: 4px; color: #756a76; font-size: 13px; }
+  .pending-booking__amount { font-weight: 800; text-align: right; }
+  .pending-booking__cancel { min-height: 40px; padding: 0 14px; border: 1px solid #e2a9bf; background: #fff3f7; color: #932b54; font-weight: 800; cursor: pointer; }
+  .pending-booking__cancel:hover { background: #f9dce7; }
+  .pending-cancel { width: min(520px, calc(100% - 32px)); padding: 24px; border: 0; box-shadow: 0 24px 70px rgba(25, 15, 24, .32); }
+  .pending-cancel::backdrop { background: rgba(25, 15, 24, .58); }
+  .pending-cancel textarea { width: 100%; min-height: 100px; box-sizing: border-box; margin-top: 8px; padding: 12px; border: 1px solid #cfbdca; resize: vertical; }
+  .pending-cancel__note { color: #665b68; font-size: 13px; }
+  .pending-cancel__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+  .pending-cancel__actions button { min-height: 42px; padding: 0 16px; font-weight: 800; }
+  .pending-cancel__confirm { border: 1px solid #8f2851; background: #8f2851; color: #fff; }
+  @media (max-width: 720px) {
+    .pending-bookings { margin: 16px 12px 90px; padding: 18px; }
+    .pending-bookings__heading { align-items: stretch; flex-direction: column; }
+    .pending-booking { grid-template-columns: 1fr; gap: 8px; }
+    .pending-booking__amount { text-align: left; }
+    .pending-booking__cancel { width: 100%; }
+  }
+</style>
+
+<script>
+  (() => {
+    const money = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+    const refresh = document.querySelector('#pending-refresh');
+    const status = document.querySelector('#pending-status');
+    const list = document.querySelector('#pending-list');
+    const dialog = document.querySelector('#pending-cancel-dialog');
+    const form = document.querySelector('#pending-cancel-form');
+    const reason = document.querySelector('#pending-cancel-reason');
+    const summary = document.querySelector('#pending-cancel-summary');
+    let selected = null;
+
+    const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    })[character]);
+
+    function setLoading(loading) {
+      refresh.disabled = loading;
+      refresh.querySelector('span').textContent = loading ? '⌛' : '↻';
+    }
+
+    function loadPending() {
+      setLoading(true);
+      status.textContent = 'Consultando Agenda 2026…';
+      list.replaceChildren();
+      google.script.run
+        .withSuccessHandler(renderPending)
+        .withFailureHandler(error => {
+          setLoading(false);
+          status.textContent = error?.message || 'No fue posible consultar los agendamientos.';
+        })
+        .qsListPendingBookings();
+    }
+
+    function renderPending(result) {
+      setLoading(false);
+      const bookings = result?.bookings || [];
+      status.textContent = bookings.length
+        ? `${bookings.length} agendamiento${bookings.length === 1 ? '' : 's'} pendiente${bookings.length === 1 ? '' : 's'}.`
+        : 'No hay agendamientos futuros o servicios pendientes.';
+      list.innerHTML = bookings.map(booking => `
+        <article class="pending-booking">
+          <div class="pending-booking__date">${escapeHtml(booking.dateLabel)}<br>${escapeHtml(booking.time)}</div>
+          <div>
+            <div class="pending-booking__service">${escapeHtml(booking.service || 'Sin servicio')}</div>
+            <div class="pending-booking__meta">${escapeHtml(booking.customer || 'Sin clienta')} · ${escapeHtml(booking.staff || 'Sin encargada')}</div>
+          </div>
+          <div>
+            <div class="pending-booking__amount">${money.format(booking.total || 0)}</div>
+            <div class="pending-booking__meta">Saldo ${money.format(booking.balance || 0)}</div>
+          </div>
+          <button type="button" class="pending-booking__cancel" data-token="${escapeHtml(booking.token)}">Cancelar</button>
+        </article>`).join('');
+      list.querySelectorAll('[data-token]').forEach(button => button.addEventListener('click', () => {
+        selected = bookings.find(booking => booking.token === button.dataset.token);
+        summary.textContent = `${selected.dateLabel} ${selected.time} · ${selected.service} · ${selected.customer}`;
+        reason.value = '';
+        dialog.showModal();
+        reason.focus();
+      }));
+    }
+
+    refresh.addEventListener('click', loadPending);
+    document.querySelector('#pending-cancel-close').addEventListener('click', () => dialog.close());
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      if (!selected || !reason.reportValidity()) return;
+      const submit = form.querySelector('.pending-cancel__confirm');
+      submit.disabled = true;
+      submit.textContent = 'Cancelando…';
+      google.script.run
+        .withSuccessHandler(result => {
+          submit.disabled = false;
+          submit.textContent = 'Confirmar cancelación';
+          dialog.close();
+          status.textContent = result.message || 'Reserva cancelada.';
+          loadPending();
+        })
+        .withFailureHandler(error => {
+          submit.disabled = false;
+          submit.textContent = 'Confirmar cancelación';
+          status.textContent = error?.message || 'No fue posible cancelar la reserva.';
+        })
+        .qsCancelPendingBooking(selected.token, reason.value);
+    });
+  })();
+</script>

@@ -10,7 +10,7 @@ final class CreateServiceCommand
         public readonly string $name,
         public readonly ?string $category,
         public readonly ?int $durationMinutes,
+        public readonly int $quantity = 1,
     ) {
     }
 }
-

@@ -12,8 +12,11 @@ Aplicacion standalone local-first para reemplazar la V1 basada en WordPress.
 ## Levantar entorno local
 
 ```bash
-docker compose up --build
+docker compose up -d
 ```
+
+> [!IMPORTANT]
+> El entorno de desarrollo consta de tres contenedores principales: `db` (PostgreSQL), `app` (API y Web, puerto 8080) y `worker` (Procesador asíncrono). Si intentas correr la aplicación mediante `php -S` fuera de Docker, el procesamiento asíncrono de sincronización no funcionará a menos que también levantes el worker localmente.
 
 Endpoints iniciales:
 
@@ -63,13 +66,33 @@ curl -X POST http://localhost:8080/api/v1/bookings \
   -d "{\"service_id\":1,\"staff_id\":1,\"customer_name\":\"Cliente Demo\",\"customer_phone\":\"+56912345678\",\"scheduled_for\":\"2026-07-20T14:30:00Z\",\"status\":\"confirmed\",\"address\":\"Av. Siempre Viva 123\",\"comuna\":\"Providencia\",\"service_value\":85000,\"transfer_value\":12000,\"deposit_amount\":30000,\"total_service\":97000,\"balance_due\":67000,\"payment_status\":\"abonado\",\"service_status\":\"agendado\",\"contract_id\":\"QS-2026-001\",\"milestone\":\"reserva\",\"cash_group\":\"servicios\"}"
 ```
 
-## Migraciones locales
+## Migraciones de base de datos
 
-En una base nueva, Docker ejecuta automaticamente los SQL montados en `database/migrations`.
-Si el volumen de PostgreSQL ya existia, aplica las migraciones manualmente:
+La base de datos utiliza un sistema de migraciones idempotente y seguro transaccionalmente que previene la corrupción del esquema.
+
+> [!CAUTION]
+> El directorio `database/migrations` **ya no se monta automáticamente** en `/docker-entrypoint-initdb.d`. El ciclo de vida del esquema es gestionado al 100% por nuestra herramienta en PHP.
+
+Para aplicar o actualizar las migraciones en cualquier entorno (Desarrollo, Testing, o Producción), ejecuta el comando oficial:
+
+```bash
+docker compose exec app php tools/migrate.php
+```
+
+Usuarios de Windows pueden usar el atajo de PowerShell:
 
 ```powershell
 .\tools\migrate.ps1
+```
+
+## Pruebas de Integración y Aislamiento
+
+La suite de pruebas en esta V2 corre bajo un entorno **completamente aislado**. Se levanta una base de datos PostgreSQL efímera en memoria RAM (`tmpfs`), lo que previene que PHPUnit corrompa la base de datos operativa y garantiza pruebas veloces.
+
+Para ejecutar la suite completa de pruebas:
+
+```bash
+docker compose --profile test run --rm test vendor/bin/phpunit
 ```
 
 ## Replica normalizada de Google Sheets
@@ -88,16 +111,18 @@ La V2 mantiene tablas locales para representar los Sheets como base historica no
 
 El dominio operativo sigue en tablas propias (`qs_services`, `qs_staff`, `qs_bookings`) y conserva referencias de origen (`source_sheet`, `source_row`, estados GAS) sin depender de Google para funcionar.
 
-La sincronizacion actual es solo de lectura desde Sheets hacia PostgreSQL. No modifica celdas, formulas, tabs ni Apps Script.
+La sincronizacion desde Sheets a PostgreSQL se procesa mediante una arquitectura **asíncrona** de alta concurrencia.
 
 ```bash
+# Encola un trabajo de sincronización en la base de datos (Devuelve HTTP 202)
 curl -X POST http://localhost:8080/api/v1/sync/sheets/import
 ```
 
-Tambien se puede ejecutar dentro del contenedor:
+Para procesar estas colas, el sistema cuenta con un Worker deduplicado basado en bloqueos de PostgreSQL (`FOR UPDATE SKIP LOCKED`).
+En Docker, el servicio `worker` ya corre el script:
 
 ```bash
-docker exec qs-manager-v2-app sh -lc "php tools/import-sheets.php"
+docker exec qs-manager-v2-worker php tools/sync-worker.php
 ```
 
 `SHEETS_READ_SYNC_ENABLED=true` habilita la lectura de CSV export desde Google Sheets. `sheets_write_sync` permanece deshabilitado.

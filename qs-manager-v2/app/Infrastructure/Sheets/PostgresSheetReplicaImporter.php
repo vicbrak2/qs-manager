@@ -178,16 +178,16 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
             try {
                 $sourceId = $this->sourceId($sheetName, $source);
                 $runId = $this->startRun($sourceId, $syncRunId);
-                
+
                 $this->connection->beginTransaction();
-                
+
                 $start = microtime(true);
                 $rows = $this->reader->read($source['spreadsheet_id'], $source['gid'], $sheetName);
                 $duration = (int) ((microtime(true) - $start) * 1000);
-                
+
                 $rowsSeen = count($rows);
                 $rowsImported = $this->{$source['handler']}($runId, $sheetName, $rows);
-                
+
                 $this->connection->commit();
             } catch (\Throwable $exception) {
                 $duration = isset($start) ? (int) ((microtime(true) - $start) * 1000) : null;
@@ -208,7 +208,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
                 'status' => $status,
                 'message' => $message,
             ];
-            
+
             if ($source['is_critical'] ?? false) {
                 if ($status === 'failed') {
                     $allCriticalSucceeded = false;
@@ -254,12 +254,12 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
             $sourceRow = $index + 1;
             $this->connection->prepare(
                 'insert into qs_sheet_service_catalog_rows (
-                    import_run_id, source_row, active, category, service_name, sale_price,
+                    import_run_id, source_row, active, category, service_name, quantity, sale_price,
                     payment_mua, payment_stylist, trial_mua, trial_stylist, materials,
                     logistics, transfer_value, other_costs, total_cost, utility,
                     margin_percent, margin_status, observations
                 ) values (
-                    :import_run_id, :source_row, :active, :category, :service_name, :sale_price,
+                    :import_run_id, :source_row, :active, :category, :service_name, :quantity, :sale_price,
                     :payment_mua, :payment_stylist, :trial_mua, :trial_stylist, :materials,
                     :logistics, :transfer_value, :other_costs, :total_cost, :utility,
                     :margin_percent, :margin_status, :observations
@@ -270,6 +270,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
                 'active' => $this->dbBool($this->bool($row, 'activo')),
                 'category' => $this->string($row, 'categoria'),
                 'service_name' => $serviceName,
+                'quantity' => $this->positiveInt($row, 'cantidad') ?? 1,
                 'sale_price' => $this->catalogMoney($row, 'precio venta'),
                 'payment_mua' => $this->catalogMoney($row, 'pago mua'),
                 'payment_stylist' => $this->catalogMoney($row, 'pago estilista'),
@@ -398,9 +399,6 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
                 'notes' => $notes,
             ]);
 
-            if ($date !== null) {
-                $this->upsertWorkshopBookingProjection($sheetName, $index + 1, $row, $rawValues, $date, $notes);
-            }
             $imported++;
         }
 
@@ -411,6 +409,9 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
     {
         [$headerIndex, $headers] = $this->findHeader($rows, ['encargada', 'fecha', 'servicio']);
         $imported = 0;
+
+        $this->connection->prepare('delete from qs_bookings where source_sheet = :source_sheet')
+            ->execute(['source_sheet' => $sheetName]);
 
         for ($index = $headerIndex + 1; $index < count($rows); $index++) {
             $row = $this->combine($headers, $rows[$index]);
@@ -423,6 +424,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
             }
 
             $sourceRow = $index + 1;
+            $financials = $this->agendaFinancials($row);
             $this->connection->prepare(
                 'insert into qs_sheet_agenda_month_rows (
                     import_run_id, source_sheet, source_row, staff_name, day_label, service_date,
@@ -457,13 +459,13 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
                 'transfer_value' => $this->money($row, 'traslado'),
                 'deposit_amount' => $this->money($row, 'abono'),
                 'deposit_date' => $this->date($row, 'fecha abono'),
-                'service_value' => $this->money($row, 'valor servicio'),
-                'total_service' => $this->money($row, 'total servicio'),
-                'balance_due' => $this->money($row, 'total por pagar'),
+                'service_value' => $financials['service_value'],
+                'total_service' => $financials['total_service'],
+                'balance_due' => $financials['balance_due'],
                 'action' => $this->string($row, 'accion'),
                 'event_status' => $this->string($row, 'estado evento'),
                 'calendar_event_id' => $this->string($row, 'id evento'),
-                'payment_status' => $this->string($row, 'estado pago'),
+                'payment_status' => $financials['payment_status'],
             ]);
 
             if ($serviceName !== null && $customerName !== null) {
@@ -479,6 +481,9 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
     {
         [$headerIndex, $headers] = $this->findHeader($rows, ['id', 'fecha', 'servicio']);
         $imported = 0;
+
+        $this->connection->prepare('delete from qs_bookings where source_sheet = :source_sheet')
+            ->execute(['source_sheet' => $sheetName]);
 
         for ($index = $headerIndex + 1; $index < count($rows); $index++) {
             $row = $this->combine($headers, $rows[$index]);
@@ -634,16 +639,17 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
     {
         $this->connection->prepare(
             'insert into qs_services (
-                name, category, duration_minutes, active, sale_price, total_cost, utility,
+                name, category, duration_minutes, quantity, active, sale_price, total_cost, utility,
                 margin_percent, margin_status, source_sheet, source_row
             ) values (
-                :name, :category, null, :active, :sale_price, :total_cost, :utility,
+                :name, :category, null, :quantity, :active, :sale_price, :total_cost, :utility,
                 :margin_percent, :margin_status, :source_sheet, :source_row
             )
             on conflict (source_sheet, source_row) where source_sheet is not null and source_row is not null
             do update set
                 name = excluded.name,
                 category = excluded.category,
+                quantity = excluded.quantity,
                 active = excluded.active,
                 sale_price = excluded.sale_price,
                 total_cost = excluded.total_cost,
@@ -653,6 +659,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
         )->execute([
             'name' => $serviceName,
             'category' => $this->string($row, 'categoria'),
+            'quantity' => $this->positiveInt($row, 'cantidad') ?? 1,
             'active' => $this->dbBool($this->bool($row, 'activo') ?? true),
             'sale_price' => $this->catalogMoney($row, 'precio venta'),
             'total_cost' => $this->catalogMoney($row, 'costo total'),
@@ -708,6 +715,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
             'update qs_services
              set sheet_external_id = :sheet_external_id,
                  category = :category,
+                 quantity = :quantity,
                  active = :active,
                  sale_price = :sale_price,
                  total_cost = :total_cost,
@@ -717,7 +725,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
                  source_sheet = :source_sheet,
                  source_row = :source_row
              where id = (
-                 select id from qs_services 
+                 select id from qs_services
                  where lower(trim(name)) = lower(trim(:name))
                  order by case when source_sheet = :source_sheet then 0 else 1 end, id asc
                  limit 1
@@ -729,6 +737,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
             'sheet_external_id' => $serviceId,
             'name' => $serviceName,
             'category' => $this->string($row, 'categoria'),
+            'quantity' => $this->positiveInt($row, 'cantidad') ?? 1,
             'active' => $this->dbBool($this->bool($row, 'activo') ?? true),
             'sale_price' => $this->money($row, 'precio_venta_clp'),
             'total_cost' => $this->money($row, 'costo_total_clp'),
@@ -745,15 +754,16 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
 
         $this->connection->prepare(
             'insert into qs_services (
-                sheet_external_id, name, category, duration_minutes, active, sale_price, total_cost,
+                sheet_external_id, name, category, duration_minutes, quantity, active, sale_price, total_cost,
                 utility, margin_percent, margin_status, source_sheet, source_row
             ) values (
-                :sheet_external_id, :name, :category, null, :active, :sale_price, :total_cost,
+                :sheet_external_id, :name, :category, null, :quantity, :active, :sale_price, :total_cost,
                 :utility, :margin_percent, :margin_status, :source_sheet, :source_row
             ) on conflict (source_sheet, source_row) where source_sheet is not null and source_row is not null do update set
                 sheet_external_id = excluded.sheet_external_id,
                 name = excluded.name,
                 category = excluded.category,
+                quantity = excluded.quantity,
                 active = excluded.active,
                 sale_price = excluded.sale_price,
                 total_cost = excluded.total_cost,
@@ -764,6 +774,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
             'sheet_external_id' => $serviceId,
             'name' => $serviceName,
             'category' => $this->string($row, 'categoria'),
+            'quantity' => $this->positiveInt($row, 'cantidad') ?? 1,
             'active' => $this->dbBool($this->bool($row, 'activo') ?? true),
             'sale_price' => $this->money($row, 'precio_venta_clp'),
             'total_cost' => $this->money($row, 'costo_total_clp'),
@@ -777,6 +788,62 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
 
     private function reconcileOperationalProjections(): void
     {
+        $this->connection->exec("delete from qs_bookings where source_sheet = 'Talleres'");
+
+        $this->connection->exec(
+            "update qs_bookings booking
+             set service_id = master_service.id
+             from qs_services local_service,
+                  qs_services master_service
+             where booking.service_id = local_service.id
+               and local_service.source_sheet is null
+               and local_service.sheet_external_id is not null
+               and master_service.source_sheet = 'Servicios_Master'
+               and master_service.sheet_external_id = local_service.sheet_external_id"
+        );
+
+        $this->connection->exec(
+            "delete from qs_services local_service
+             using qs_services master_service
+             where local_service.source_sheet is null
+               and local_service.sheet_external_id is not null
+               and master_service.source_sheet = 'Servicios_Master'
+               and master_service.sheet_external_id = local_service.sheet_external_id"
+        );
+
+        $this->connection->exec(
+            "update qs_services archived_service
+             set source_sheet = 'Servicios_Master_Archivado',
+                 source_row = null,
+                 active = false
+             where archived_service.source_sheet is null
+               and archived_service.sheet_external_id is not null
+               and exists (
+                   select 1 from qs_bookings booking
+                   where booking.service_id = archived_service.id
+               )
+               and not exists (
+                   select 1 from qs_services master_service
+                   where master_service.source_sheet = 'Servicios_Master'
+                     and master_service.sheet_external_id = archived_service.sheet_external_id
+               )"
+        );
+
+        $this->connection->exec(
+            "delete from qs_services stale_service
+             where stale_service.source_sheet is null
+               and stale_service.sheet_external_id is not null
+               and not exists (
+                   select 1 from qs_bookings booking
+                   where booking.service_id = stale_service.id
+               )
+               and not exists (
+                   select 1 from qs_services master_service
+                   where master_service.source_sheet = 'Servicios_Master'
+                     and master_service.sheet_external_id = stale_service.sheet_external_id
+               )"
+        );
+
         $this->connection->exec(
             "update qs_bookings b
              set service_id = catalog_services.id
@@ -857,7 +924,8 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
             "delete from qs_bookings
              where source_sheet in (
                 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+                'Bitácora QS — Servicios'
              )
                and (
                 customer_name is null
@@ -938,6 +1006,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
     {
         $scheduledFor = $this->scheduledFor($row);
         $serviceName = $this->string($row, 'servicio');
+        $financials = $this->agendaFinancials($row);
 
         $this->connection->prepare(
             'insert into qs_bookings (
@@ -977,12 +1046,12 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
             'status' => $this->bookingStatus($this->string($row, 'estado evento')),
             'address' => $this->string($row, 'direccion'),
             'comuna' => $this->string($row, 'comuna'),
-            'service_value' => $this->money($row, 'valor servicio'),
+            'service_value' => $financials['service_value'],
             'transfer_value' => $this->money($row, 'traslado'),
             'deposit_amount' => $this->money($row, 'abono'),
-            'total_service' => $this->money($row, 'total servicio'),
-            'balance_due' => $this->money($row, 'total por pagar'),
-            'payment_status' => $this->string($row, 'estado pago'),
+            'total_service' => $financials['total_service'],
+            'balance_due' => $financials['balance_due'],
+            'payment_status' => $financials['payment_status'],
             'service_status' => $this->string($row, 'estado evento'),
             'calendar_event_id' => $this->string($row, 'id evento'),
             'source_sheet' => $sheetName,
@@ -1032,7 +1101,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
             'service_id' => $this->serviceIdByName($serviceName),
             'customer_name' => $this->string($row, 'nombre'),
             'customer_phone' => $this->normalizePhone($this->string($row, 'numero')),
-            'scheduled_for' => $workshopDate . ' 00:00:00-04',
+            'scheduled_for' => $this->localTimestamp($workshopDate, '00:00:00'),
             'status' => 'confirmed',
             'deposit_amount' => $paymentAmount,
             'total_service' => $paymentAmount,
@@ -1159,7 +1228,18 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
 
         $time = $this->time($row, 'hora') ?? '00:00:00';
 
-        return $date . ' ' . $time . '-04';
+        return $this->localTimestamp($date, $time);
+    }
+
+    /**
+     * Chile alterna entre -04 (invierno) y -03 (verano); un offset fijo
+     * desplaza una hora las reservas de la temporada contraria.
+     */
+    private function localTimestamp(string $date, string $time): string
+    {
+        $local = new \DateTimeImmutable($date . ' ' . $time, new \DateTimeZone('America/Santiago'));
+
+        return $local->format('Y-m-d H:i:sP');
     }
 
     private function bookingStatus(?string $sheetStatus): string
@@ -1168,7 +1248,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
 
         return match (true) {
             str_contains($status, 'cancel') => 'cancelled',
-            str_contains($status, 'complet'), str_contains($status, 'realiz') => 'completed',
+            str_contains($status, 'complet'), str_contains($status, 'realiz'), str_contains($status, 'termin') => 'completed',
             str_contains($status, 'agend'), str_contains($status, 'confirm') => 'confirmed',
             default => 'draft',
         };
@@ -1210,17 +1290,18 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
         $clean = str_replace(['$', ' ', "\u{00A0}", '.'], '', $value);
         $clean = str_replace(',', '.', $clean);
 
-        return is_numeric($clean) ? (float) $clean : null;
+        $result = is_numeric($clean) ? (float) $clean : null;
+
+        if ($result !== null && $result > 0 && $result < 1000) {
+            $result *= 1000;
+        }
+
+        return $result;
     }
 
     private function catalogMoney(array $row, string $key): ?float
     {
-        $value = $this->money($row, $key);
-        if ($value === null) {
-            return null;
-        }
-
-        return $value > 0 && $value < 1000 ? $value * 1000 : $value;
+        return $this->money($row, $key);
     }
 
     private function sumMoney(array $row, array $keys): ?float
@@ -1306,6 +1387,41 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
         }
 
         return null;
+    }
+
+    /**
+     * @return array{service_value: ?float, total_service: ?float, balance_due: ?float, payment_status: ?string}
+     */
+    private function agendaFinancials(array $row): array
+    {
+        $serviceValue = $this->money($row, 'valor servicio');
+        $transferValue = $this->money($row, 'traslado');
+        $depositAmount = $this->money($row, 'abono');
+        $totalService = $this->money($row, 'total servicio');
+
+        if ($totalService === null && ($serviceValue !== null || $transferValue !== null)) {
+            $totalService = ($serviceValue ?? 0.0) + ($transferValue ?? 0.0);
+        }
+
+        $balanceDue = $this->money($row, 'total por pagar');
+        if ($balanceDue === null && $totalService !== null) {
+            $balanceDue = max(0.0, $totalService - ($depositAmount ?? 0.0));
+        }
+
+        $paymentStatus = $this->string($row, 'estado pago');
+        $isWorkshop = $this->normalizeKey($this->string($row, 'dia') ?? '') === 'taller';
+        if (($paymentStatus === null || $isWorkshop) && $totalService !== null) {
+            $paymentStatus = ($depositAmount ?? 0.0) >= $totalService
+                ? 'Pagado'
+                : (($depositAmount ?? 0.0) > 0.0 ? 'Parcial' : 'Pendiente');
+        }
+
+        return [
+            'service_value' => $serviceValue,
+            'total_service' => $totalService,
+            'balance_due' => $balanceDue,
+            'payment_status' => $paymentStatus,
+        ];
     }
 
     private function workshopNotes(array $row, array $rawValues): ?string

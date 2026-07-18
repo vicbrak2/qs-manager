@@ -6,17 +6,26 @@ import { notify } from './ui/notifications.js';
 import { clearFormErrors, showFormErrors } from './ui/validation.js';
 
 import { setTab, loadHealth, loadSyncStatus } from './features/dashboard.js';
-import { loadServices, resetServiceForm, editService, servicePayload, renderServices } from './features/services.js';
-import { loadStaff, loadBookings, resetBookingForm, editBooking, bookingPayload, renderBookings, bookingMatches } from './features/bookings.js';
+import { loadServices, resetServiceForm, editService, servicePayload, renderServices, toggleServiceSort } from './features/services.js';
+import { loadStaff, loadBookings, resetBookingForm, editBooking, bookingPayload, renderBookings, bookingMatches, toggleBookingSort } from './features/bookings.js';
 import { syncAll, renderSyncModal, syncBookingGas } from './features/sync.js';
+import { loadFinanceDashboard } from './features/finance.js';
 
 async function boot() {
-  await Promise.all([loadHealth(), loadSyncStatus(), loadServices(), loadStaff(), loadBookings()]);
+  await Promise.all([loadHealth(), loadSyncStatus(), loadServices(), loadStaff(), loadBookings(), loadFinanceDashboard()]);
 }
 
+$('#tab-finance').addEventListener('click', () => {
+  setTab('finance');
+  if (!$('#finance-val-contracted').dataset.loaded) {
+    loadFinanceDashboard();
+    $('#finance-val-contracted').dataset.loaded = 'true';
+  }
+});
 $('#tab-services').addEventListener('click', () => setTab('services'));
 $('#tab-bookings').addEventListener('click', () => setTab('bookings'));
 $('#sync-all').addEventListener('click', syncAll);
+$('#refresh-finance').addEventListener('click', loadFinanceDashboard);
 $('#refresh-services').addEventListener('click', loadServices);
 $('#refresh-bookings').addEventListener('click', loadBookings);
 $('#new-service').addEventListener('click', resetServiceForm);
@@ -66,6 +75,12 @@ $('#booking-per-page').addEventListener('change', () => {
 });
 
 document.addEventListener('click', async (event) => {
+  const serviceSortButton = event.target.closest('[data-service-sort]');
+  if (serviceSortButton) toggleServiceSort(serviceSortButton.dataset.serviceSort);
+
+  const bookingSortButton = event.target.closest('[data-booking-sort]');
+  if (bookingSortButton) toggleBookingSort(bookingSortButton.dataset.bookingSort);
+
   const serviceButton = event.target.closest('[data-edit-service]');
   if (serviceButton) editService(Number(serviceButton.dataset.editService));
 
@@ -93,6 +108,7 @@ $('#service-form').addEventListener('submit', async (event) => {
         name: form.elements.name.value.trim(),
         category: form.elements.category.value.trim() || null,
         duration_minutes: form.elements.duration_minutes.value ? Number(form.elements.duration_minutes.value) : null,
+        quantity: form.elements.quantity.value ? Number(form.elements.quantity.value) : 1,
       }),
     });
     notify(id ? 'Servicio actualizado.' : 'Servicio creado.');

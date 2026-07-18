@@ -33,11 +33,10 @@ final class WebController
   <title>QS Manager V2</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
-  </noscript>
-  <link rel="stylesheet" href="/assets/css/main.css?v=3">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap">
+  <link rel="stylesheet" href="/assets/css/tokens.css?v=5">
+  <link rel="stylesheet" href="/assets/css/main.css?v=5">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <header>
@@ -64,11 +63,102 @@ final class WebController
     </div>
 
     <div class="tabs">
-      <button id="tab-services" class="tab active" type="button">Servicios</button>
+      <button id="tab-finance" class="tab active" type="button">Finanzas</button>
+      <button id="tab-services" class="tab" type="button">Servicios</button>
       <button id="tab-bookings" class="tab" type="button">Reservas</button>
     </div>
 
-    <section id="services-view" class="workspace">
+    <section id="finance-view">
+      <div class="finance-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div class="finance-filters" style="display: flex; gap: 12px; align-items: center;">
+          <label>Desde: <input type="date" id="finance-from"></label>
+          <label>Hasta: <input type="date" id="finance-to"></label>
+          <label>Base:
+            <select id="finance-basis" disabled title="Por ahora solo se soporta modo caja estimado">
+              <option value="cash_estimated" selected>Caja (Estimado)</option>
+            </select>
+          </label>
+          <button type="button" id="refresh-finance" class="secondary">Actualizar</button>
+        </div>
+        <div class="finance-quality" id="finance-quality-indicator" style="font-size: 0.875rem; color: var(--color-gray-600);">
+          Cargando métricas...
+        </div>
+      </div>
+
+      <div class="finance-dashboard-row">
+        <div class="finance-grid">
+          <div class="finance-card">
+            <div class="finance-card-title">Vendido (Contratado)</div>
+            <div class="finance-val" id="finance-val-contracted">$ 0</div>
+          </div>
+          <div class="finance-card">
+            <div class="finance-card-title">Cobrado (Ingresos)</div>
+            <div class="finance-val" id="finance-val-collected">$ 0</div>
+          </div>
+          <div class="finance-card">
+            <div class="finance-card-title">Por Cobrar</div>
+            <div class="finance-val" id="finance-val-receivable">$ 0</div>
+          </div>
+          <div class="finance-card">
+            <div class="finance-card-title">Costos Directos</div>
+            <div class="finance-val" id="finance-val-costs">$ 0</div>
+          </div>
+          <div class="finance-card">
+            <div class="finance-card-title">Gastos Operativos</div>
+            <div class="finance-val" id="finance-val-expenses">$ 0</div>
+          </div>
+          <div class="finance-card">
+            <div class="finance-card-title">Devoluciones</div>
+            <div class="finance-val" id="finance-val-refunds">$ 0</div>
+          </div>
+          <div class="finance-card highlight">
+            <div class="finance-card-title">Utilidad Neta</div>
+            <div class="finance-val" id="finance-val-net">$ 0</div>
+          </div>
+          <div class="finance-card highlight">
+            <div class="finance-card-title">Margen Operativo</div>
+            <div class="finance-val" id="finance-val-margin">0%</div>
+          </div>
+        </div>
+
+        <div class="panel chart-panel">
+          <div class="panel-head">
+            <h2>Análisis del Período</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="finance-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top: 2rem;">
+        <div class="panel-head">
+          <h2>Reconciliación vs Fuentes Crudas</h2>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Categoría</th>
+                <th style="text-align: right;">Total Sheets</th>
+                <th style="text-align: right;">Total BD</th>
+                <th style="text-align: right;">Diferencia</th>
+                <th style="text-align: right;">Filas Excluidas</th>
+                <th style="text-align: center;">Estado</th>
+              </tr>
+            </thead>
+            <tbody id="finance-reconciliation-body">
+              <tr><td colspan="6" style="text-align: center;">Cargando reconciliación...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="reconciliation-notes" style="margin-top: 1rem; font-size: 0.875rem; color: var(--color-gray-600); line-height: 1.4;">
+          <p>💡 <strong>Nota sobre Descuadre:</strong> Un descuadre de $-45.000 (Ventas de Servicios y Pagos de Clientes) es normal si existen talleres registrados en el periodo. Los ingresos por talleres se integran en la base de datos pero provienen de la pestaña externa "Talleres", la cual no está incluida en los totales crudos de la Bitácora/Flujo de Caja principal.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="services-view" class="workspace hidden">
       <div class="panel">
         <div class="panel-head">
           <h2>Servicios</h2>
@@ -100,7 +190,17 @@ final class WebController
           <table>
             <thead>
               <tr>
-                <th>ID</th><th>Nombre</th><th>Categoria</th><th>Precio</th><th>Costo</th><th>Utilidad</th><th>Margen</th><th>Origen</th><th>Activo</th><th>Acciones</th>
+                <th>ID</th>
+                <th aria-sort="ascending"><button type="button" class="sort-btn active" data-service-sort="name">Nombre <span class="sort-indicator">▲</span></button></th>
+                <th>Categoria</th>
+                <th><button type="button" class="sort-btn" data-service-sort="quantity">Cantidad <span class="sort-indicator"></span></button></th>
+                <th><button type="button" class="sort-btn" data-service-sort="sale_price">Precio <span class="sort-indicator"></span></button></th>
+                <th>Costo</th>
+                <th>Utilidad</th>
+                <th>Margen</th>
+                <th>Origen</th>
+                <th>Activo</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody id="services-body"></tbody>
@@ -121,6 +221,9 @@ final class WebController
           </label>
           <label>Categoria
             <input name="category" maxlength="80">
+          </label>
+          <label>Cantidad
+            <input name="quantity" type="number" min="1" step="1" value="1" required>
           </label>
           <label>Duracion
             <input name="duration_minutes" type="number" min="1" max="1440">
@@ -163,7 +266,7 @@ final class WebController
             <button type="button" id="new-booking">Nueva</button>
           </div>
         </div>
-        <div class="booking-filters">
+        <div class="filters">
           <label>Buscar
             <input id="booking-filter-text" placeholder="Cliente, comuna, telefono">
           </label>
@@ -191,10 +294,27 @@ final class WebController
           </label>
         </div>
         <div class="table-wrap">
-          <table>
+          <table class="booking-table">
+            <colgroup>
+              <col><col><col><col><col><col><col><col><col><col><col><col><col><col><col>
+            </colgroup>
             <thead>
               <tr>
-                <th>ID</th><th>Fecha</th><th>Cliente</th><th>Telefono</th><th>Servicio</th><th>Comuna</th><th>Direccion</th><th>Total</th><th>Saldo</th><th>Pago</th><th>Estado</th><th>Origen</th><th>Acciones</th>
+                <th>ID</th>
+                <th aria-sort="descending"><button type="button" class="sort-btn active" data-booking-sort="scheduled_for">Fecha <span class="sort-indicator">▼</span></button></th>
+                <th>Hora</th>
+                <th><button type="button" class="sort-btn" data-booking-sort="customer_name">Cliente <span class="sort-indicator"></span></button></th>
+                <th>Telefono</th>
+                <th>Servicio</th>
+                <th>Comuna</th>
+                <th>Direccion</th>
+                <th>Total</th>
+                <th>Saldo</th>
+                <th>Pago</th>
+                <th>Estado</th>
+                <th>Origen</th>
+                <th>Sync</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody id="bookings-body"></tbody>

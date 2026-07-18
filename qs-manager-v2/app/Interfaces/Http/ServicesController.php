@@ -57,6 +57,7 @@ final class ServicesController
                 $validated['name'],
                 $validated['category'],
                 $validated['duration_minutes'],
+                $validated['quantity'],
             ));
         } catch (ValidationException $exception) {
             return $this->validationError($response, $exception->errors());
@@ -151,6 +152,7 @@ final class ServicesController
         }
 
         $duration = $this->optionalPositiveInt($body, 'duration_minutes', 'Duration minutes', $errors);
+        $quantity = $this->optionalPositiveInt($body, 'quantity', 'Quantity', $errors) ?? 1;
         $active = $this->optionalBool($body, 'active', $errors) ?? true;
         $salePrice = $this->optionalMoney($body, 'sale_price', 'Sale price', $errors);
         $totalCost = $this->optionalMoney($body, 'total_cost', 'Total cost', $errors);
@@ -169,6 +171,7 @@ final class ServicesController
             'name' => $name ?? '',
             'category' => $category,
             'duration_minutes' => $duration,
+            'quantity' => $quantity,
             'active' => $active,
             'sale_price' => $salePrice,
             'total_cost' => $totalCost,

@@ -1,0 +1,122 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #fff8fb;
+  color: #241c27;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+.app-shell {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: #fff8fb;
+}
+
+.app-shell {
+  position: relative;
+  height: 100vh;
+  height: 100dvh;
+}
+
+.app-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff8fb;
+}
+
+.loading,
+.load-error {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  background: #fff8fb;
+}
+
+.loading[hidden],
+.load-error[hidden] {
+  display: none;
+}
+
+.loading img,
+.load-error img {
+  border-radius: 50%;
+  box-shadow: 0 7px 22px rgba(87, 54, 82, 0.17);
+}
+
+.loading strong {
+  margin-top: 6px;
+  font-size: 18px;
+}
+
+.loading span,
+.load-error p {
+  max-width: 420px;
+  color: #746778;
+  line-height: 1.5;
+}
+
+.loading__dots {
+  color: #df6e9c;
+  font-size: 22px;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.load-error h1 {
+  margin: 8px 0 0;
+  font-size: 22px;
+}
+
+.load-error p {
+  margin: 0;
+}
+
+.load-error button {
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 0 20px;
+  border: 1px solid #d89ab7;
+  border-radius: 7px;
+  background: #f4b8cf;
+  color: #241c27;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.load-error button:focus-visible {
+  outline: 3px solid rgba(223, 110, 156, 0.3);
+  outline-offset: 2px;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.38;
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading__dots {
+    animation: none;
+  }
+}

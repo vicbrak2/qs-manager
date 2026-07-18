@@ -19,8 +19,11 @@ use QSManager\Infrastructure\Persistence\Postgres\PostgresServiceRepository;
 use QSManager\Infrastructure\Persistence\Postgres\PostgresStaffRepository;
 use QSManager\Infrastructure\Sheets\GoogleSheetsCsvReader;
 use QSManager\Infrastructure\Sheets\PostgresSheetReplicaImporter;
+use QSManager\Infrastructure\Sheets\PostgresSyncQueue;
 use QSManager\Infrastructure\Stubs\LocalAgentResponder;
+use QSManager\Infrastructure\Persistence\Postgres\PostgresFinanceReadRepository;
 use QSManager\Interfaces\Http\BookingController;
+use QSManager\Interfaces\Http\FinanceController;
 use QSManager\Interfaces\Http\HealthController;
 use QSManager\Interfaces\Http\ModulesController;
 use QSManager\Interfaces\Http\ServicesController;
@@ -56,6 +59,7 @@ final class AppFactory
 
         (new WebController())->register($app);
         (new HealthController($connection))->register($app);
+        (new FinanceController(new PostgresFinanceReadRepository($connection)))->register($app);
         (new ModulesController($agentResponder))->register($app);
         (new ServicesController(
             new CreateService($serviceRepository),
@@ -67,7 +71,7 @@ final class AppFactory
             new ListStaffMembers($staffRepository),
         ))->register($app);
         (new SheetSyncController(
-            $sheetImporter,
+            new PostgresSyncQueue($connection),
             $connection,
             self::envBool('SHEETS_READ_SYNC_ENABLED', false),
         ))->register($app);

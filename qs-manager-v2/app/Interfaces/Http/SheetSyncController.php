@@ -8,12 +8,13 @@ use PDO;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use QSManager\Application\Sheets\SheetReplicaImporter;
+use QSManager\Application\Sheets\SyncQueue;
 use Slim\App;
 
 final class SheetSyncController
 {
     public function __construct(
-        private readonly SheetReplicaImporter $importer,
+        private readonly SyncQueue $syncQueue,
         private readonly PDO $connection,
         private readonly bool $enabled,
     ) {
@@ -65,45 +66,27 @@ final class SheetSyncController
             ], 202);
         }
 
-        $this->connection->beginTransaction();
-        
-        $this->connection->query("SELECT pg_advisory_xact_lock(1122334455)");
-        
-        $statement = $this->connection->query(
-            "SELECT id, status FROM qs_sync_runs WHERE status IN ('queued', 'running') ORDER BY id ASC LIMIT 1"
-        );
-        $existing = $statement->fetch(PDO::FETCH_ASSOC);
+        try {
+            $result = $this->syncQueue->enqueueOrReuse('api');
 
-        if ($existing) {
-            $this->connection->commit();
             return $this->json($response, [
-                'run_id' => $existing['id'],
-                'status' => $existing['status'],
-                'message' => 'Sync already in progress or queued.',
-                'reused' => true,
-            ], 200);
+                'run_id' => $result->runId,
+                'status' => $result->status,
+                'message' => $result->reused ? 'Sync already in progress or queued.' : 'Sync enqueued successfully.',
+                'reused' => $result->reused,
+            ], $result->reused ? 200 : 202);
+        } catch (\Throwable $e) {
+            return $this->json($response, [
+                'error' => 'Database error when trying to enqueue sync run.',
+                'details' => $e->getMessage(),
+            ], 500);
         }
-
-        $statement = $this->connection->prepare(
-            "INSERT INTO qs_sync_runs (status, mode, triggered_by) VALUES ('queued', 'read_only', :triggered_by) RETURNING id"
-        );
-        $statement->execute(['triggered_by' => 'api']);
-        $runId = $statement->fetchColumn();
-
-        $this->connection->commit();
-
-        return $this->json($response, [
-            'run_id' => $runId,
-            'status' => 'queued',
-            'message' => 'Sync enqueued successfully.',
-            'reused' => false,
-        ], 202);
     }
 
     public function getRun(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $id = $args['id'] ?? null;
-        
+
         if ($id === 'last') {
             $statement = $this->connection->query('SELECT id FROM qs_sync_runs ORDER BY started_at DESC NULLS LAST LIMIT 1');
             $id = $statement->fetchColumn();

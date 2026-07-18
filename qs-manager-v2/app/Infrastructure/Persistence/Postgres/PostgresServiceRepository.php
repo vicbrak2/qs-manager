@@ -24,9 +24,9 @@ final class PostgresServiceRepository implements ServiceRepository
             }
 
             $statement = $this->connection->prepare(
-                'insert into qs_services (name, category, duration_minutes, active)
-                 values (:name, :category, :duration_minutes, :active)
-                 returning id, name, category, duration_minutes, active, sale_price, total_cost, utility,
+                'insert into qs_services (name, category, duration_minutes, quantity, active)
+                 values (:name, :category, :duration_minutes, :quantity, :active)
+                 returning id, name, category, duration_minutes, quantity, active, sale_price, total_cost, utility,
                            margin_percent, margin_status, source_sheet, source_row'
             );
 
@@ -34,6 +34,7 @@ final class PostgresServiceRepository implements ServiceRepository
                 'name' => $service->name()->value(),
                 'category' => $service->category(),
                 'duration_minutes' => $service->duration()?->minutes(),
+                'quantity' => $service->quantity(),
                 'active' => $service->active(),
             ]);
 
@@ -56,10 +57,11 @@ final class PostgresServiceRepository implements ServiceRepository
     public function findAll(): array
     {
         $statement = $this->connection->query(
-            'select id, name, category, duration_minutes, active, sale_price, total_cost, utility,
+            "select id, name, category, duration_minutes, quantity, active, sale_price, total_cost, utility,
                     margin_percent, margin_status, source_sheet, source_row
              from qs_services
-             order by name asc'
+             where source_sheet = 'Servicios_Master'
+             order by name asc"
         );
 
         $rows = $statement->fetchAll();
@@ -70,7 +72,7 @@ final class PostgresServiceRepository implements ServiceRepository
     public function findById(int $id): ?Service
     {
         $statement = $this->connection->prepare(
-            'select id, name, category, duration_minutes, active, sale_price, total_cost, utility,
+            'select id, name, category, duration_minutes, quantity, active, sale_price, total_cost, utility,
                     margin_percent, margin_status, source_sheet, source_row
              from qs_services
              where id = :id'
@@ -103,6 +105,7 @@ final class PostgresServiceRepository implements ServiceRepository
                  set name = :name,
                      category = :category,
                      duration_minutes = :duration_minutes,
+                     quantity = :quantity,
                      active = :active,
                      sale_price = :sale_price,
                      total_cost = :total_cost,
@@ -110,7 +113,7 @@ final class PostgresServiceRepository implements ServiceRepository
                      margin_percent = :margin_percent,
                      margin_status = :margin_status
                  where id = :id
-                 returning id, name, category, duration_minutes, active, sale_price, total_cost, utility,
+                 returning id, name, category, duration_minutes, quantity, active, sale_price, total_cost, utility,
                            margin_percent, margin_status, source_sheet, source_row'
             );
 
@@ -119,6 +122,7 @@ final class PostgresServiceRepository implements ServiceRepository
                 'name' => $data['name'],
                 'category' => $data['category'],
                 'duration_minutes' => $data['duration_minutes'],
+                'quantity' => $data['quantity'],
                 'active' => $data['active'],
                 'sale_price' => $data['sale_price'],
                 'total_cost' => $data['total_cost'],
@@ -165,6 +169,7 @@ final class PostgresServiceRepository implements ServiceRepository
             (string) $row['name'],
             $row['category'] === null ? null : (string) $row['category'],
             $row['duration_minutes'] === null ? null : (int) $row['duration_minutes'],
+            (int) $row['quantity'],
             (bool) $row['active'],
             $row['sale_price'] === null ? null : (float) $row['sale_price'],
             $row['total_cost'] === null ? null : (float) $row['total_cost'],

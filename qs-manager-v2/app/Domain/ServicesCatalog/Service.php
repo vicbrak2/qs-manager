@@ -11,6 +11,7 @@ final class Service
         private readonly ServiceName $name,
         private readonly ?string $category,
         private readonly ?ServiceDuration $duration,
+        private readonly int $quantity,
         private readonly bool $active,
         private readonly ?float $salePrice,
         private readonly ?float $totalCost,
@@ -26,12 +27,14 @@ final class Service
         string $name,
         ?string $category,
         ?int $durationMinutes,
+        int $quantity = 1,
     ): self {
         return new self(
             null,
             ServiceName::fromString($name),
             self::normalizeCategory($category),
             $durationMinutes === null ? null : ServiceDuration::fromMinutes($durationMinutes),
+            $quantity,
             true,
             null,
             null,
@@ -48,6 +51,7 @@ final class Service
         string $name,
         ?string $category,
         ?int $durationMinutes,
+        int $quantity,
         bool $active,
         ?float $salePrice = null,
         ?float $totalCost = null,
@@ -62,6 +66,7 @@ final class Service
             ServiceName::fromString($name),
             self::normalizeCategory($category),
             $durationMinutes === null ? null : ServiceDuration::fromMinutes($durationMinutes),
+            $quantity,
             $active,
             $salePrice,
             $totalCost,
@@ -98,6 +103,11 @@ final class Service
         return $this->active;
     }
 
+    public function quantity(): int
+    {
+        return $this->quantity;
+    }
+
     public function toArray(): array
     {
         return [
@@ -105,6 +115,7 @@ final class Service
             'name' => $this->name->value(),
             'category' => $this->category,
             'duration_minutes' => $this->duration?->minutes(),
+            'quantity' => $this->quantity,
             'active' => $this->active,
             'sale_price' => $this->salePrice,
             'total_cost' => $this->totalCost,

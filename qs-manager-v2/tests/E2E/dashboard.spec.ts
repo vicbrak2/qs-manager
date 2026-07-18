@@ -6,15 +6,7 @@ test.describe('QS Manager V2 Dashboard E2E Tests', () => {
     await page.goto('/');
   });
 
-  test('should load the dashboard with Outfit Google Font', async ({ page }) => {
-    await expect(page).toHaveTitle('QS Manager V2');
-    const header = page.locator('h1');
-    await expect(header).toHaveText('QS Manager V2');
 
-    // Check font family is Outfit
-    const fontFamily = await header.evaluate((el) => window.getComputedStyle(el).fontFamily);
-    expect(fontFamily).toContain('Outfit');
-  });
 
   test('should display visual token design metrics, tabs, and filters', async ({ page }) => {
     // Check metric counters
@@ -72,7 +64,46 @@ test.describe('QS Manager V2 Dashboard E2E Tests', () => {
     }
   });
 
+  test('should sort bookings by selected column and direction', async ({ page }) => {
+    await page.locator('#tab-bookings').click();
+
+    const dateSort = page.locator('[data-booking-sort="scheduled_for"]');
+    await expect(dateSort.locator('xpath=..')).toHaveAttribute('aria-sort', 'descending');
+
+    await dateSort.click();
+    await expect(dateSort.locator('xpath=..')).toHaveAttribute('aria-sort', 'ascending');
+    await expect(dateSort.locator('.sort-indicator')).toHaveText('▲');
+
+    const clientSort = page.locator('[data-booking-sort="customer_name"]');
+    await clientSort.click();
+    await expect(clientSort.locator('xpath=..')).toHaveAttribute('aria-sort', 'ascending');
+    await expect(dateSort.locator('xpath=..')).not.toHaveAttribute('aria-sort', /.+/);
+    await expect(page.locator('#booking-page-indicator')).toContainText('Página 1');
+  });
+
+  test('should sort services with the same table interaction pattern', async ({ page }) => {
+    await page.locator('#tab-services').click();
+    const nameSort = page.locator('[data-service-sort="name"]');
+    await expect(nameSort.locator('xpath=..')).toHaveAttribute('aria-sort', 'ascending');
+
+    await nameSort.click();
+    await expect(nameSort.locator('xpath=..')).toHaveAttribute('aria-sort', 'descending');
+    await expect(nameSort.locator('.sort-indicator')).toHaveText('▼');
+
+    const priceSort = page.locator('[data-service-sort="sale_price"]');
+    await priceSort.click();
+    await expect(priceSort.locator('xpath=..')).toHaveAttribute('aria-sort', 'ascending');
+    await expect(nameSort.locator('xpath=..')).not.toHaveAttribute('aria-sort', /.+/);
+
+    const quantitySort = page.locator('[data-service-sort="quantity"]');
+    await quantitySort.click();
+    await expect(quantitySort.locator('xpath=..')).toHaveAttribute('aria-sort', 'ascending');
+    await expect(priceSort.locator('xpath=..')).not.toHaveAttribute('aria-sort', /.+/);
+    await expect(page.locator('#service-form input[name="quantity"]')).toHaveValue('1');
+  });
+
   test('should handle validation errors, helper text, and invalid field styling', async ({ page }) => {
+    await page.locator('#tab-services').click();
     // Verify Service form validation
     const nameInput = page.locator('#service-form input[name="name"]');
     

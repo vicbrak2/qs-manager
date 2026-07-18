@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QSManager\Application\Sheets;
 
+use QSManager\Application\Finance\RebuildFinanceProjection;
 use QSManager\Application\Sheets\SyncRunRepository;
 
 final class ProcessSheetSyncRun
@@ -11,14 +12,18 @@ final class ProcessSheetSyncRun
     public function __construct(
         private readonly SheetReplicaImporter $importer,
         private readonly SyncRunRepository $repository,
+        private readonly RebuildFinanceProjection $financeProjection,
         private readonly string $workerId,
     ) {
     }
 
     public function processNext(): bool
     {
-        $runId = $this->repository->claimNextRun($this->workerId);
-        
+        $leaseTimeout = (int) (getenv('SYNC_LEASE_TIMEOUT_MINUTES') ?: 10);
+        $maxAttempts = (int) (getenv('SYNC_MAX_ATTEMPTS') ?: 3);
+
+        $runId = $this->repository->claimNextRun($this->workerId, $leaseTimeout, $maxAttempts);
+
         if ($runId === null) {
             return false;
         }
@@ -27,7 +32,7 @@ final class ProcessSheetSyncRun
             $result = $this->importer->importAll($runId, function () use ($runId) {
                 $this->repository->heartbeat($runId);
             });
-            
+
             $payload = $result->toArray();
             $sources = $payload['sources'] ?? [];
             $totalSources = count($sources);
@@ -36,7 +41,7 @@ final class ProcessSheetSyncRun
             $totalRowsSeen = 0;
             $totalRowsImported = 0;
             $errorSummary = [];
-            
+
             foreach ($sources as $sheet => $data) {
                 if ($data['status'] === 'failed') {
                     $failedSources++;
@@ -47,7 +52,7 @@ final class ProcessSheetSyncRun
                 $totalRowsSeen += $data['rows_seen'];
                 $totalRowsImported += $data['rows_imported'];
             }
-            
+
             $status = 'completed';
             if ($failedSources > 0) {
                 $status = $completedSources === 0 ? 'failed' : 'partial';
@@ -57,20 +62,24 @@ final class ProcessSheetSyncRun
                 $errorSummary[] = 'No sources were returned by the importer.';
             }
 
-            $this->repository->markCompleted($runId, [
-                'status' => $status,
-                'totalSources' => $totalSources,
-                'completedSources' => $completedSources,
-                'failedSources' => $failedSources,
-                'totalRowsSeen' => $totalRowsSeen,
-                'totalRowsImported' => $totalRowsImported,
-                'errorSummary' => $errorSummary !== [] ? implode("\n", $errorSummary) : null,
-            ]);
-            
+            if ($status === 'completed' || $status === 'partial') {
+                $this->financeProjection->rebuild($runId);
+            }
+
+            $this->repository->markCompleted($runId, new SyncRunSummary(
+                $status,
+                $totalSources,
+                $completedSources,
+                $failedSources,
+                $totalRowsSeen,
+                $totalRowsImported,
+                $errorSummary !== [] ? implode("\n", $errorSummary) : null,
+            ));
+
         } catch (\Throwable $e) {
             $this->repository->markFailed($runId, $e->getMessage());
         }
-        
+
         return true;
     }
 }

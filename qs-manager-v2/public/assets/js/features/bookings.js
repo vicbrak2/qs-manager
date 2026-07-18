@@ -2,7 +2,7 @@
 import { state } from '../state.js';
 import { api } from '../api.js';
 import { $ } from '../dom.js';
-import { escapeHtml, money, badge, sourceLabel, dash, formatDate, text, toDateTimeLocal, fromDateTimeLocal, numberOrNull, idOrNull } from '../ui/formatting.js';
+import { escapeHtml, money, badge, sourceLabel, dash, formatDate, formatTime, text, toDateTimeLocal, fromDateTimeLocal, numberOrNull, idOrNull } from '../ui/formatting.js';
 import { notify } from '../ui/notifications.js';
 import { clearFormErrors, showFormErrors } from '../ui/validation.js';
 import { refreshMetrics } from './dashboard.js';
@@ -36,9 +36,74 @@ export function bookingMatches(booking) {
   return true;
 }
 
+const numericSortKeys = new Set(['id', 'total_service', 'balance_due']);
+
+function bookingSortValue(booking, key) {
+  const value = booking[key];
+  if (value === null || value === undefined || value === '') return null;
+  if (key === 'scheduled_for') {
+    const timestamp = Date.parse(value);
+    return Number.isNaN(timestamp) ? null : timestamp;
+  }
+  if (numericSortKeys.has(key)) {
+    const number = Number(value);
+    return Number.isNaN(number) ? null : number;
+  }
+  return String(value).trim().toLocaleLowerCase('es-CL');
+}
+
+function compareBookings(left, right) {
+  const { key, direction } = state.bookingsSort;
+  const leftValue = bookingSortValue(left, key);
+  const rightValue = bookingSortValue(right, key);
+
+  if (leftValue === null && rightValue === null) return Number(left.id) - Number(right.id);
+  if (leftValue === null) return 1;
+  if (rightValue === null) return -1;
+
+  let comparison;
+  if (typeof leftValue === 'string' && typeof rightValue === 'string') {
+    comparison = leftValue.localeCompare(rightValue, 'es-CL', { numeric: true, sensitivity: 'base' });
+  } else {
+    comparison = leftValue - rightValue;
+  }
+
+  if (comparison === 0) comparison = Number(left.id) - Number(right.id);
+  return direction === 'asc' ? comparison : -comparison;
+}
+
+function updateBookingSortHeaders() {
+  document.querySelectorAll('[data-booking-sort]').forEach((button) => {
+    const active = button.dataset.bookingSort === state.bookingsSort.key;
+    const header = button.closest('th');
+    const indicator = button.querySelector('.sort-indicator');
+    button.classList.toggle('active', active);
+    header.removeAttribute('aria-sort');
+    indicator.textContent = '';
+
+    if (active) {
+      const ascending = state.bookingsSort.direction === 'asc';
+      header.setAttribute('aria-sort', ascending ? 'ascending' : 'descending');
+      indicator.textContent = ascending ? '▲' : '▼';
+    }
+  });
+}
+
+export function toggleBookingSort(key) {
+  if (state.bookingsSort.key === key) {
+    state.bookingsSort.direction = state.bookingsSort.direction === 'asc' ? 'desc' : 'asc';
+  } else {
+    state.bookingsSort.key = key;
+    state.bookingsSort.direction = 'asc';
+  }
+  state.bookingsPagination.currentPage = 1;
+  renderBookings();
+}
+
 export function renderBookings() {
-  const filtered = state.bookings.filter(bookingMatches);
+  const filtered = state.bookings.filter(bookingMatches).sort(compareBookings);
   $('#bookings-empty').style.display = filtered.length ? 'none' : 'block';
+  updateBookingSortHeaders();
   
   const perPage = Number($('#booking-per-page').value);
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
@@ -93,6 +158,7 @@ export function renderBookings() {
       <tr>
         <td>${booking.id}</td>
         <td>${formatDate(booking.scheduled_for)}</td>
+        <td>${formatTime(booking.scheduled_for)}</td>
         <td class="wrap">${escapeHtml(booking.customer_name || '')}</td>
         <td>${escapeHtml(dash(booking.customer_phone))}</td>
         <td class="wrap">${escapeHtml(booking.service_name || '')}</td>
@@ -100,11 +166,12 @@ export function renderBookings() {
         <td class="wrap">${escapeHtml(dash(booking.address))}</td>
         <td>${money(booking.total_service)}</td>
         <td>${money(booking.balance_due)}</td>
-        <td>${badge(booking.payment_status || '', 'muted')}</td>
+        <td>${booking.payment_status ? badge(booking.payment_status, booking.payment_status.toLowerCase() === 'pagado' ? 'ok' : 'warn') : '—'}</td>
         <td>${badge(booking.status, statusKind)}</td>
-        <td>${badge(sourceLabel(booking), booking.source_sheet ? 'warn' : 'muted')}<br>${badge(syncStatusLabel, syncStatusKind)}</td>
-        <td>
-          <div style="display: flex; gap: 6px; align-items: center;">
+        <td class="source-cell" title="${escapeHtml(sourceLabel(booking))}">${badge(sourceLabel(booking), booking.source_sheet ? 'warn' : 'muted')}</td>
+        <td class="sync-cell">${badge(syncStatusLabel, syncStatusKind)}</td>
+        <td class="booking-actions-cell">
+          <div class="booking-actions">
             <button class="secondary btn-sm" type="button" data-edit-booking="${booking.id}">Editar</button>
             <button class="sync-gas-btn btn-sm btn-sync-gas-row" type="button" data-sync-booking-id="${booking.id}" title="${escapeHtml(booking.gas_last_sync_message || 'Sincronizar GAS')}">
               <span class="sync-icon ${syncStatusClass}">↻</span>

@@ -19,7 +19,14 @@ export function formatDate(value) {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' });
+  return date.toLocaleDateString('es-CL', { dateStyle: 'short' });
+}
+
+export function formatTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 export function toDateTimeLocal(value) {

@@ -30,6 +30,7 @@ final class ServiceRequestValidator
         }
 
         $duration = $this->optionalPositiveInt($body, 'duration_minutes', 'Duration minutes', $errors);
+        $quantity = $this->optionalPositiveInt($body, 'quantity', 'Quantity', $errors) ?? 1;
 
         if ($errors !== []) {
             throw new ValidationException($errors);
@@ -39,6 +40,7 @@ final class ServiceRequestValidator
             'name' => $name ?? '',
             'category' => $category,
             'duration_minutes' => $duration,
+            'quantity' => $quantity,
         ];
     }
 
@@ -85,4 +87,3 @@ final class ServiceRequestValidator
         return $value;
     }
 }
-

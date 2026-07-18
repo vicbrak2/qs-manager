@@ -19,9 +19,9 @@ final class CreateService
             $command->name,
             $command->category,
             $command->durationMinutes,
+            $command->quantity,
         );
 
         return $this->services->save($service);
     }
 }
-

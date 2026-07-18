@@ -62,16 +62,46 @@ final class PostgresSheetReplicaImporterTest extends TestCase
         
         $count1 = (int) $this->connection->query('SELECT COUNT(*) FROM qs_services')->fetchColumn();
         $this->assertSame(1, $count1);
+
+        $this->connection->exec(
+            "INSERT INTO qs_services (sheet_external_id, name, quantity, active)
+             VALUES ('S-001', 'Corte Hombre antiguo', 1, true)"
+        );
+        $this->connection->exec(
+            "INSERT INTO qs_services (sheet_external_id, name, quantity, active)
+             VALUES ('S-STALE', 'Servicio retirado', 1, false)"
+        );
+        $this->assertSame(3, (int) $this->connection->query('SELECT COUNT(*) FROM qs_services')->fetchColumn());
         
         // Second execution (Idempotency)
         $result2 = $importer->importAll();
         $this->assertSame('completed', $result2->toArray()['sources']['Servicios_Master']['status']);
         
-        $count2 = (int) $this->connection->query('SELECT COUNT(*) FROM qs_services')->fetchColumn();
-        // The count should still be 1 (or 2 if we insert history per import_run, but the actual qs_services table should have 1)
-        // Since the replica inserts rows for each run but the projection upserts, we should check qs_services
-        
         $qsServicesCount = (int) $this->connection->query('SELECT COUNT(*) FROM qs_services')->fetchColumn();
         $this->assertSame(1, $qsServicesCount);
+    }
+
+    public function testScheduledForUsesSantiagoTimezoneAcrossDstSeasons(): void
+    {
+        $importer = new PostgresSheetReplicaImporter(
+            $this->connection,
+            $this->createMock(SheetCsvReader::class)
+        );
+
+        $method = new \ReflectionMethod($importer, 'scheduledFor');
+
+        // Verano chileno (diciembre): offset -03. Un offset fijo -04 producía 13:00Z.
+        $summer = $method->invoke($importer, ['fecha' => '29/12/2026', 'hora' => '09:00']);
+        $this->assertSame(
+            '2026-12-29 12:00:00',
+            (new \DateTimeImmutable($summer))->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s')
+        );
+
+        // Invierno chileno (julio): offset -04.
+        $winter = $method->invoke($importer, ['fecha' => '15/07/2026', 'hora' => '09:00']);
+        $this->assertSame(
+            '2026-07-15 13:00:00',
+            (new \DateTimeImmutable($winter))->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s')
+        );
     }
 }
