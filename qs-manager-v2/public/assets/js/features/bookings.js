@@ -72,6 +72,16 @@ function compareBookings(left, right) {
   return direction === 'asc' ? comparison : -comparison;
 }
 
+function isHistoricalBooking(booking, now = Date.now()) {
+  return bookingTrafficKind(booking, now) === 'completed' || bookingTrafficKind(booking, now) === 'cancelled';
+}
+
+export function visibleBookings() {
+  return state.bookings
+    .filter(bookingMatches)
+    .filter((booking) => state.bookingsView === 'history' ? isHistoricalBooking(booking) : !isHistoricalBooking(booking));
+}
+
 function updateBookingSortHeaders() {
   document.querySelectorAll('[data-booking-sort]').forEach((button) => {
     const active = button.dataset.bookingSort === state.bookingsSort.key;
@@ -91,17 +101,62 @@ function updateBookingSortHeaders() {
 
 export function toggleBookingSort(key) {
   if (state.bookingsSort.key === key) {
+    // Ya esta ordenado por esta columna: alternar direccion, sin importar
+    // la columna (antes "scheduled_for" era un caso especial que siempre
+    // reimponia la direccion segun la vista actual y nunca alternaba --
+    // clickear la fecha de nuevo no hacia nada).
     state.bookingsSort.direction = state.bookingsSort.direction === 'asc' ? 'desc' : 'asc';
   } else {
     state.bookingsSort.key = key;
-    state.bookingsSort.direction = 'asc';
+    state.bookingsSort.direction = key === 'scheduled_for'
+      ? (state.bookingsView === 'upcoming' ? 'asc' : 'desc')
+      : 'asc';
   }
   state.bookingsPagination.currentPage = 1;
   renderBookings();
 }
 
+export function setBookingsView(view) {
+  state.bookingsView = view === 'history' ? 'history' : 'upcoming';
+  state.bookingsSort.key = 'scheduled_for';
+  state.bookingsSort.direction = state.bookingsView === 'upcoming' ? 'asc' : 'desc';
+  state.bookingsPagination.currentPage = 1;
+  renderBookings();
+}
+
+export function bookingTrafficKind(booking, now = Date.now()) {
+  if (booking.status === 'cancelled') return 'cancelled';
+
+  const scheduledAt = Date.parse(booking.scheduled_for);
+  if (booking.status === 'completed' || (!Number.isNaN(scheduledAt) && scheduledAt <= now)) {
+    return 'completed';
+  }
+
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+  if (!Number.isNaN(scheduledAt) && scheduledAt - now <= sevenDaysMs) {
+    return 'urgent';
+  }
+
+  return 'scheduled';
+}
+
 export function renderBookings() {
-  const filtered = state.bookings.filter(bookingMatches).sort(compareBookings);
+  const allFiltered = state.bookings.filter(bookingMatches);
+  const upcomingCount = allFiltered.filter((booking) => !isHistoricalBooking(booking)).length;
+  const historyCount = allFiltered.length - upcomingCount;
+  $('#booking-upcoming-count').textContent = upcomingCount;
+  $('#booking-history-count').textContent = historyCount;
+  document.querySelectorAll('[data-booking-view]').forEach((button) => {
+    const active = button.dataset.bookingView === state.bookingsView;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  $('#booking-list-title').textContent = state.bookingsView === 'upcoming' ? 'Próximas reservas' : 'Historial';
+  $('#booking-list-copy').textContent = state.bookingsView === 'upcoming'
+    ? 'Ordenadas desde la atención pendiente más cercana.'
+    : 'Servicios completados, fechas pasadas y reservas canceladas; lo más reciente aparece primero.';
+
+  const filtered = visibleBookings().sort(compareBookings);
   $('#bookings-empty').style.display = filtered.length ? 'none' : 'block';
   updateBookingSortHeaders();
   
@@ -126,6 +181,7 @@ export function renderBookings() {
 
   $('#bookings-body').innerHTML = rows.map((booking) => {
     const statusKind = booking.status === 'confirmed' ? 'ok' : booking.status === 'cancelled' ? 'danger' : booking.status === 'completed' ? 'warn' : 'muted';
+    const trafficKind = bookingTrafficKind(booking);
     
     let syncStatusLabel = 'local';
     let syncStatusKind = 'muted';
@@ -155,7 +211,7 @@ export function renderBookings() {
     }
     
     return `
-      <tr>
+      <tr class="booking-traffic-${trafficKind}" data-booking-traffic="${trafficKind}">
         <td>${booking.id}</td>
         <td>${formatDate(booking.scheduled_for)}</td>
         <td>${formatTime(booking.scheduled_for)}</td>

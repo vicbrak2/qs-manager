@@ -7,6 +7,7 @@ export const state = {
   },
   staff: [],
   bookings: [],
+  bookingsView: 'upcoming',
   activeTab: 'services',
   bookingsPagination: {
     currentPage: 1,
@@ -14,6 +15,6 @@ export const state = {
   },
   bookingsSort: {
     key: 'scheduled_for',
-    direction: 'desc',
+    direction: 'asc',
   }
 };

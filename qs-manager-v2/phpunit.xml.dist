@@ -7,5 +7,6 @@
     </testsuites>
     <php>
         <env name="DB_NAME" value="qs_manager_v2_test" force="true"/>
+        <env name="SHEETS_WRITE_SYNC_ENABLED" value="false" force="true"/>
     </php>
 </phpunit>

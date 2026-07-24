@@ -10,6 +10,8 @@ test.describe('Auditoría Automatizada de Usabilidad y UX', () => {
         metrics: {
           contracted_sales: 45000,
           collected_revenue: 105000,
+          committed_deposits: 0,
+          realized_revenue: 105000,
           accounts_receivable: 0,
           direct_costs: 0,
           operating_expenses: 0,
@@ -54,7 +56,10 @@ test.describe('Auditoría Automatizada de Usabilidad y UX', () => {
     await page.setViewportSize({ width: 800, height: 800 });
     await page.waitForTimeout(500);
     
-    const gridBox = await page.locator('.finance-grid').boundingBox();
+    // .finance-grid ya no existe -- el dashboard se rediseño a
+    // .finance-dashboard-row > .finance-main + .chart-panel, que es lo que
+    // realmente se apila en mobile (ver main.css @media max-width: 1024px).
+    const gridBox = await page.locator('.finance-main').boundingBox();
     const chartBox = await page.locator('.chart-panel').boundingBox();
     
     expect(gridBox).not.toBeNull();

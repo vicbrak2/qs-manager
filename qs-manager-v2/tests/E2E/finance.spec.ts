@@ -37,6 +37,8 @@ test.describe('Finance Dashboard', () => {
         metrics: {
           contracted_sales: 50000,
           collected_revenue: 40000,
+          committed_deposits: 10000,
+          realized_revenue: 40000,
           accounts_receivable: 10000,
           direct_costs: 5000,
           operating_expenses: 5000,
@@ -70,11 +72,39 @@ test.describe('Finance Dashboard', () => {
 
     // Check reconciliation table
     const tableRows = page.locator('#finance-reconciliation-body tr');
-    await expect(tableRows).toHaveCount(5);
+    await expect(tableRows).toHaveCount(6);
     
     // Check first row (Ventas)
     const firstRowStatus = tableRows.nth(0).locator('.status-badge');
-    await expect(firstRowStatus).toHaveText('OK');
+    await expect(firstRowStatus).toHaveText('Cuadra');
     await expect(firstRowStatus).toHaveClass(/ok/);
+    await expect(page.locator('#finance-story-title')).toContainText('$40.000');
+    await expect(page.locator('#finance-quality-indicator')).toHaveText('Todo cuadra');
+  });
+
+  test('should explain available result by paid service', async ({ page }) => {
+    await page.route('/api/v1/finance/available-details*', async (route) => {
+      await route.fulfill({ json: {
+        period: { from: '2026-07-01', to: '2026-07-31', basis: 'cash_estimated' },
+        services: [{
+          external_id: 'workshop-1', occurred_on: '2026-07-17', customer: 'Camila y Antonia',
+          service: 'Taller Automaquillaje grupal', realized_revenue: 60000, direct_cost: 0,
+          available_amount: 60000, source_type: 'workshop', source_sheet: 'Talleres', source_row: 2
+        }],
+        deductions: { unmatched_direct_costs: 0, operating_expenses: 10000, refunds: 0 },
+        totals: { realized_revenue: 60000, matched_direct_costs: 0, service_available: 60000, net_available: 50000 }
+      }});
+    });
+
+    await page.goto('http://localhost:8080/');
+    await page.locator('#finance-details-toggle').click();
+
+    await expect(page.locator('#finance-available-details')).toBeVisible();
+    await expect(page.locator('#finance-details-body')).toContainText('Camila y Antonia');
+    await expect(page.locator('#finance-details-body')).toContainText('Taller Automaquillaje grupal');
+    await expect(page.locator('#finance-details-realized')).toContainText('$60.000');
+    await expect(page.locator('#finance-details-service-total')).toContainText('$60.000');
+    await expect(page.locator('#finance-details-expenses')).toContainText('$10.000');
+    await expect(page.locator('#finance-details-net')).toContainText('$50.000');
   });
 });

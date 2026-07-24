@@ -7,11 +7,12 @@ import { clearFormErrors, showFormErrors } from './ui/validation.js';
 
 import { setTab, loadHealth, loadSyncStatus } from './features/dashboard.js';
 import { loadServices, resetServiceForm, editService, servicePayload, renderServices, toggleServiceSort } from './features/services.js';
-import { loadStaff, loadBookings, resetBookingForm, editBooking, bookingPayload, renderBookings, bookingMatches, toggleBookingSort } from './features/bookings.js';
+import { loadStaff, loadBookings, resetBookingForm, editBooking, bookingPayload, renderBookings, visibleBookings, toggleBookingSort, setBookingsView } from './features/bookings.js';
 import { syncAll, renderSyncModal, syncBookingGas } from './features/sync.js';
-import { loadFinanceDashboard } from './features/finance.js';
+import { initFinanceDetails, loadFinanceDashboard } from './features/finance.js';
 
 async function boot() {
+  initFinanceDetails();
   await Promise.all([loadHealth(), loadSyncStatus(), loadServices(), loadStaff(), loadBookings(), loadFinanceDashboard()]);
 }
 
@@ -61,7 +62,7 @@ $('#booking-prev-page').addEventListener('click', () => {
 
 $('#booking-next-page').addEventListener('click', () => {
   const perPage = Number($('#booking-per-page').value);
-  const filtered = state.bookings.filter(bookingMatches);
+  const filtered = visibleBookings();
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   if (state.bookingsPagination.currentPage < totalPages) {
     state.bookingsPagination.currentPage++;
@@ -75,6 +76,9 @@ $('#booking-per-page').addEventListener('change', () => {
 });
 
 document.addEventListener('click', async (event) => {
+  const bookingViewButton = event.target.closest('[data-booking-view]');
+  if (bookingViewButton) setBookingsView(bookingViewButton.dataset.bookingView);
+
   const serviceSortButton = event.target.closest('[data-service-sort]');
   if (serviceSortButton) toggleServiceSort(serviceSortButton.dataset.serviceSort);
 
@@ -104,14 +108,9 @@ $('#service-form').addEventListener('submit', async (event) => {
   try {
     await api(id ? `/api/v1/services/${id}` : '/api/v1/services', {
       method: id ? 'PUT' : 'POST',
-      body: JSON.stringify(id ? servicePayload() : {
-        name: form.elements.name.value.trim(),
-        category: form.elements.category.value.trim() || null,
-        duration_minutes: form.elements.duration_minutes.value ? Number(form.elements.duration_minutes.value) : null,
-        quantity: form.elements.quantity.value ? Number(form.elements.quantity.value) : 1,
-      }),
+      body: JSON.stringify(servicePayload()),
     });
-    notify(id ? 'Servicio actualizado.' : 'Servicio creado.');
+    notify(id ? 'Servicio actualizado.' : 'Servicio publicado en Servicios Master y Seguimiento Contable.');
     resetServiceForm();
     await loadServices();
   } catch (error) {

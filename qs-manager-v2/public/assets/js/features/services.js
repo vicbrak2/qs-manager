@@ -95,7 +95,12 @@ export function renderServices() {
   const rows = state.services.filter(serviceMatches).sort(compareServices);
   $('#services-empty').style.display = rows.length ? 'none' : 'block';
   updateServiceSortHeaders();
-  $('#services-body').innerHTML = rows.map((service) => `
+  $('#services-body').innerHTML = rows.map((service) => {
+    const source = service.source_sheet === 'Servicios_Master'
+      ? 'Servicios Master'
+      : service.source_sheet || 'Local';
+
+    return `
     <tr class="${profitabilityClass(service.margin_percent)}">
       <td>${service.id}</td>
       <td class="wrap">${escapeHtml(service.name)}</td>
@@ -105,11 +110,12 @@ export function renderServices() {
       <td>${money(service.total_cost)}</td>
       <td>${money(service.utility)}</td>
       <td>${percent(service.margin_percent)}</td>
-      <td>${badge(sourceLabel(service), service.source_sheet ? 'warn' : 'muted')}</td>
+      <td class="source-cell" title="${escapeHtml(sourceLabel(service))}">${badge(source, service.source_sheet ? 'warn' : 'muted')}</td>
       <td>${badge(service.active ? 'activo' : 'inactivo', service.active ? 'ok' : 'muted')}</td>
       <td><button class="secondary btn-sm" type="button" data-edit-service="${service.id}">Editar</button></td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
 export function fillServiceSelect() {

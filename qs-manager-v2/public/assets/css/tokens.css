@@ -36,6 +36,16 @@
   --profit-high:       hsl(207, 75%, 96%);
   --profit-high-hover: hsl(207, 68%, 91%);
 
+  /* Booking urgency row backgrounds */
+  --booking-completed:       hsl(142, 55%, 95%);
+  --booking-completed-hover: hsl(142, 48%, 89%);
+  --booking-scheduled:       hsl(46, 100%, 95%);
+  --booking-scheduled-hover: hsl(46, 92%, 89%);
+  --booking-urgent:          hsl(0, 82%, 96%);
+  --booking-urgent-hover:    hsl(0, 76%, 90%);
+  --booking-cancelled:       hsl(214, 18%, 96%);
+  --booking-cancelled-hover: hsl(214, 16%, 90%);
+
   /* =========================================================================
      FUNCTIONAL MAPPINGS
      ========================================================================= */

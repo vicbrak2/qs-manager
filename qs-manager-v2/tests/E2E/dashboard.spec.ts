@@ -41,6 +41,54 @@ test.describe('QS Manager V2 Dashboard E2E Tests', () => {
     await expect(page.locator('#booking-filter-status')).toHaveValue('confirmed');
   });
 
+  test('should render booking rows with traffic-light urgency colors', async ({ page }) => {
+    const now = Date.now();
+    const booking = (id: number, daysFromNow: number, status = 'confirmed') => ({
+      id,
+      service_id: null,
+      staff_id: null,
+      customer_name: `Cliente ${id}`,
+      customer_phone: null,
+      scheduled_for: new Date(now + daysFromNow * 86400000).toISOString(),
+      status,
+      service_name: 'Servicio prueba',
+      comuna: null,
+      address: null,
+      total_service: 50000,
+      balance_due: 25000,
+      payment_status: 'Parcial',
+      source_sheet: 'Test',
+      source_row: id,
+    });
+
+    await page.route('**/api/v1/bookings', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ bookings: [
+        booking(1, -1),
+        booking(2, 1, 'completed'),
+        booking(3, 14),
+        booking(4, 7),
+        booking(5, 2, 'cancelled'),
+      ] }),
+    }));
+
+    await page.goto('/');
+    await expect(page.locator('#tab-finance')).toHaveClass(/active/);
+    await page.locator('#tab-bookings').click();
+    await expect(page.locator('#bookings-view')).not.toHaveClass(/hidden/);
+
+    await expect(page.locator('.booking-traffic-legend')).toBeVisible();
+    await expect(page.locator('#booking-upcoming-count')).toHaveText('2');
+    await expect(page.locator('#booking-history-count')).toHaveText('3');
+    await expect(page.locator('[data-booking-traffic="completed"]')).toHaveCount(0);
+    await expect(page.locator('[data-booking-traffic="scheduled"]')).toHaveCount(1);
+    await expect(page.locator('[data-booking-traffic="urgent"]')).toHaveCount(1);
+    await page.locator('[data-booking-view="history"]').click();
+    await expect(page.locator('[data-booking-traffic="completed"]')).toHaveCount(2);
+    await expect(page.locator('[data-booking-traffic="cancelled"]')).toHaveCount(1);
+  });
+
   test('should support table pagination and rows-per-page selector', async ({ page }) => {
     // Switch to Bookings view
     await page.locator('#tab-bookings').click();
@@ -68,11 +116,24 @@ test.describe('QS Manager V2 Dashboard E2E Tests', () => {
     await page.locator('#tab-bookings').click();
 
     const dateSort = page.locator('[data-booking-sort="scheduled_for"]');
-    await expect(dateSort.locator('xpath=..')).toHaveAttribute('aria-sort', 'descending');
+    await expect(dateSort.locator('xpath=..')).toHaveAttribute('aria-sort', 'ascending');
 
+    // Clickear la misma columna de nuevo alterna la direccion (como
+    // cualquier otra columna) -- antes quedaba pegada en "ascending" porque
+    // toggleBookingSort() reimponia la direccion segun la vista en vez de
+    // alternar cuando la columna ya estaba activa. Ver bookings.js.
+    await dateSort.click();
+    await expect(dateSort.locator('xpath=..')).toHaveAttribute('aria-sort', 'descending');
+    await expect(dateSort.locator('.sort-indicator')).toHaveText('▼');
+
+    // Un segundo click vuelve a ascendente.
     await dateSort.click();
     await expect(dateSort.locator('xpath=..')).toHaveAttribute('aria-sort', 'ascending');
     await expect(dateSort.locator('.sort-indicator')).toHaveText('▲');
+
+    await page.locator('[data-booking-view="history"]').click();
+    await expect(dateSort.locator('xpath=..')).toHaveAttribute('aria-sort', 'descending');
+    await expect(dateSort.locator('.sort-indicator')).toHaveText('▼');
 
     const clientSort = page.locator('[data-booking-sort="customer_name"]');
     await clientSort.click();
@@ -83,6 +144,8 @@ test.describe('QS Manager V2 Dashboard E2E Tests', () => {
 
   test('should sort services with the same table interaction pattern', async ({ page }) => {
     await page.locator('#tab-services').click();
+    await expect(page.locator('#services-body .source-cell .badge').first()).toHaveText('Servicios Master');
+    await expect(page.locator('#services-body .source-cell').first()).toHaveAttribute('title', /Servicios_Master #\d+/);
     const nameSort = page.locator('[data-service-sort="name"]');
     await expect(nameSort.locator('xpath=..')).toHaveAttribute('aria-sort', 'ascending');
 

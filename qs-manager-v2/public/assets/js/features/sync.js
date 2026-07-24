@@ -88,7 +88,7 @@ export function renderSyncModal(run) {
     'Servicios': ['services_master', 'service_catalog', 'agenda_values'],
     'Reservas': ['bitacora', 'agenda_month'],
     'Talleres': ['workshops'],
-    'Finanzas': ['cash_tracking', 'operational_expenses']
+    'Finanzas': ['cash_tracking', 'operational_expenses', 'fixed_expenses']
   };
   
   for (const [groupName, purposes] of Object.entries(groups)) {

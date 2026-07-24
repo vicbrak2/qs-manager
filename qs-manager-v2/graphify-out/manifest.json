@@ -1,0 +1,750 @@
+{
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\playwright.config.ts": {
+    "mtime": 1783985202.0051358,
+    "hash": "ac7697258f90c635fc08bb3fe41b1ca6"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\test_sheet.php": {
+    "mtime": 1783963513.9979372,
+    "hash": "894165dba7e7e2bfbe73a3bee4a1b42e"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Booking\\BookingGasGateway.php": {
+    "mtime": 1783911993.4230065,
+    "hash": "596a856d6b111cfa23577961dec08491"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Booking\\CreateBooking.php": {
+    "mtime": 1784933265.67766,
+    "hash": "908dccd405f8f563c8e23769f0d2fdc8"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Booking\\CreateBookingCommand.php": {
+    "mtime": 1783911813.2505069,
+    "hash": "f76d3466acd079908c5198fc1a08b3bb"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Booking\\GasSyncResult.php": {
+    "mtime": 1783912136.1670883,
+    "hash": "38ffbdc64e87e697409d7c8b37b7395d"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Booking\\ListBookings.php": {
+    "mtime": 1783909566.3128388,
+    "hash": "e2ca36cd2233bba72ea6ffd6833d34c9"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Booking\\SyncBookingToGas.php": {
+    "mtime": 1783912010.3853674,
+    "hash": "389135e3a8db4d2ff7e4744ee26b1e38"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Finance\\RebuildFinanceProjection.php": {
+    "mtime": 1784392339.5354083,
+    "hash": "ef8ac3710244e8a6a85be2473a9498d6"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\ServicesCatalog\\CreateService.php": {
+    "mtime": 1784011524.535273,
+    "hash": "7c76310da4ca2c81e66d9f33aefb2019"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\ServicesCatalog\\CreateServiceCommand.php": {
+    "mtime": 1784011524.5342734,
+    "hash": "ab90461f5977e3ddeb465b5020832422"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\ServicesCatalog\\ListServices.php": {
+    "mtime": 1783904901.506255,
+    "hash": "9e15f18bbc7f9eabbf78b0cb92b06492"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\ServicesCatalog\\ServiceCatalogGateway.php": {
+    "mtime": 1784353456.3554995,
+    "hash": "f4ede8b866c164f60d513becb47aa951"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Sheets\\EnqueueResult.php": {
+    "mtime": 1783992467.0076647,
+    "hash": "bcc5cbac460dccd84e5b57561797f1c6"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Sheets\\ProcessSheetSyncRun.php": {
+    "mtime": 1784333876.9260707,
+    "hash": "658528a94361129e28502fd0df4b72d4"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Sheets\\SheetCsvReader.php": {
+    "mtime": 1783964323.5228996,
+    "hash": "c7a3f60adb82e34679a5711762fe8dac"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Sheets\\SheetReplicaImporter.php": {
+    "mtime": 1783976890.3936288,
+    "hash": "cd825c8c8cc0a288d21aa26af35d47de"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Sheets\\SheetSyncResult.php": {
+    "mtime": 1783912416.536129,
+    "hash": "1fdaccd082e2793fbf535f783968d5a3"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Sheets\\SyncQueue.php": {
+    "mtime": 1783992475.5333483,
+    "hash": "3b5facf8d8088feaa99f17a9f4ef227c"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Sheets\\SyncRunRepository.php": {
+    "mtime": 1783992062.2210927,
+    "hash": "8635f08a180b2cc21e0bdb65e759ffbc"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Sheets\\SyncRunSummary.php": {
+    "mtime": 1783991866.882839,
+    "hash": "16912bd670ae63918fcbef9be15841b8"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Team\\CreateStaffMember.php": {
+    "mtime": 1783908849.1514156,
+    "hash": "cf91a4c48fe69f77d5063851cfed76ff"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Team\\CreateStaffMemberCommand.php": {
+    "mtime": 1783908849.1534286,
+    "hash": "83ed0be43d8eef0fd42cdf174111a145"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Team\\ListStaffMembers.php": {
+    "mtime": 1783908849.1574514,
+    "hash": "4688ea6b8dde9ddf72507ff4fcc27af6"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Agents\\AgentResponder.php": {
+    "mtime": 1783903836.7702942,
+    "hash": "15bf22d2e0c14e2eac9047b08ebac695"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Bitacora\\Bitacora.php": {
+    "mtime": 1784926939.4267101,
+    "hash": "fe9989fec08d2b40937f3e5f7960798a"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Bitacora\\BitacoraPolicy.php": {
+    "mtime": 1784926948.5360403,
+    "hash": "3f7141952622c3799deb543d0f677acd"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Bitacora\\PickupPoint.php": {
+    "mtime": 1784926891.1550574,
+    "hash": "fb8181b97982a959f125c426a5db8463"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Bitacora\\RoutePlan.php": {
+    "mtime": 1784926925.377349,
+    "hash": "6c35fb0f21f8b8e7bf97f63d4d939ccb"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Bitacora\\ServiceAddress.php": {
+    "mtime": 1784926899.4000974,
+    "hash": "9bf4bca120b5b7f4534ab58f8cf565f6"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Bitacora\\TravelDuration.php": {
+    "mtime": 1784926905.8387904,
+    "hash": "6e7eb966466241b280f5014634d3a816"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Bitacora\\TravelNote.php": {
+    "mtime": 1784926915.099161,
+    "hash": "93c865e032c8da7a7bba28685a4ba706"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Booking\\Booking.php": {
+    "mtime": 1783916231.6189241,
+    "hash": "28961a6902e9170a3a4045f3e8ba1ac2"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Booking\\BookingConflictException.php": {
+    "mtime": 1784927459.2086139,
+    "hash": "d32aa59229795410644093eb596acb43"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Booking\\BookingId.php": {
+    "mtime": 1783909550.2589743,
+    "hash": "5f60cf81c055ba2fda9156de11f0fdf8"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Booking\\BookingRepository.php": {
+    "mtime": 1784933222.59891,
+    "hash": "ca279c1c24a22b01acb4780f3ef7cd3a"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Booking\\BookingStatus.php": {
+    "mtime": 1783909552.384474,
+    "hash": "0e39b6ea3788e35093541440527162d0"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Booking\\BookingTimeRange.php": {
+    "mtime": 1784927451.8990011,
+    "hash": "42d144528464012034fb00e20435842c"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Finance\\AccountingBasis.php": {
+    "mtime": 1784081156.411785,
+    "hash": "ea1b99c70861e27c911197382f5923a5"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Finance\\FinancePeriod.php": {
+    "mtime": 1784082933.0225475,
+    "hash": "ead51776fd17552361edfa75f11f294f"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Finance\\FinanceReadRepository.php": {
+    "mtime": 1784357333.6990666,
+    "hash": "62ff0c1fe89fd25346cf875acef2f2ea"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Finance\\FinancialMetrics.php": {
+    "mtime": 1784392339.5490198,
+    "hash": "148ea7278a8b37c44f02decb8796d226"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Finance\\Money.php": {
+    "mtime": 1784081139.307709,
+    "hash": "61edb8214443e0acdc8fdeda6900c29b"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Finance\\PaymentMethod.php": {
+    "mtime": 1784931739.4394581,
+    "hash": "c89ec41eea9b2cd61cc5ef572608bfe7"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\ServicesCatalog\\Service.php": {
+    "mtime": 1784011556.5709643,
+    "hash": "fb153a4616fa3e62b7584f63f693160b"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\ServicesCatalog\\ServiceDuration.php": {
+    "mtime": 1783904901.48998,
+    "hash": "0431890aa12f9dab212873df9aba6f4c"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\ServicesCatalog\\ServiceId.php": {
+    "mtime": 1783904901.4919784,
+    "hash": "fa0b8d3aa4bfb90856b4215d2cbd4840"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\ServicesCatalog\\ServiceName.php": {
+    "mtime": 1783911118.683498,
+    "hash": "0ce3668b033f2f484cba89cd2b970014"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\ServicesCatalog\\ServiceRepository.php": {
+    "mtime": 1784353456.3601592,
+    "hash": "ea8259e007a21f716b6d0f27eda09f87"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Team\\AvailabilityChecker.php": {
+    "mtime": 1784927325.4315941,
+    "hash": "bd62393ba4880ff1d4d0c56e7adc3828"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Team\\AvailabilityWindow.php": {
+    "mtime": 1784927315.5058317,
+    "hash": "dcce070c07f619c7d33221b87d476c66"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Team\\StaffDisplayName.php": {
+    "mtime": 1783911118.683498,
+    "hash": "c8c75553aa41bd35cd83452dd7412e6d"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Team\\StaffId.php": {
+    "mtime": 1783908849.1326733,
+    "hash": "0ace73946f54bff028787fc55ec1048a"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Team\\StaffMember.php": {
+    "mtime": 1783908849.1458843,
+    "hash": "029ae6a7255ba9a5e6ac3c080c7c4489"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Team\\StaffRepository.php": {
+    "mtime": 1783911118.683498,
+    "hash": "78f0fd40bf32939d88f10eb39409c7a4"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Team\\StaffRole.php": {
+    "mtime": 1783908849.1478934,
+    "hash": "3848345795492e2d555277d30ac86cfd"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Database\\ConnectionFactory.php": {
+    "mtime": 1783903836.7633362,
+    "hash": "ba8801ff87512cd2f6a863c63332eac9"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Gas\\GasBookingPayloadMapper.php": {
+    "mtime": 1783912026.0354505,
+    "hash": "29663fb2b4761000492ef82996c64740"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Gas\\HttpGasBookingGateway.php": {
+    "mtime": 1783967274.3524694,
+    "hash": "70b6808644b7da6568d1efa75e177887"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Gas\\HttpGasServiceCatalogGateway.php": {
+    "mtime": 1784353456.3554995,
+    "hash": "a09f3b416684ae49084121964404dd97"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Http\\AppFactory.php": {
+    "mtime": 1784933269.8639472,
+    "hash": "3ef562104e24f3cb649c638e144220aa"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Http\\CurlHttpClient.php": {
+    "mtime": 1783976815.871631,
+    "hash": "ddaaf283f7ee740640f79e7a534bdbd5"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Http\\HttpClient.php": {
+    "mtime": 1783976815.7676122,
+    "hash": "b2197b102d8bcbbd53e2481db6407faf"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Persistence\\Postgres\\PostgresBookingRepository.php": {
+    "mtime": 1784933246.3903508,
+    "hash": "3bc6db288b96593beebe3a78131ecd91"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Persistence\\Postgres\\PostgresFinanceReadRepository.php": {
+    "mtime": 1784392406.2286117,
+    "hash": "eb3c04c283764e230ecf41b7e8427c50"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Persistence\\Postgres\\PostgresServiceRepository.php": {
+    "mtime": 1784353456.360667,
+    "hash": "e4981a83e3cd4c387457aaab984bef9b"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Persistence\\Postgres\\PostgresStaffRepository.php": {
+    "mtime": 1783911118.6886792,
+    "hash": "7b96ce6e9e0fcf533ef71ebd416259cb"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\BookingProjectionWriter.php": {
+    "mtime": 1784931863.3422866,
+    "hash": "5a5d0f926f86e3378babc44e9ed35f2f"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\GoogleSheetsCsvReader.php": {
+    "mtime": 1784035588.7478423,
+    "hash": "dc6769ff353ca4f72d02dc4c8e60eded"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\PostgresSheetReplicaImporter.php": {
+    "mtime": 1784928080.5004306,
+    "hash": "13afccbf79fe503fa1114da2d2abb34f"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\PostgresSyncQueue.php": {
+    "mtime": 1783992459.9197128,
+    "hash": "0637b6dd88d38a4757b9a39d00bbba8f"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\PostgresSyncRunRepository.php": {
+    "mtime": 1784333876.941192,
+    "hash": "cdd441d407a1492bbd0316a873ecd985"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\SheetImportSource.php": {
+    "mtime": 1784927887.1949415,
+    "hash": "32dfb4d05a66aa2239a88bf9d6f6764b"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\SheetRowMapper.php": {
+    "mtime": 1784931868.3982646,
+    "hash": "ff9af460d853764ea1a0785639876851"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\Importers\\AgendaMonthImporter.php": {
+    "mtime": 1784927991.130577,
+    "hash": "8dd66964e585499f682dec0bd65a8cd6"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\Importers\\BitacoraImporter.php": {
+    "mtime": 1784931726.1276062,
+    "hash": "32e67a9c92c19ceaf6d080cee4309304"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\Importers\\CashTrackingImporter.php": {
+    "mtime": 1784928020.6789446,
+    "hash": "3282e11645ca1d1054db3b1b80be5269"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\Importers\\ExpensesImporter.php": {
+    "mtime": 1784928037.6947865,
+    "hash": "3af58ddce4076d90347252d88cb0b9ef"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\Importers\\ServicesCatalogImporter.php": {
+    "mtime": 1784927952.5089984,
+    "hash": "f5a3f9c8982162149faf2bd490cbdcdf"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\Importers\\ServicesMasterImporter.php": {
+    "mtime": 1784927963.3717582,
+    "hash": "b5259aa40865533623d8dc4dd0dda245"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\Importers\\WorkshopsImporter.php": {
+    "mtime": 1784931874.3263776,
+    "hash": "088cbc1a6397a7401cafe00adc5e2422"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Stubs\\LocalAgentResponder.php": {
+    "mtime": 1783903836.771949,
+    "hash": "710f979ad510617a7a803ab9c3f2dc6e"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\BookingController.php": {
+    "mtime": 1784933276.0911386,
+    "hash": "b755e4471a913feab90607685ca21277"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\FinanceController.php": {
+    "mtime": 1784357333.7043896,
+    "hash": "882cc18430556fea816ca2c3660f712f"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\HealthController.php": {
+    "mtime": 1784001012.639409,
+    "hash": "60d352e745724cb812914639b72ef43f"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\ModulesController.php": {
+    "mtime": 1783903836.7679963,
+    "hash": "245eaea744ff0f44f559c96b75e9e1f6"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\ServicesController.php": {
+    "mtime": 1784354340.8164775,
+    "hash": "d1293422b281e78d2dbb089d79eaa730"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\SheetSyncController.php": {
+    "mtime": 1784333876.9432046,
+    "hash": "e3c838e04c17c6609efc3fe748c4f194"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\TeamController.php": {
+    "mtime": 1783911154.5662057,
+    "hash": "7a1f24d8ec8ef32aa89cfa7fa699f9a0"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\WebController.php": {
+    "mtime": 1784392406.2307727,
+    "hash": "7a87dc978e3a85d6b733ae8141fb470e"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\Validation\\BookingRequestValidator.php": {
+    "mtime": 1783916764.877026,
+    "hash": "7d597682f033c6ed830d9333c13587c5"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\Validation\\ServiceRequestValidator.php": {
+    "mtime": 1784353545.5941477,
+    "hash": "1dc2c2fffb2f00b538f5ed333ecbbc57"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\Validation\\TeamRequestValidator.php": {
+    "mtime": 1783911078.1500437,
+    "hash": "4810aebcf4c407b57348d57aaf4c2639"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\Validation\\ValidationException.php": {
+    "mtime": 1783911078.141596,
+    "hash": "745bdc6b55c1b5c19575cf478310db81"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\database\\migrations\\0001_initial_schema.sql": {
+    "mtime": 1783903836.77302,
+    "hash": "42913ed7cf81e30953e2efd5a1147885"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\database\\migrations\\0002_sheet_replica_and_booking_ops.sql": {
+    "mtime": 1783911773.4100335,
+    "hash": "2d287b3b76ba014f840ee02b384b69b6"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\database\\migrations\\0003_read_only_sheet_sync.sql": {
+    "mtime": 1783912410.5288427,
+    "hash": "826030da6afda752466671601d89e1ab"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\database\\migrations\\0004_agenda_2026_read_only_sync.sql": {
+    "mtime": 1783915423.1921818,
+    "hash": "e6079a931aafe2c26f88a969ac8750b1"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\database\\migrations\\0005_async_sync_architecture.sql": {
+    "mtime": 1783964045.3217676,
+    "hash": "e2ec419d569614f42f4a5cca0f31cb94"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\database\\migrations\\0006_async_sync_heartbeat.sql": {
+    "mtime": 1783991984.5080605,
+    "hash": "bd4a7442131e19b0f9e7e73a55fe498c"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\database\\migrations\\0007_service_quantity.sql": {
+    "mtime": 1784011524.5317569,
+    "hash": "9a7093913ae688a5e883ae2ed9fe41f2"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\database\\migrations\\0008_finance_projection_schema.sql": {
+    "mtime": 1784084841.192956,
+    "hash": "4b5381f3b668d8556231e1eae78a45e5"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\database\\migrations\\0009_finance_projection_sync_run.sql": {
+    "mtime": 1784084847.9593654,
+    "hash": "4194484d27c2d9bf56b3eb0798e506a0"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\database\\migrations\\0010_finance_views.sql": {
+    "mtime": 1784089274.1496649,
+    "hash": "88e4040816da7aa7fb888f7963072ce7"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\database\\migrations\\0011_workshop_finance_views.sql": {
+    "mtime": 1784092905.5568078,
+    "hash": "c94aa8e49045c1644df99707fceb30a4"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\database\\migrations\\0012_bank_balances.sql": {
+    "mtime": 1784154787.9744365,
+    "hash": "60f6e4a85d681f8afc575ba687faa7eb"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\database\\migrations\\0013_exclude_agenda_values_source.sql": {
+    "mtime": 1784384176.136782,
+    "hash": "4014a89b4a1284666db79188ec4fe156"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\database\\migrations\\0014_fixed_expenses.sql": {
+    "mtime": 1784392339.523311,
+    "hash": "e1c669cfbc4c5264ec8a628d9ca78c09"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\index.php": {
+    "mtime": 1783903836.753904,
+    "hash": "4904f25844df220ac6e12bc0068a141e"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\router.php": {
+    "mtime": 1783988126.2957003,
+    "hash": "1a5f42f47e5e0a7434225d18a8332c21"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\api.js": {
+    "mtime": 1783988672.9917777,
+    "hash": "92b10547d35b442d4ffbab004715d52d"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\app.js": {
+    "mtime": 1784360340.638656,
+    "hash": "507b6ce653a58bd4355210359e51ad14"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\dom.js": {
+    "mtime": 1783988672.9897766,
+    "hash": "5175b4f267af4cd92a880f540b9df155"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\state.js": {
+    "mtime": 1784360340.624962,
+    "hash": "f977189ab93d8e883db0bc3f7191bfb4"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\features\\bookings.js": {
+    "mtime": 1784929213.920342,
+    "hash": "ca391c1fdcf419019dacddc184a90c16"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\features\\dashboard.js": {
+    "mtime": 1784095326.084621,
+    "hash": "113b6d29388ab9a485061a6bfaf7ad9c"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\features\\finance.js": {
+    "mtime": 1784392416.91942,
+    "hash": "8a315e5f243c755594a6e8a32fb4ab8a"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\features\\services.js": {
+    "mtime": 1784352557.8825788,
+    "hash": "ba2ca63b3e234a4fab7012e59a2bcf2f"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\features\\sync.js": {
+    "mtime": 1784392406.234347,
+    "hash": "5d51ab91d3ebb8e71cbbd42f0803f78e"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\ui\\formatting.js": {
+    "mtime": 1784302889.7998328,
+    "hash": "bd26283fda31dc930e1c0207fcc1dc15"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\ui\\notifications.js": {
+    "mtime": 1783988672.990778,
+    "hash": "0caa63d2fde57ea2347bd635b38cb44f"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\ui\\validation.js": {
+    "mtime": 1783988672.9917777,
+    "hash": "9bed179a7cdb0db6d5068d54218a6652"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\bootstrap.php": {
+    "mtime": 1783991874.6375666,
+    "hash": "eafb1883ed2563230820e334ab15fa3a"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Architecture\\DomainPurityTest.php": {
+    "mtime": 1784923510.1069717,
+    "hash": "7bfa667c94da0e92c9c24568977b5d93"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Architecture\\FileSizeGuardrailTest.php": {
+    "mtime": 1784928216.058852,
+    "hash": "0180b166da64a0d511726fe16788b4f1"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Architecture\\NoWordPressDependencyTest.php": {
+    "mtime": 1784923479.3762188,
+    "hash": "25de309bff15c65637317d401e81cc76"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Architecture\\Support\\PhpFileScanner.php": {
+    "mtime": 1784923467.638932,
+    "hash": "a01cf18af0ecca54e891ea4c243ebebf"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Domain\\Booking\\BookingTest.php": {
+    "mtime": 1783909601.1521323,
+    "hash": "f0f725e821584f0ec8ec007fc99b291a"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Domain\\ServicesCatalog\\ServiceTest.php": {
+    "mtime": 1783911198.6333144,
+    "hash": "5aaa0b8fb0f002ab388acd27252372a1"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Domain\\Team\\StaffMemberTest.php": {
+    "mtime": 1783911198.6348224,
+    "hash": "d84a84e2440e4d1c2408c358519a8274"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\E2E\\dashboard.spec.ts": {
+    "mtime": 1784929322.2675505,
+    "hash": "92d395e882eeb45f4b60e02a81098a2d"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\E2E\\finance.spec.ts": {
+    "mtime": 1784392661.1297803,
+    "hash": "d55821f998777d3bc85f0abc2156a0e9"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\E2E\\playwright.config.ts": {
+    "mtime": 1783934603.1589067,
+    "hash": "6d85c550dc88c5c38222ca175accc9d0"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\E2E\\sync.spec.ts": {
+    "mtime": 1783987237.1814108,
+    "hash": "619d7c57e5e3107b6d389fb1626abd10"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\E2E\\ux_audit.spec.ts": {
+    "mtime": 1784929245.599949,
+    "hash": "53224b70757475ba9133b0c5e585a6f6"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Integration\\Finance\\RebuildFinanceProjectionTest.php": {
+    "mtime": 1784932687.5832422,
+    "hash": "1acffc26800b0cbaa3bed08e105f6b38"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Integration\\Http\\BookingRoutesTest.php": {
+    "mtime": 1784933300.1406536,
+    "hash": "68e016f019b1bdd65136860f95eb2d5c"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Integration\\Http\\FinanceRoutesTest.php": {
+    "mtime": 1784928396.1748157,
+    "hash": "e142bff241b56b601e75d9f33f83e78d"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Integration\\Http\\ServicesRoutesTest.php": {
+    "mtime": 1784928372.7584703,
+    "hash": "337c8b7d0a95ff7f8888c03cd01a5614"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Integration\\Http\\SheetsRoutesTest.php": {
+    "mtime": 1784928411.7118976,
+    "hash": "f374a515018d52547de5f8439acf1baf"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Integration\\Http\\TeamRoutesTest.php": {
+    "mtime": 1784928384.3244176,
+    "hash": "8e0df1252fd9a7324501be9e520964e2"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Integration\\Sheets\\GoogleSheetsCsvReaderTest.php": {
+    "mtime": 1783976844.7332408,
+    "hash": "5437939605461eed71da4b5a0e20fcc7"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Integration\\Sheets\\PostgresSheetReplicaImporterTest.php": {
+    "mtime": 1784932716.347932,
+    "hash": "a1d339bf1c56c3070bba7b3ab5e13a90"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Integration\\Sheets\\SyncWorkerIntegrationTest.php": {
+    "mtime": 1784081302.5107613,
+    "hash": "11323c9c18cbc0a0538efcabc02fcba2"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Load\\concurrent-sync.ps1": {
+    "mtime": 1783992660.201135,
+    "hash": "ff5e1ecb215889bfe93287927bb2a038"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Support\\HttpTestCase.php": {
+    "mtime": 1784928339.0938318,
+    "hash": "cf8281a039c76fcb5b3d80fc8711747e"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Support\\MockGasStreamWrapper.php": {
+    "mtime": 1784928326.6741147,
+    "hash": "1df371c20951f144b30e28ec6a8a50f7"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Unit\\Domain\\Bitacora\\BitacoraPolicyTest.php": {
+    "mtime": 1784927012.055282,
+    "hash": "f45c4eb09be49b9080361b77fa4bc2da"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Unit\\Domain\\Bitacora\\BitacoraTest.php": {
+    "mtime": 1784927027.7667785,
+    "hash": "6a89e52e42e19d96fdc6691a3893a93f"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Unit\\Domain\\Bitacora\\PickupPointTest.php": {
+    "mtime": 1784926964.7597902,
+    "hash": "e3a35b5aa3ff36b4977942ee8430f5aa"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Unit\\Domain\\Bitacora\\RoutePlanTest.php": {
+    "mtime": 1784926994.2142725,
+    "hash": "78d8a47bcd9d3e584210a5a214495063"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Unit\\Domain\\Bitacora\\ServiceAddressTest.php": {
+    "mtime": 1784926974.4668238,
+    "hash": "dcafc6f661f94720362a588b01221454"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Unit\\Domain\\Bitacora\\TravelDurationTest.php": {
+    "mtime": 1784926982.7021787,
+    "hash": "ba151bcea146f2d24933111f12b49d4b"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Unit\\Domain\\Booking\\BookingConflictExceptionTest.php": {
+    "mtime": 1784927481.8648088,
+    "hash": "3ddce1ee1180630daddded5cd57301c5"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Unit\\Domain\\Booking\\BookingTimeRangeTest.php": {
+    "mtime": 1784927473.102053,
+    "hash": "4231f7fc63796845059d6fa69a67defc"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Unit\\Domain\\Finance\\MoneyTest.php": {
+    "mtime": 1784082968.6837068,
+    "hash": "45a5a4afa9eea9d5563bc714bf0a3787"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Unit\\Domain\\Finance\\PaymentMethodTest.php": {
+    "mtime": 1784923941.496833,
+    "hash": "45e93e008464b9dfe6563e19bd28aeeb"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Unit\\Domain\\Team\\AvailabilityCheckerTest.php": {
+    "mtime": 1784927355.7466986,
+    "hash": "6a9f5d74c9612d6cce03259e394440a3"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Unit\\Domain\\Team\\AvailabilityWindowTest.php": {
+    "mtime": 1784927342.878587,
+    "hash": "e057b19b5234bcb8dbbcac9aaadd1522"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tools\\audit-v1-v2.ps1": {
+    "mtime": 1784919814.987787,
+    "hash": "7fe36c10f0e15f1734a5931f2abb60d5"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tools\\import-sheets.php": {
+    "mtime": 1783912596.1188595,
+    "hash": "7f59c2b5f838a3cbe2a05abf348af1c5"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tools\\migrate.php": {
+    "mtime": 1783991884.1040697,
+    "hash": "638387f063a027e3ba1cf1cdbfb8129d"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tools\\migrate.ps1": {
+    "mtime": 1783991012.5450487,
+    "hash": "b10ce494c92ec716d4dfa193a10bf89c"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tools\\sync-worker.php": {
+    "mtime": 1784081288.4775586,
+    "hash": "4e046158d89e8067e3c8956267a6b478"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\var\\apply_mig_0011.php": {
+    "mtime": 1784092983.3398101,
+    "hash": "35681e15e15bed95d87ae26127d4ef38"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\analisis de mercado.md": {
+    "mtime": 1784257071.867985,
+    "hash": "7c905d439353999bdb067c11fff0bcd1"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\ARCHITECTURE.md": {
+    "mtime": 1783903836.7501085,
+    "hash": "61c320249fe7c38645fac54a3894a84e"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docker-compose.yml": {
+    "mtime": 1784353981.8183,
+    "hash": "196f5f7aecce8ac4f55d88060ec159d9"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\PROJECT.md": {
+    "mtime": 1783945573.441509,
+    "hash": "5434b504f839fdd75a446439d8da2cac"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\README.md": {
+    "mtime": 1784384074.039034,
+    "hash": "ef4227dc25606b9aeca95725ff8abf0e"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\Se ha pegado el markdown(6) (1).md": {
+    "mtime": 1784259212.4406347,
+    "hash": "a1c77a6be059f13ad0988852d05cb657"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\Se ha pegado el markdown(6).md": {
+    "mtime": 1784259195.1781645,
+    "hash": "a1c77a6be059f13ad0988852d05cb657"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\TEST_READY.md": {
+    "mtime": 1783989935.9794214,
+    "hash": "7ef2ab23d82b05d6fcc52d7d91b2aa0f"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\audits\\deprecated-v1-components.md": {
+    "mtime": 1784923187.6783514,
+    "hash": "30d446fd43cb324aadb3f85e13c24616"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\audits\\migration-audit.md": {
+    "mtime": 1784919827.8358855,
+    "hash": "60bfc0c6ece9f6890b14594aa3af930b"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\audits\\MIGRATION_LOG.md": {
+    "mtime": 1784933382.5256107,
+    "hash": "91dee3375cef23ad2782e674ad546ea5"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\audits\\v2-audit-report.md": {
+    "mtime": 1783965435.0038521,
+    "hash": "0fdec9f080a319a92314c0a17297fa43"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\audits\\v2-walkthrough.md": {
+    "mtime": 1783987316.1256588,
+    "hash": "9bffa2841e335bb4e772a04f2cb6b542"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\business\\qamiluna-registration-kit.md": {
+    "mtime": 1784384687.3127005,
+    "hash": "baea199deaed282030f63beb2cacb8bb"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\plans\\v2-closure-checklist.md": {
+    "mtime": 1783989944.1642735,
+    "hash": "7d4a504e0ad98703c7334793c9cd916b"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\quality\\e2e-booking-flow-pending-2026-07-15.md": {
+    "mtime": 1784161502.1016243,
+    "hash": "e3cc588e05e83c59b00a1e3e09f9600c"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\runbooks\\gas-write-sync-activation.md": {
+    "mtime": 1784932816.1421883,
+    "hash": "82a8ecd2a9ef5aa0d42917b1401de1cb"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\playwright-report\\index.html": {
+    "mtime": 1784393047.100104,
+    "hash": "fbdb5d72bb5ab1d54834034143392fd8"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\E2E\\playwright-report\\index.html": {
+    "mtime": 1784933381.030822,
+    "hash": "9f38bb46eb702d088948db7a4f3efc41"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\671165142_17924457306276429_6794574309549150381_n.jpg": {
+    "mtime": 1784222286.561214,
+    "hash": "f848f8b7293da208e5df3eda36020356"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\temp\\finance-desktop.png": {
+    "mtime": 1784356355.628721,
+    "hash": "4c8412da5257a2f80e7a4c08cd0d87be"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\temp\\finance-mobile.png": {
+    "mtime": 1784356377.0846138,
+    "hash": "ca60ac75fa9e845a364bc17e390b172d"
+  }
+}

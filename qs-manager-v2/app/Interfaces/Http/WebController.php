@@ -69,93 +69,101 @@ final class WebController
     </div>
 
     <section id="finance-view">
-      <div class="finance-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <div class="finance-filters" style="display: flex; gap: 12px; align-items: center;">
-          <label>Desde: <input type="date" id="finance-from"></label>
-          <label>Hasta: <input type="date" id="finance-to"></label>
-          <label>Base:
-            <select id="finance-basis" disabled title="Por ahora solo se soporta modo caja estimado">
-              <option value="cash_estimated" selected>Caja (Estimado)</option>
+      <header class="finance-header">
+        <div>
+          <p class="finance-eyebrow">Resumen financiero</p>
+          <h2>¿Cómo va el estudio?</h2>
+          <p class="finance-header-copy">Compara lo vendido con el dinero recibido y los gastos del período.</p>
+        </div>
+        <div class="finance-filters">
+          <label>Desde <input type="date" id="finance-from"></label>
+          <label>Hasta <input type="date" id="finance-to"></label>
+          <label>Vista
+            <select id="finance-basis" disabled title="Por ahora solo se soporta dinero recibido estimado">
+              <option value="cash_estimated" selected>Dinero recibido</option>
             </select>
           </label>
           <button type="button" id="refresh-finance" class="secondary">Actualizar</button>
         </div>
-        <div class="finance-quality" id="finance-quality-indicator" style="font-size: 0.875rem; color: var(--color-gray-600);">
-          Cargando métricas...
+      </header>
+
+      <div class="finance-story" aria-live="polite">
+        <div class="finance-story-icon" aria-hidden="true">$</div>
+        <div>
+          <strong id="finance-story-title">Cargando resumen del período...</strong>
+          <p id="finance-story-copy">Estamos reuniendo ventas, cobros y egresos.</p>
         </div>
       </div>
 
       <div class="finance-dashboard-row">
-        <div class="finance-grid">
-          <div class="finance-card">
-            <div class="finance-card-title">Vendido (Contratado)</div>
-            <div class="finance-val" id="finance-val-contracted">$ 0</div>
-          </div>
-          <div class="finance-card">
-            <div class="finance-card-title">Cobrado (Ingresos)</div>
-            <div class="finance-val" id="finance-val-collected">$ 0</div>
-          </div>
-          <div class="finance-card">
-            <div class="finance-card-title">Por Cobrar</div>
-            <div class="finance-val" id="finance-val-receivable">$ 0</div>
-          </div>
-          <div class="finance-card">
-            <div class="finance-card-title">Costos Directos</div>
-            <div class="finance-val" id="finance-val-costs">$ 0</div>
-          </div>
-          <div class="finance-card">
-            <div class="finance-card-title">Gastos Operativos</div>
-            <div class="finance-val" id="finance-val-expenses">$ 0</div>
-          </div>
-          <div class="finance-card">
-            <div class="finance-card-title">Devoluciones</div>
-            <div class="finance-val" id="finance-val-refunds">$ 0</div>
-          </div>
-          <div class="finance-card highlight">
-            <div class="finance-card-title">Utilidad Neta</div>
-            <div class="finance-val" id="finance-val-net">$ 0</div>
-          </div>
-          <div class="finance-card highlight">
-            <div class="finance-card-title">Margen Operativo</div>
-            <div class="finance-val" id="finance-val-margin">0%</div>
-          </div>
+        <div class="finance-main">
+          <section class="finance-section" aria-labelledby="finance-flow-title">
+            <div class="finance-section-head">
+              <div><p class="finance-step">1. Flujo comercial</p><h3 id="finance-flow-title">De lo vendido a lo cobrado</h3></div>
+              <span class="finance-period-note">Las ventas pueden cobrarse en fechas diferentes.</span>
+            </div>
+            <div class="finance-flow-grid">
+              <div class="finance-card finance-card--sales"><div class="finance-card-title">Vendido</div><div class="finance-val" id="finance-val-contracted">$ 0</div><p>Valor total de los servicios registrados.</p></div>
+              <div class="finance-card finance-card--collected"><div class="finance-card-title">Dinero recibido</div><div class="finance-val" id="finance-val-collected">$ 0</div><p>Pagos y abonos que ya ingresaron.</p></div>
+              <div class="finance-card finance-card--committed"><div class="finance-card-title">Abonos comprometidos</div><div class="finance-val" id="finance-val-committed">$ 0</div><p>Abonos de servicios que todavía no han finalizado.</p></div>
+              <div class="finance-card finance-card--pending"><div class="finance-card-title">Pendiente de cobro</div><div class="finance-val" id="finance-val-receivable">$ 0</div><p>Parte vendida que todavía no aparece pagada.</p></div>
+            </div>
+          </section>
+
+          <section class="finance-section" aria-labelledby="finance-result-title">
+            <div class="finance-section-head"><div><p class="finance-step">2. Resultado de caja</p><h3 id="finance-result-title">Lo que quedó después de egresos</h3></div></div>
+            <div class="finance-result-grid">
+              <div class="finance-card finance-card--realized"><div class="finance-card-title">Ingresos realizados</div><div class="finance-val" id="finance-val-realized">$ 0</div><p>Valor de servicios terminados en el período.</p></div>
+              <div class="finance-card finance-card--expense"><div class="finance-card-title">Pago a profesionales</div><div class="finance-val" id="finance-val-costs">$ 0</div><p>Costos asociados directamente a los servicios.</p></div>
+              <div class="finance-card finance-card--expense"><div class="finance-card-title">Gastos fijos</div><div class="finance-val" id="finance-val-fixed-expenses">$ 0</div><p>Arriendo y suscripciones mensuales confirmadas.</p><small id="finance-fixed-expense-status">Sin partidas pendientes</small></div>
+              <div class="finance-card finance-card--expense"><div class="finance-card-title">Otros gastos</div><div class="finance-val" id="finance-val-expenses">$ 0</div><p>Gastos variables pagados durante el período.</p></div>
+              <div class="finance-card finance-card--expense"><div class="finance-card-title">Devoluciones</div><div class="finance-val" id="finance-val-refunds">$ 0</div><p>Dinero devuelto a clientes.</p></div>
+              <div class="finance-card finance-card--result"><div class="finance-card-title">Resultado disponible</div><div class="finance-val" id="finance-val-net">$ 0</div><p>Recibido menos costos, gastos y devoluciones.</p><button type="button" class="finance-detail-button" id="finance-details-toggle" aria-expanded="false" aria-controls="finance-available-details">Ver detalle por servicio</button></div>
+              <div class="finance-card finance-card--margin"><div class="finance-card-title">Margen sobre lo cobrado</div><div class="finance-val" id="finance-val-margin">0%</div><p>Porcentaje del cobro que quedó disponible.</p></div>
+            </div>
+          </section>
         </div>
 
         <div class="panel chart-panel">
-          <div class="panel-head">
-            <h2>Análisis del Período</h2>
-          </div>
-          <div class="chart-container">
-            <canvas id="finance-chart"></canvas>
-          </div>
+          <div class="panel-head"><div><p class="finance-step">Vista rápida</p><h2>Cómo se mueve el dinero</h2></div></div>
+          <div class="chart-container"><canvas id="finance-chart"></canvas></div>
+          <p class="chart-help">La diferencia entre “Vendido” y “Recibido” corresponde a pagos pendientes.</p>
         </div>
       </div>
 
-      <div class="panel" style="margin-top: 2rem;">
-        <div class="panel-head">
-          <h2>Reconciliación vs Fuentes Crudas</h2>
+      <section class="panel finance-details hidden" id="finance-available-details" aria-labelledby="finance-details-title">
+        <div class="panel-head finance-details-head">
+          <div><p class="finance-step">Detalle del disponible</p><h2 id="finance-details-title">Servicios finalizados que generaron utilidad</h2><p>Los abonos de reservas futuras no se incluyen. La utilidad nace al finalizar el servicio y registrar su costo profesional.</p></div>
+          <button type="button" class="secondary" id="finance-details-close">Cerrar</button>
         </div>
         <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Categoría</th>
-                <th style="text-align: right;">Total Sheets</th>
-                <th style="text-align: right;">Total BD</th>
-                <th style="text-align: right;">Diferencia</th>
-                <th style="text-align: right;">Filas Excluidas</th>
-                <th style="text-align: center;">Estado</th>
-              </tr>
-            </thead>
-            <tbody id="finance-reconciliation-body">
-              <tr><td colspan="6" style="text-align: center;">Cargando reconciliación...</td></tr>
-            </tbody>
+          <table class="data-table finance-details-table">
+            <thead><tr><th>Fecha servicio</th><th>Cliente</th><th>Servicio finalizado</th><th class="numeric">Ingreso realizado</th><th class="numeric">Costo profesional</th><th class="numeric">Utilidad realizada</th></tr></thead>
+            <tbody id="finance-details-body"><tr><td colspan="6">Abre el detalle para consultar los servicios.</td></tr></tbody>
+            <tfoot><tr><th colspan="3">Subtotal por servicios finalizados</th><th class="numeric" id="finance-details-realized">$ 0</th><th class="numeric" id="finance-details-costs">$ 0</th><th class="numeric" id="finance-details-service-total">$ 0</th></tr></tfoot>
           </table>
         </div>
-        <div class="reconciliation-notes" style="margin-top: 1rem; font-size: 0.875rem; color: var(--color-gray-600); line-height: 1.4;">
-          <p>💡 <strong>Nota sobre Descuadre:</strong> Un descuadre de $-45.000 (Ventas de Servicios y Pagos de Clientes) es normal si existen talleres registrados en el periodo. Los ingresos por talleres se integran en la base de datos pero provienen de la pestaña externa "Talleres", la cual no está incluida en los totales crudos de la Bitácora/Flujo de Caja principal.</p>
+        <div class="finance-details-adjustments">
+          <h3>Deducciones generales del período</h3>
+          <dl><div><dt>Costos sin abono asociado</dt><dd id="finance-details-unmatched">$ 0</dd></div><div><dt>Gastos fijos</dt><dd id="finance-details-fixed-expenses">$ 0</dd></div><div><dt>Otros gastos</dt><dd id="finance-details-expenses">$ 0</dd></div><div><dt>Devoluciones</dt><dd id="finance-details-refunds">$ 0</dd></div><div class="finance-details-final"><dt>Resultado disponible final</dt><dd id="finance-details-net">$ 0</dd></div></dl>
         </div>
-      </div>
+      </section>
+
+      <details class="panel finance-audit" id="finance-audit">
+        <summary>
+          <span><strong>Calidad de los datos</strong><small>Compara las planillas originales con la información usada por la aplicación.</small></span>
+          <span class="finance-quality" id="finance-quality-indicator">Comprobando...</span>
+        </summary>
+        <div class="finance-audit-content">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Concepto</th><th class="numeric">En planillas</th><th class="numeric">En la aplicación</th><th class="numeric">Diferencia</th><th class="numeric">Omitidas</th><th>Revisión</th></tr></thead>
+              <tbody id="finance-reconciliation-body"><tr><td colspan="6">Comprobando información...</td></tr></tbody>
+            </table>
+          </div>
+          <div class="reconciliation-notes"><strong>¿Qué significa?</strong><p>“Cuadra” indica que ambas fuentes tienen el mismo total. “Revisar” muestra una diferencia real que debe investigarse; no modifica automáticamente las planillas.</p></div>
+        </div>
+      </details>
     </section>
 
     <section id="services-view" class="workspace hidden">
@@ -229,10 +237,10 @@ final class WebController
             <input name="duration_minutes" type="number" min="1" max="1440">
           </label>
           <label>Precio venta
-            <input name="sale_price" type="number" min="0" step="1">
+            <input name="sale_price" type="number" min="0" step="1" required>
           </label>
           <label>Costo total
-            <input name="total_cost" type="number" min="0" step="1">
+            <input name="total_cost" type="number" min="0" step="1" required>
           </label>
           <label>Utilidad
             <input name="utility" type="number" min="0" step="1">
@@ -293,6 +301,19 @@ final class WebController
             <input id="booking-filter-payment" placeholder="Parcial, pendiente">
           </label>
         </div>
+        <div class="booking-traffic-legend" aria-label="Semáforo de reservas">
+          <span><i class="traffic-dot completed"></i>Completada o pasada</span>
+          <span><i class="traffic-dot scheduled"></i>Faltan más de 7 días</span>
+          <span><i class="traffic-dot urgent"></i>Faltan 7 días o menos</span>
+          <span><i class="traffic-dot cancelled"></i>Cancelada</span>
+        </div>
+        <div class="booking-view-switch" role="group" aria-label="Vista de reservas">
+          <button type="button" class="active" data-booking-view="upcoming" aria-pressed="true">Próximas <span id="booking-upcoming-count">0</span></button>
+          <button type="button" data-booking-view="history" aria-pressed="false">Historial <span id="booking-history-count">0</span></button>
+        </div>
+        <div class="booking-list-heading">
+          <div><h3 id="booking-list-title">Próximas reservas</h3><p id="booking-list-copy">Ordenadas desde la atención pendiente más cercana.</p></div>
+        </div>
         <div class="table-wrap">
           <table class="booking-table">
             <colgroup>
@@ -301,7 +322,7 @@ final class WebController
             <thead>
               <tr>
                 <th>ID</th>
-                <th aria-sort="descending"><button type="button" class="sort-btn active" data-booking-sort="scheduled_for">Fecha <span class="sort-indicator">▼</span></button></th>
+                <th aria-sort="ascending"><button type="button" class="sort-btn active" data-booking-sort="scheduled_for">Fecha <span class="sort-indicator">▲</span></button></th>
                 <th>Hora</th>
                 <th><button type="button" class="sort-btn" data-booking-sort="customer_name">Cliente <span class="sort-indicator"></span></button></th>
                 <th>Telefono</th>

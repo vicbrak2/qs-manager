@@ -21,6 +21,9 @@ services:
       QDRANT_ENABLED: "false"
       WHATSAPP_ENABLED: "false"
       GAS_WEBAPP_URL: ""
+      SHEETS_WRITE_SYNC_ENABLED: "${SHEETS_WRITE_SYNC_ENABLED:-false}"
+      GAS_CATALOG_WEBAPP_URL: "${GAS_CATALOG_WEBAPP_URL:-}"
+      GAS_CATALOG_SECRET: "${GAS_CATALOG_SECRET:-}"
       SHEETS_READ_SYNC_ENABLED: "true"
     volumes:
       - ./:/var/www/app

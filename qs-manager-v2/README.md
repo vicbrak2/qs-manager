@@ -106,7 +106,9 @@ La V2 mantiene tablas locales para representar los Sheets como base historica no
 - `qs_sheet_cash_tracking_rows`: filas normalizadas de `Seguimiento Caja`.
 - `qs_sheet_operational_expense_rows`: filas normalizadas de `Gastos Operativos`.
 - `qs_sheet_agenda_month_rows`: filas normalizadas de los meses de `Agenda 2026`.
-- `qs_sheet_agenda_value_rows`: filas normalizadas de precios/base `Valores` de `Agenda 2026`.
+- `Servicios_Master` de Bitacora QS es la fuente operativa de identidad, nombre y precio publicado.
+- `Servicios` de Seguimiento Contable conserva el desglose financiero de costos y utilidad.
+- `Valores` de Agenda 2026 queda excluida del flujo de sincronizacion; su tabla historica se conserva solo por compatibilidad y auditoria.
 - `qs_sheet_workshop_rows`: filas normalizadas de `Talleres` de `Agenda 2026`.
 
 El dominio operativo sigue en tablas propias (`qs_services`, `qs_staff`, `qs_bookings`) y conserva referencias de origen (`source_sheet`, `source_row`, estados GAS) sin depender de Google para funcionar.
@@ -125,11 +127,24 @@ En Docker, el servicio `worker` ya corre el script:
 docker exec qs-manager-v2-worker php tools/sync-worker.php
 ```
 
-`SHEETS_READ_SYNC_ENABLED=true` habilita la lectura de CSV export desde Google Sheets. `sheets_write_sync` permanece deshabilitado.
+`SHEETS_READ_SYNC_ENABLED=true` habilita la lectura de CSV export desde Google Sheets. La escritura del catalogo permanece deshabilitada salvo que se configuren explicitamente las variables descritas abajo.
 
 ## Apps Script / GAS
 
-El archivo `../tools/qs-manager-v2-webapp.gs` contiene un `doPost(e)` seguro para desplegar como Web App de Apps Script cuando se quiera sincronizar bookings hacia la Bitacora.
+El archivo `../tools/qs-manager-v2-webapp.gs` contiene dos acciones del Web App:
+
+- La accion por defecto mantiene el upsert de bookings hacia Bitacora.
+- `action=create_service` publica un alta idempotente en `Servicios` (Seguimiento Contable) y `Servicios_Master` (BitacoraQS).
+
+La escritura de servicios requiere `QS_MANAGER_CATALOG_API_KEY` en Script Properties y las siguientes variables locales:
+
+```dotenv
+SHEETS_WRITE_SYNC_ENABLED=true
+GAS_CATALOG_WEBAPP_URL=https://script.google.com/macros/s/.../exec
+GAS_CATALOG_SECRET=<mismo valor configurado en Script Properties>
+```
+
+El secreto se guarda solo en `.env` (ignorado por Git). Ante un fallo de GAS, la API devuelve `502` y no crea una fila local. Tras una escritura correcta, PostgreSQL recibe una proyeccion identificada como `Servicios_Master` y se encola el sync de lectura completo.
 
 Por defecto `GAS_WEBAPP_URL` esta vacio en `docker-compose.yml`, asi que `POST /api/v1/bookings/{id}/sync-gas` responde `skipped` y no realiza llamadas externas. Para activar la integracion, define `GAS_WEBAPP_URL` con la URL desplegada de Apps Script y reinicia el contenedor `app`.
 
