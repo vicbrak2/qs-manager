@@ -17,7 +17,7 @@ Todas las respuestas usan JSON:
 
 ### `GET ?action=bootstrap&api_version=1`
 
-Devuelve servicios activos, tipos, profesionales seleccionables y metadatos de vigencia. No devuelve correos privados de profesionales.
+Devuelve servicios activos disponibles para el selector del cotizador, tipos, profesionales seleccionables y metadatos de vigencia. La opcion `Todos` pertenece al selector de tipo de servicio; al seleccionarla, el selector de servicios debe listar todos los servicios activos sin filtro por tipo. El selector de servicios muestra solo el nombre del servicio, sin precios. No devuelve correos privados de profesionales.
 
 ### `GET ?action=travel_quote&api_version=1&commune=...`
 

@@ -8,6 +8,9 @@ interface ServiceRepository
 {
     public function save(Service $service): Service;
 
+    /** @param array<string, mixed> $data */
+    public function saveMasterProjection(array $data): Service;
+
     /**
      * @return list<Service>
      */

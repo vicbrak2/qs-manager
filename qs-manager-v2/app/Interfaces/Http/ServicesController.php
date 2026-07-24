@@ -10,6 +10,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use QSManager\Application\ServicesCatalog\CreateService;
 use QSManager\Application\ServicesCatalog\CreateServiceCommand;
 use QSManager\Application\ServicesCatalog\ListServices;
+use QSManager\Application\ServicesCatalog\ServiceCatalogGateway;
+use QSManager\Application\Sheets\SyncQueue;
 use QSManager\Domain\ServicesCatalog\ServiceRepository;
 use QSManager\Interfaces\Http\Validation\ServiceRequestValidator;
 use QSManager\Interfaces\Http\Validation\ValidationException;
@@ -22,6 +24,8 @@ final class ServicesController
         private readonly ListServices $listServices,
         private readonly ServiceRepository $services,
         private readonly ServiceRequestValidator $validator = new ServiceRequestValidator(),
+        private readonly ?ServiceCatalogGateway $catalogGateway = null,
+        private readonly ?SyncQueue $syncQueue = null,
     ) {
     }
 
@@ -53,19 +57,72 @@ final class ServicesController
 
         try {
             $validated = $this->validator->validate($body);
-            $service = $this->createService->execute(new CreateServiceCommand(
-                $validated['name'],
-                $validated['category'],
-                $validated['duration_minutes'],
-                $validated['quantity'],
-            ));
+            if ($this->catalogGateway !== null) {
+                $missing = [];
+                foreach (['sale_price' => 'Sale price is required.', 'total_cost' => 'Total cost is required.'] as $field => $message) {
+                    if (!array_key_exists($field, $body) || $body[$field] === null || $body[$field] === '') {
+                        $missing[$field][] = $message;
+                    }
+                }
+                if ($missing !== []) {
+                    throw new ValidationException($missing);
+                }
+                $published = $this->catalogGateway->create($validated, bin2hex(random_bytes(16)));
+                $service = $this->services->saveMasterProjection($this->masterProjection($validated, $published));
+                try {
+                    $sync = $this->syncQueue?->enqueueOrReuse('service_catalog_write');
+                } catch (\Throwable) {
+                    // The source-of-truth write already succeeded. A later manual sync can recover the projection.
+                    $sync = null;
+                }
+            } else {
+                $service = $this->createService->execute(new CreateServiceCommand(
+                    $validated['name'],
+                    $validated['category'],
+                    $validated['duration_minutes'],
+                    $validated['quantity'],
+                ));
+                $sync = null;
+            }
         } catch (ValidationException $exception) {
             return $this->validationError($response, $exception->errors());
         } catch (InvalidArgumentException $exception) {
             return $this->json($response, ['error' => $exception->getMessage()], 422);
+        } catch (\RuntimeException $exception) {
+            return $this->json($response, ['error' => $exception->getMessage()], 502);
         }
 
-        return $this->json($response, ['service' => $service->toArray()], 201);
+        return $this->json($response, [
+            'service' => $service->toArray(),
+            'published_to_sheets' => $this->catalogGateway !== null,
+            'sync_run_id' => $sync?->runId,
+        ], 201);
+    }
+
+    /** @param array<string, mixed> $validated @param array<string, mixed> $published */
+    private function masterProjection(array $validated, array $published): array
+    {
+        if (empty($published['service_id']) || (int) ($published['master_row'] ?? 0) < 2) {
+            throw new \RuntimeException('GAS no devolvio una referencia valida de Servicios_Master.');
+        }
+        $salePrice = (int) $validated['sale_price'];
+        $totalCost = (int) $validated['total_cost'];
+        $utility = $salePrice - $totalCost;
+        $margin = $salePrice === 0 ? 0.0 : $utility / $salePrice;
+
+        return [
+            ...$validated,
+            'service_id' => (string) ($published['service_id'] ?? ''),
+            'master_row' => (int) ($published['master_row'] ?? 0),
+            'utility' => $utility,
+            'margin_percent' => $margin,
+            'margin_status' => (string) ($published['margin_status'] ?? $this->marginStatus($margin)),
+        ];
+    }
+
+    private function marginStatus(float $margin): string
+    {
+        return $margin >= 0.4 ? 'AZUL' : ($margin >= 0.3 ? 'VERDE' : ($margin < 0.2 ? 'ROJO' : 'AMARILLO'));
     }
 
     public function update(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface

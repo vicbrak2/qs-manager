@@ -54,6 +54,49 @@ final class PostgresServiceRepository implements ServiceRepository
         }
     }
 
+    public function saveMasterProjection(array $data): Service
+    {
+        $statement = $this->connection->prepare(
+            "insert into qs_services (
+                sheet_external_id, name, category, duration_minutes, quantity, active,
+                sale_price, total_cost, utility, margin_percent, margin_status, source_sheet, source_row
+             ) values (
+                :sheet_external_id, :name, :category, :duration_minutes, :quantity, true,
+                :sale_price, :total_cost, :utility, :margin_percent, :margin_status, 'Servicios_Master', :source_row
+             )
+             on conflict (source_sheet, source_row) where source_sheet is not null and source_row is not null
+             do update set
+                sheet_external_id = excluded.sheet_external_id,
+                name = excluded.name,
+                category = excluded.category,
+                duration_minutes = excluded.duration_minutes,
+                quantity = excluded.quantity,
+                active = excluded.active,
+                sale_price = excluded.sale_price,
+                total_cost = excluded.total_cost,
+                utility = excluded.utility,
+                margin_percent = excluded.margin_percent,
+                margin_status = excluded.margin_status
+             returning id, name, category, duration_minutes, quantity, active, sale_price, total_cost, utility,
+                       margin_percent, margin_status, source_sheet, source_row"
+        );
+        $statement->execute([
+            'sheet_external_id' => $data['service_id'],
+            'name' => $data['name'],
+            'category' => $data['category'],
+            'duration_minutes' => $data['duration_minutes'],
+            'quantity' => $data['quantity'],
+            'sale_price' => $data['sale_price'],
+            'total_cost' => $data['total_cost'],
+            'utility' => $data['utility'],
+            'margin_percent' => $data['margin_percent'],
+            'margin_status' => $data['margin_status'],
+            'source_row' => $data['master_row'],
+        ]);
+
+        return $this->fromRow($statement->fetch());
+    }
+
     public function findAll(): array
     {
         $statement = $this->connection->query(
