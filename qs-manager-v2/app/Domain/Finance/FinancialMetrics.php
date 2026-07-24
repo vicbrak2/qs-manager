@@ -9,8 +9,11 @@ final class FinancialMetrics
     public function __construct(
         public readonly Money $contractedSales,
         public readonly Money $collectedRevenue,
+        public readonly Money $committedDeposits,
+        public readonly Money $realizedRevenue,
         public readonly Money $directCosts,
         public readonly Money $operatingExpenses,
+        public readonly Money $fixedExpenses,
         public readonly Money $refunds,
     ) {
     }
@@ -26,15 +29,16 @@ final class FinancialMetrics
 
     public function netResult(): Money
     {
-        return $this->collectedRevenue
+        return $this->realizedRevenue
             ->subtract($this->directCosts)
             ->subtract($this->operatingExpenses)
+            ->subtract($this->fixedExpenses)
             ->subtract($this->refunds);
     }
 
     public function operatingMargin(): ?float
     {
-        $revenue = $this->collectedRevenue->amount();
+        $revenue = $this->realizedRevenue->amount();
         if ($revenue === 0) {
             return null;
         }
@@ -47,9 +51,12 @@ final class FinancialMetrics
         return [
             'contracted_sales' => $this->contractedSales->amount(),
             'collected_revenue' => $this->collectedRevenue->amount(),
+            'committed_deposits' => $this->committedDeposits->amount(),
+            'realized_revenue' => $this->realizedRevenue->amount(),
             'accounts_receivable' => $this->accountsReceivable()->amount(),
             'direct_costs' => $this->directCosts->amount(),
             'operating_expenses' => $this->operatingExpenses->amount(),
+            'fixed_expenses' => $this->fixedExpenses->amount(),
             'refunds' => $this->refunds->amount(),
             'net_result' => $this->netResult()->amount(),
             'operating_margin' => $this->operatingMargin(),

@@ -7,7 +7,10 @@ namespace QSManager\Tests\Integration\Finance;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use QSManager\Application\Finance\RebuildFinanceProjection;
+use QSManager\Domain\Finance\AccountingBasis;
+use QSManager\Domain\Finance\FinancePeriod;
 use QSManager\Infrastructure\Database\ConnectionFactory;
+use QSManager\Infrastructure\Persistence\Postgres\PostgresFinanceReadRepository;
 
 final class RebuildFinanceProjectionTest extends TestCase
 {
@@ -219,7 +222,7 @@ final class RebuildFinanceProjectionTest extends TestCase
         $sheetTotalCosts = $this->pdo->query("
             SELECT COALESCE(SUM(operating_expenses), 0)::numeric(12,2)::text 
             FROM qs_sheet_cash_tracking_rows 
-            WHERE lower(trim(service_status)) IN ('realizada', 'confirmado', 'realizado', 'confirmada')
+            WHERE lower(trim(service_status)) IN ('realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada')
             AND operating_expenses > 0
         ")->fetchColumn();
 
@@ -228,7 +231,7 @@ final class RebuildFinanceProjectionTest extends TestCase
             FROM qs_finance_entries WHERE entry_type = 'direct_cost'
         ")->fetchColumn();
 
-        $this->assertEquals('3000.00', $sheetTotalCosts); // 1000 + 2000
+        $this->assertEquals('1000.00', $sheetTotalCosts); // Confirmed services do not realize costs or profit yet.
         $this->assertSame($sheetTotalCosts, $projectedTotalCosts, "Cost totals must match");
 
         // 4. Operational Expenses
@@ -260,5 +263,110 @@ final class RebuildFinanceProjectionTest extends TestCase
 
         $this->assertEquals('5000.00', $sheetTotalRefunds);
         $this->assertSame($sheetTotalRefunds, $projectedTotalRefunds, "Refund totals must match");
+    }
+
+    public function testReconciliationIncludesFallbackSourcesAndExecutedStatuses(): void
+    {
+        $this->pdo->exec("INSERT INTO qs_sheet_import_runs (id, source_id, status) VALUES (1, 1, 'completed'), (2, 3, 'completed'), (3, 4, 'completed'), (4, 5, 'completed')");
+        $this->pdo->exec("
+            INSERT INTO qs_sheet_cash_tracking_rows
+                (import_run_id, source_row, service_external_id, service_date, service_status, total_services)
+            VALUES (1, 2, 'CASH-1', '2026-07-01', 'Ejecutado', 10000)
+        ");
+        $this->pdo->exec("
+            INSERT INTO qs_sheet_bitacora_rows
+                (import_run_id, source_row, qs_external_id, service_date, service_status, total_service)
+            VALUES (2, 2, 'BIT-1', '2026-07-02', 'Terminado', 20000)
+        ");
+        $this->pdo->exec("
+            INSERT INTO qs_sheet_agenda_month_rows
+                (import_run_id, source_sheet, source_row, calendar_event_id, service_date, event_status, total_service)
+            VALUES (3, 'Julio', 2, 'AGENDA-1', '2026-07-03', 'Realizada', 30000)
+        ");
+        $this->pdo->exec("
+            INSERT INTO qs_sheet_workshop_rows
+                (import_run_id, source_row, workshop_date, customer_name, payment_amount)
+            VALUES (4, 2, '2026-07-04', 'Participante', 40000)
+        ");
+        $this->pdo->exec("INSERT INTO qs_sync_runs (id, status, mode) VALUES (99, 'completed', 'write')");
+
+        $this->projection->rebuild(99);
+
+        $repository = new PostgresFinanceReadRepository($this->pdo);
+        $reconciliation = $repository->reconciliation(
+            FinancePeriod::create('2026-07-01', '2026-07-31'),
+            AccountingBasis::CASH_ESTIMATED,
+        );
+
+        self::assertSame(100000, $reconciliation['service_revenue']['sheet_total']);
+        self::assertSame(100000, $reconciliation['service_revenue']['projected_total']);
+        self::assertSame(0, $reconciliation['service_revenue']['difference']);
+    }
+
+    public function testFixedExpensesProjectMonthlyConfirmedEntries(): void
+    {
+        $this->pdo->exec("
+            INSERT INTO qs_sheet_sources (id, spreadsheet_id, spreadsheet_title, sheet_name, purpose)
+            VALUES (6, 'mock', 'mock', 'Gastos_Fijos', 'fixed_expenses')
+        ");
+        $this->pdo->exec("INSERT INTO qs_sheet_import_runs (id, source_id, status) VALUES (6, 6, 'completed')");
+
+        // Solo la fila Confirmado + Mensual + monto > 0 debe proyectarse.
+        $this->pdo->exec("
+            INSERT INTO qs_sheet_fixed_expense_rows
+                (import_run_id, source_row, concept, category, amount, expense_type, periodicity, expense_status, base_period)
+            VALUES
+                (6, 2, 'Arriendo estudio', 'Infraestructura', 350000, 'fijo', 'Mensual', 'Confirmado', '2026-06'),
+                (6, 3, 'Suscripcion en evaluacion', 'Software', 20000, 'fijo', 'Mensual', 'Pendiente', '2026-06'),
+                (6, 4, 'Patente anual', 'Legal', 90000, 'fijo', 'Anual', 'Confirmado', '2026-06'),
+                (6, 5, 'Item sin monto', 'Otros', 0, 'fijo', 'Mensual', 'Confirmado', '2026-06')
+        ");
+        $this->pdo->exec("INSERT INTO qs_sync_runs (id, status, mode) VALUES (99, 'completed', 'write')");
+
+        $this->projection->rebuild(99);
+
+        $concepts = $this->pdo->query(
+            "SELECT DISTINCT metadata->>'concept' FROM qs_finance_entries WHERE entry_type = 'fixed_expense'"
+        )->fetchAll(PDO::FETCH_COLUMN);
+        $this->assertSame(['Arriendo estudio'], $concepts);
+
+        // Un entry por mes desde base_period hasta el mes actual + 24, todos
+        // por el monto mensual. El horizonte depende de current_date, asi que
+        // el conteo esperado se calcula con la misma aritmetica de Postgres.
+        $summary = $this->pdo->query("
+            SELECT COUNT(*) AS entries,
+                   MIN(occurred_on)::text AS first_month,
+                   MAX(occurred_on)::text AS last_month,
+                   COUNT(*) FILTER (WHERE amount <> 350000) AS wrong_amounts
+            FROM qs_finance_entries WHERE entry_type = 'fixed_expense'
+        ")->fetch(PDO::FETCH_ASSOC);
+
+        $expected = $this->pdo->query("
+            SELECT ((extract(year FROM age(horizon, date '2026-06-01')) * 12
+                   + extract(month FROM age(horizon, date '2026-06-01')))::int + 1) AS months,
+                   horizon::date::text AS last_month
+            FROM (SELECT date_trunc('month', current_date) + interval '24 months' AS horizon) h
+        ")->fetch(PDO::FETCH_ASSOC);
+
+        $this->assertSame('2026-06-01', $summary['first_month']);
+        $this->assertSame($expected['last_month'], $summary['last_month']);
+        $this->assertSame((int) $expected['months'], (int) $summary['entries']);
+        $this->assertSame(0, (int) $summary['wrong_amounts']);
+
+        // El dashboard de un mes cualquiera del rango imputa exactamente una
+        // mensualidad del gasto fijo.
+        $repository = new PostgresFinanceReadRepository($this->pdo);
+        $metrics = $repository->dashboard(
+            FinancePeriod::create('2026-07-01', '2026-07-31'),
+            AccountingBasis::CASH_ESTIMATED,
+        )->toArray();
+        $this->assertSame(350000, $metrics['fixed_expenses']);
+
+        // Idempotencia: reconstruir no duplica mensualidades.
+        $this->projection->rebuild(99);
+        $count = (int) $this->pdo->query(
+            "SELECT COUNT(*) FROM qs_finance_entries WHERE entry_type = 'fixed_expense'"
+        )->fetchColumn();
+        $this->assertSame((int) $expected['months'], $count);
     }
 }

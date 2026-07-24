@@ -20,6 +20,7 @@ final class FinanceController
     public function register(App $app): void
     {
         $app->get('/api/v1/finance/dashboard', [$this, 'dashboard']);
+        $app->get('/api/v1/finance/available-details', [$this, 'availableDetails']);
     }
 
     public function dashboard(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
@@ -83,6 +84,61 @@ final class FinanceController
         ];
 
         return $this->json($response, $payload);
+    }
+
+    public function availableDetails(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $validation = $this->validatedPeriod($request);
+        if ($validation instanceof ResponseInterface) {
+            return $validation;
+        }
+
+        [$period, $basis] = $validation;
+
+        return $this->json($response, [
+            'period' => [
+                'from' => $period->from()->format('Y-m-d'),
+                'to' => $period->to()->format('Y-m-d'),
+                'basis' => $basis->value,
+            ],
+            ...$this->repository->availableDetails($period, $basis),
+        ]);
+    }
+
+    /** @return array{FinancePeriod, AccountingBasis}|ResponseInterface */
+    private function validatedPeriod(ServerRequestInterface $request): array|ResponseInterface
+    {
+        $params = $request->getQueryParams();
+        $tz = new \DateTimeZone('America/Santiago');
+        $from = $params['from'] ?? (new \DateTimeImmutable('now', $tz))->format('Y-m-01');
+        $to = $params['to'] ?? (new \DateTimeImmutable('now', $tz))->format('Y-m-t');
+        $basisRaw = $params['basis'] ?? 'cash_estimated';
+
+        if ($basisRaw !== 'cash_estimated') {
+            return $this->json(new \Slim\Psr7\Response(), [
+                'error' => 'Invalid basis.',
+                'details' => 'basis must be cash_estimated',
+            ], 422);
+        }
+
+        try {
+            $period = FinancePeriod::create($from, $to);
+        } catch (\InvalidArgumentException $e) {
+            return $this->json(new \Slim\Psr7\Response(), [
+                'error' => 'Invalid date format or range.',
+                'details' => $e->getMessage(),
+            ], 422);
+        }
+
+        $diff = $period->from()->diff($period->to());
+        if ($diff->y * 12 + $diff->m > 24) {
+            return $this->json(new \Slim\Psr7\Response(), [
+                'error' => 'Date range too large.',
+                'details' => 'The maximum allowed date range is 24 months.',
+            ], 422);
+        }
+
+        return [$period, AccountingBasis::CASH_ESTIMATED];
     }
 
     private function json(ResponseInterface $response, array $payload, int $status = 200): ResponseInterface

@@ -34,4 +34,9 @@ interface FinanceReadRepository
         FinancePeriod $period,
         AccountingBasis $basis
     ): array;
+
+    public function availableDetails(
+        FinancePeriod $period,
+        AccountingBasis $basis
+    ): array;
 }
