@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 namespace QSManager\Infrastructure\Http;
 
+use QSManager\Application\Bitacora\SaveBitacora;
 use QSManager\Application\Booking\CreateBooking;
 use QSManager\Application\Booking\ListBookings;
 use QSManager\Application\Booking\SyncBookingToGas;
 use QSManager\Application\ServicesCatalog\CreateService;
 use QSManager\Application\ServicesCatalog\ListServices;
+use QSManager\Application\Team\CheckStaffAvailability;
 use QSManager\Application\Team\CreateStaffMember;
 use QSManager\Application\Team\ListStaffMembers;
 use QSManager\Infrastructure\Database\ConnectionFactory;
 use QSManager\Infrastructure\Gas\GasBookingPayloadMapper;
 use QSManager\Infrastructure\Gas\HttpGasBookingGateway;
 use QSManager\Infrastructure\Gas\HttpGasServiceCatalogGateway;
+use QSManager\Domain\Bitacora\BitacoraPolicy;
+use QSManager\Domain\Team\AvailabilityChecker;
+use QSManager\Infrastructure\Persistence\Postgres\PostgresBitacoraRepository;
 use QSManager\Infrastructure\Persistence\Postgres\PostgresBookingRepository;
 use QSManager\Infrastructure\Persistence\Postgres\PostgresServiceRepository;
 use QSManager\Infrastructure\Persistence\Postgres\PostgresStaffRepository;
@@ -23,6 +28,7 @@ use QSManager\Infrastructure\Sheets\PostgresSheetReplicaImporter;
 use QSManager\Infrastructure\Sheets\PostgresSyncQueue;
 use QSManager\Infrastructure\Stubs\LocalAgentResponder;
 use QSManager\Infrastructure\Persistence\Postgres\PostgresFinanceReadRepository;
+use QSManager\Interfaces\Http\BitacoraController;
 use QSManager\Interfaces\Http\BookingController;
 use QSManager\Interfaces\Http\FinanceController;
 use QSManager\Interfaces\Http\HealthController;
@@ -30,6 +36,7 @@ use QSManager\Interfaces\Http\ModulesController;
 use QSManager\Interfaces\Http\ServicesController;
 use QSManager\Interfaces\Http\SheetSyncController;
 use QSManager\Interfaces\Http\TeamController;
+use QSManager\Interfaces\Http\Validation\BitacoraRequestValidator;
 use QSManager\Interfaces\Http\Validation\BookingRequestValidator;
 use QSManager\Interfaces\Http\WebController;
 use Slim\App;
@@ -79,11 +86,19 @@ final class AppFactory
         (new TeamController(
             new CreateStaffMember($staffRepository),
             new ListStaffMembers($staffRepository),
+            $staffRepository,
+            new CheckStaffAvailability($bookingRepository, new AvailabilityChecker()),
         ))->register($app);
         (new SheetSyncController(
             $syncQueue,
             $connection,
             self::envBool('SHEETS_READ_SYNC_ENABLED', false),
+        ))->register($app);
+        $bitacoraRepository = new PostgresBitacoraRepository($connection);
+        (new BitacoraController(
+            new SaveBitacora($bitacoraRepository, new BitacoraPolicy()),
+            new BitacoraRequestValidator($staffRepository),
+            $bitacoraRepository,
         ))->register($app);
         (new BookingController(
             new CreateBooking($bookingRepository, $serviceRepository),

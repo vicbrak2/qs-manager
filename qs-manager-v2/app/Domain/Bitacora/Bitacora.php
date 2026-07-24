@@ -117,4 +117,32 @@ final class Bitacora
     {
         return $this->precioClienteClp - $this->costoStaffClp;
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'fecha_servicio' => $this->fechaServicio,
+            'tipo_servicio' => $this->tipoServicio,
+            'mua_id' => $this->muaId,
+            'estilista_id' => $this->estilistaId,
+            'clienta_nombre' => $this->clientaNombre,
+            'direccion_servicio' => $this->serviceAddress->value(),
+            'route_plan' => $this->routePlan->toArray(),
+            'notas_logisticas' => $this->notasLogisticas,
+            'costo_staff_clp' => $this->costoStaffClp,
+            'precio_cliente_clp' => $this->precioClienteClp,
+            'projected_margin_clp' => $this->projectedMarginClp(),
+            'notes' => array_map(static fn (TravelNote $note): array => [
+                'message' => $note->message(),
+                'author_user_id' => $note->authorUserId(),
+                'created_at' => $note->createdAt()->format(DATE_ATOM),
+            ], $this->notes),
+            'created_at' => $this->createdAt->format(DATE_ATOM),
+            'updated_at' => $this->updatedAt->format(DATE_ATOM),
+        ];
+    }
 }

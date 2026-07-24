@@ -218,11 +218,21 @@ También en 2026-07-24, fuera del plan original:
   PUT de update no pasa por `CreateBooking` (pendiente menor si se quiere).
   Test: `testOverlappingBookingForSameStaffIsRejected`.
 
+- ✅ **Módulo Bitácora nativo de V2** (2026-07-24): migración `0015`
+  (`qs_bitacoras` + `qs_bitacora_notes`), `PostgresBitacoraRepository`,
+  `SaveBitacora` (aplica `BitacoraPolicy`), `BitacoraRequestValidator` y
+  `BitacoraController` con las mismas rutas funcionales que V1: CRUD,
+  `/{id}/summary` y `/{id}/notes`. Test: `BitacoraRoutesTest`. Con esto el
+  `BitacoraController` de V1 quedó redundante.
+- ✅ **Endpoint de disponibilidad de staff** (2026-07-24):
+  `GET /api/v1/team/{id}/availability?date=&time=&duration_minutes=` usa
+  `AvailabilityChecker`/`AvailabilityWindow` con las reservas activas como
+  fuente de ocupación (no hay agenda declarada de ventanas — decisión
+  registrada en `CheckStaffAvailability`). Test en `TeamRoutesTest`.
+
 Sigue pendiente:
-1. **Conectar el resto del dominio de Fase 3**: `Bitacora`/`BitacoraPolicy`
-   (falta persistencia + HTTP) y `AvailabilityChecker` (falta endpoint de
-   disponibilidad de staff). El chequeo de conflictos en el update de
-   reservas (PUT) tampoco existe aún.
+1. El chequeo de conflictos en el update de reservas (PUT) no existe aún
+   (solo en creación).
 2. **Borrar V1** cuando el usuario lo decida (hoy: no).
 3. **Discrepancia de puerto de Jarvis** — de otro repo (`llm-virtual-brain`),
    fuera del alcance de este plan.
