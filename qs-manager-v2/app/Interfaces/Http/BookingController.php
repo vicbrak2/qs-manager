@@ -11,6 +11,7 @@ use QSManager\Application\Booking\CreateBooking;
 use QSManager\Application\Booking\CreateBookingCommand;
 use QSManager\Application\Booking\ListBookings;
 use QSManager\Application\Booking\SyncBookingToGas;
+use QSManager\Domain\Booking\BookingConflictException;
 use QSManager\Domain\Booking\BookingRepository;
 use QSManager\Interfaces\Http\Validation\BookingRequestValidator;
 use QSManager\Interfaces\Http\Validation\ValidationException;
@@ -78,6 +79,8 @@ final class BookingController
             ));
         } catch (ValidationException $exception) {
             return $this->validationError($response, $exception->errors());
+        } catch (BookingConflictException $exception) {
+            return $this->validationError($response, ['scheduled_for' => [$exception->getMessage()]]);
         } catch (InvalidArgumentException $exception) {
             return $this->json($response, ['error' => $exception->getMessage()], 422);
         } catch (\PDOException $exception) {

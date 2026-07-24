@@ -14,6 +14,7 @@ use QSManager\Application\Team\ListStaffMembers;
 use QSManager\Infrastructure\Database\ConnectionFactory;
 use QSManager\Infrastructure\Gas\GasBookingPayloadMapper;
 use QSManager\Infrastructure\Gas\HttpGasBookingGateway;
+use QSManager\Infrastructure\Gas\HttpGasServiceCatalogGateway;
 use QSManager\Infrastructure\Persistence\Postgres\PostgresBookingRepository;
 use QSManager\Infrastructure\Persistence\Postgres\PostgresServiceRepository;
 use QSManager\Infrastructure\Persistence\Postgres\PostgresStaffRepository;
@@ -56,6 +57,13 @@ final class AppFactory
             $connection,
             new GoogleSheetsCsvReader(),
         );
+        $syncQueue = new PostgresSyncQueue($connection);
+        $catalogGateway = null;
+        $catalogUrl = self::envString('GAS_CATALOG_WEBAPP_URL');
+        $catalogSecret = self::envString('GAS_CATALOG_SECRET');
+        if (self::envBool('SHEETS_WRITE_SYNC_ENABLED', false) && $catalogUrl !== null && $catalogSecret !== null) {
+            $catalogGateway = new HttpGasServiceCatalogGateway($catalogUrl, $catalogSecret);
+        }
 
         (new WebController())->register($app);
         (new HealthController($connection))->register($app);
@@ -65,18 +73,20 @@ final class AppFactory
             new CreateService($serviceRepository),
             new ListServices($serviceRepository),
             $serviceRepository,
+            catalogGateway: $catalogGateway,
+            syncQueue: $syncQueue,
         ))->register($app);
         (new TeamController(
             new CreateStaffMember($staffRepository),
             new ListStaffMembers($staffRepository),
         ))->register($app);
         (new SheetSyncController(
-            new PostgresSyncQueue($connection),
+            $syncQueue,
             $connection,
             self::envBool('SHEETS_READ_SYNC_ENABLED', false),
         ))->register($app);
         (new BookingController(
-            new CreateBooking($bookingRepository),
+            new CreateBooking($bookingRepository, $serviceRepository),
             new ListBookings($bookingRepository),
             new BookingRequestValidator($serviceRepository, $staffRepository),
             new SyncBookingToGas($bookingRepository, $gasGateway),

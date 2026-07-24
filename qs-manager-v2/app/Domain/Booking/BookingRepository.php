@@ -23,4 +23,19 @@ interface BookingRepository
     public function delete(int $id): bool;
 
     public function recordGasSyncResult(int $id, string $status, ?string $message): void;
+
+    /**
+     * Reservas activas (status <> cancelled) de un staff cuyo inicio cae en
+     * la ventana [from, to] (ISO 8601), con la duracion en minutos de su
+     * servicio (defaultDurationMinutes cuando el servicio no declara una) y
+     * una etiqueta legible para reportar conflictos de horario.
+     *
+     * @return list<array{label: string, scheduled_for: string, duration_minutes: int}>
+     */
+    public function activeSlotsForStaffBetween(
+        int $staffId,
+        string $from,
+        string $to,
+        int $defaultDurationMinutes,
+    ): array;
 }

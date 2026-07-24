@@ -228,6 +228,43 @@ final class PostgresBookingRepository implements BookingRepository
         ]);
     }
 
+    public function activeSlotsForStaffBetween(
+        int $staffId,
+        string $from,
+        string $to,
+        int $defaultDurationMinutes,
+    ): array {
+        $statement = $this->connection->prepare(
+            "select b.scheduled_for,
+                    coalesce(s.duration_minutes, :default_duration) as duration_minutes,
+                    coalesce(s.name, 'Reserva') || ' — ' || coalesce(b.customer_name, 'sin clienta') as label
+             from qs_bookings b
+             left join qs_services s on s.id = b.service_id
+             where b.staff_id = :staff_id
+               and b.status <> 'cancelled'
+               and b.scheduled_for is not null
+               and b.scheduled_for between :from and :to"
+        );
+
+        $statement->execute([
+            'staff_id' => $staffId,
+            'default_duration' => $defaultDurationMinutes,
+            'from' => $from,
+            'to' => $to,
+        ]);
+
+        $slots = [];
+        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $slots[] = [
+                'label' => (string) $row['label'],
+                'scheduled_for' => (string) $row['scheduled_for'],
+                'duration_minutes' => (int) $row['duration_minutes'],
+            ];
+        }
+
+        return $slots;
+    }
+
     private function fromRow(array $row): Booking
     {
         return Booking::fromPersistence(
