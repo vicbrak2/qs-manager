@@ -230,11 +230,18 @@ También en 2026-07-24, fuera del plan original:
   fuente de ocupación (no hay agenda declarada de ventanas — decisión
   registrada en `CheckStaffAvailability`). Test en `TeamRoutesTest`.
 
+- ✅ **V1 eliminado por completo** (2026-07-24, confirmado por el usuario tras
+  quedar Bitácora V2 operativo): plugin WordPress entero (`app/`, `assets/`,
+  `config/`, `database/`, `tests/`, `var/`, `qs-core.php`, `uninstall.php`,
+  `readme.txt`, `composer.*`, `phpunit.xml.dist` de la raíz) — 316 archivos.
+  Todo recuperable desde git. Se dejaron en la raíz `infrastructure/`
+  (workflows n8n/WhatsApp que exceden al plugin) y `docs/` (documentación
+  histórica) — decidir su destino es una conversación aparte.
+
 Sigue pendiente:
 1. El chequeo de conflictos en el update de reservas (PUT) no existe aún
    (solo en creación).
-2. **Borrar V1** cuando el usuario lo decida (hoy: no).
-3. **Discrepancia de puerto de Jarvis** — de otro repo (`llm-virtual-brain`),
+2. **Discrepancia de puerto de Jarvis** — de otro repo (`llm-virtual-brain`),
    fuera del alcance de este plan.
 
 ## Cómo retomar en otra sesión
