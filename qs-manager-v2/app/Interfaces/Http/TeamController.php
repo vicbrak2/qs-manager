@@ -7,9 +7,11 @@ namespace QSManager\Interfaces\Http;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use QSManager\Application\Team\CheckStaffAvailability;
 use QSManager\Application\Team\CreateStaffMember;
 use QSManager\Application\Team\CreateStaffMemberCommand;
 use QSManager\Application\Team\ListStaffMembers;
+use QSManager\Domain\Team\StaffRepository;
 use QSManager\Interfaces\Http\Validation\TeamRequestValidator;
 use QSManager\Interfaces\Http\Validation\ValidationException;
 use Slim\App;
@@ -19,6 +21,8 @@ final class TeamController
     public function __construct(
         private readonly CreateStaffMember $createStaffMember,
         private readonly ListStaffMembers $listStaffMembers,
+        private readonly StaffRepository $staff,
+        private readonly CheckStaffAvailability $availability,
         private readonly TeamRequestValidator $validator = new TeamRequestValidator(),
     ) {
     }
@@ -27,6 +31,49 @@ final class TeamController
     {
         $app->get('/api/v1/team', [$this, 'index']);
         $app->post('/api/v1/team', [$this, 'store']);
+        $app->get('/api/v1/team/{id}/availability', [$this, 'availability']);
+    }
+
+    public function availability(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $id = filter_var($args['id'] ?? null, FILTER_VALIDATE_INT);
+        if ($id === false || (int) $id <= 0 || !$this->staff->exists((int) $id)) {
+            return $this->json($response, ['error' => 'Staff member not found.'], 404);
+        }
+
+        $params = $request->getQueryParams();
+
+        $date = is_string($params['date'] ?? null) ? trim($params['date']) : '';
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            return $this->validationError($response, ['date' => ['Date is required in YYYY-MM-DD format.']]);
+        }
+
+        $time = null;
+        if (isset($params['time']) && $params['time'] !== '') {
+            if (!is_string($params['time']) || !preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $params['time'])) {
+                return $this->validationError($response, ['time' => ['Time must use HH:MM format.']]);
+            }
+            $time = $params['time'];
+        }
+
+        $duration = null;
+        if (isset($params['duration_minutes']) && $params['duration_minutes'] !== '') {
+            if (filter_var($params['duration_minutes'], FILTER_VALIDATE_INT) === false
+                || (int) $params['duration_minutes'] <= 0) {
+                return $this->validationError($response, ['duration_minutes' => ['Duration minutes must be a positive integer.']]);
+            }
+            $duration = (int) $params['duration_minutes'];
+        }
+
+        $result = $this->availability->execute((int) $id, $date, $time, $duration);
+
+        return $this->json($response, [
+            'staff_id' => (int) $id,
+            'date' => $date,
+            'requested_time' => $time,
+            'available' => $result['available'],
+            'busy' => $result['busy'],
+        ]);
     }
 
     public function index(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
