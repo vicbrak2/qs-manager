@@ -376,8 +376,8 @@
     "hash": "d97980253e6c74e35034003be8a4d983"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\WebController.php": {
-    "mtime": 1784392406.2307727,
-    "hash": "7a87dc978e3a85d6b733ae8141fb470e"
+    "mtime": 1785015516.8888516,
+    "hash": "ac96eee6fc9a965a49005cf24093f2a9"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\Validation\\BitacoraRequestValidator.php": {
     "mtime": 1784934110.2993536,
@@ -472,24 +472,28 @@
     "hash": "92b10547d35b442d4ffbab004715d52d"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\app.js": {
-    "mtime": 1784360340.638656,
-    "hash": "507b6ce653a58bd4355210359e51ad14"
+    "mtime": 1785015597.3897269,
+    "hash": "7880e13cff677c417f2afc6c2510ef00"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\dom.js": {
     "mtime": 1783988672.9897766,
     "hash": "5175b4f267af4cd92a880f540b9df155"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\state.js": {
-    "mtime": 1784360340.624962,
-    "hash": "f977189ab93d8e883db0bc3f7191bfb4"
+    "mtime": 1785015545.6929262,
+    "hash": "f25de7bac7f6a61f53b8f85a84bb9b03"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\features\\bitacora.js": {
+    "mtime": 1785015543.4004543,
+    "hash": "5fc2dfa86bbc1684fef0adf7f4390b80"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\features\\bookings.js": {
-    "mtime": 1784929213.920342,
-    "hash": "ca391c1fdcf419019dacddc184a90c16"
+    "mtime": 1785015571.4283617,
+    "hash": "e7894c5ddbf3dc652f05cb53768d2145"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\features\\dashboard.js": {
-    "mtime": 1784095326.084621,
-    "hash": "113b6d29388ab9a485061a6bfaf7ad9c"
+    "mtime": 1785015548.7636764,
+    "hash": "04e924cc2becbe76067f3d874ad94e05"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\features\\finance.js": {
     "mtime": 1784392416.91942,
@@ -546,6 +550,10 @@
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Domain\\Team\\StaffMemberTest.php": {
     "mtime": 1783911198.6348224,
     "hash": "d84a84e2440e4d1c2408c358519a8274"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\E2E\\bitacora.spec.ts": {
+    "mtime": 1785015639.9211564,
+    "hash": "77e2dc24a54479eea2d9156c97a4e81a"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\E2E\\dashboard.spec.ts": {
     "mtime": 1784929322.2675505,
@@ -732,8 +740,8 @@
     "hash": "60bfc0c6ece9f6890b14594aa3af930b"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\audits\\MIGRATION_LOG.md": {
-    "mtime": 1784934381.9248984,
-    "hash": "8d407c8ed809ab7341e204c4a8dc5600"
+    "mtime": 1784936405.5380037,
+    "hash": "3540885cce4d1363aaab2bc3284a4624"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\audits\\v2-audit-report.md": {
     "mtime": 1783965435.0038521,
@@ -764,8 +772,8 @@
     "hash": "fbdb5d72bb5ab1d54834034143392fd8"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\E2E\\playwright-report\\index.html": {
-    "mtime": 1784934370.9291625,
-    "hash": "155bb0617961f098fa78f45c3084d8e5"
+    "mtime": 1785015693.8141813,
+    "hash": "ec4be93179c21cf2b222b8c93416d1bb"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\671165142_17924457306276429_6794574309549150381_n.jpg": {
     "mtime": 1784222286.561214,

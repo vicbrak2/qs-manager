@@ -1,16 +1,16 @@
-# Graph Report - qs-manager-v2  (2026-07-24)
+# Graph Report - qs-manager-v2  (2026-07-25)
 
 ## Corpus Check
-- 189 files · ~99,480 words
+- 191 files · ~100,935 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1356 nodes · 1777 edges · 144 communities (64 shown, 80 thin omitted)
+- 1371 nodes · 1835 edges · 150 communities (63 shown, 87 thin omitted)
 - Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 85 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `d6b8f282`
+- Built from commit: `84d941c2`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -52,15 +52,15 @@
 - [[_COMMUNITY_Community 34|Community 34]]
 - [[_COMMUNITY_Community 35|Community 35]]
 - [[_COMMUNITY_Community 36|Community 36]]
-- [[_COMMUNITY_Community 39|Community 39]]
+- [[_COMMUNITY_Community 37|Community 37]]
 - [[_COMMUNITY_Community 40|Community 40]]
 - [[_COMMUNITY_Community 41|Community 41]]
 - [[_COMMUNITY_Community 42|Community 42]]
 - [[_COMMUNITY_Community 43|Community 43]]
 - [[_COMMUNITY_Community 44|Community 44]]
 - [[_COMMUNITY_Community 45|Community 45]]
+- [[_COMMUNITY_Community 46|Community 46]]
 - [[_COMMUNITY_Community 47|Community 47]]
-- [[_COMMUNITY_Community 48|Community 48]]
 - [[_COMMUNITY_Community 49|Community 49]]
 - [[_COMMUNITY_Community 50|Community 50]]
 - [[_COMMUNITY_Community 51|Community 51]]
@@ -75,13 +75,13 @@
 - [[_COMMUNITY_Community 60|Community 60]]
 - [[_COMMUNITY_Community 61|Community 61]]
 - [[_COMMUNITY_Community 62|Community 62]]
+- [[_COMMUNITY_Community 63|Community 63]]
 - [[_COMMUNITY_Community 64|Community 64]]
 - [[_COMMUNITY_Community 65|Community 65]]
 - [[_COMMUNITY_Community 66|Community 66]]
+- [[_COMMUNITY_Community 68|Community 68]]
 - [[_COMMUNITY_Community 69|Community 69]]
 - [[_COMMUNITY_Community 70|Community 70]]
-- [[_COMMUNITY_Community 71|Community 71]]
-- [[_COMMUNITY_Community 72|Community 72]]
 - [[_COMMUNITY_Community 73|Community 73]]
 - [[_COMMUNITY_Community 74|Community 74]]
 - [[_COMMUNITY_Community 75|Community 75]]
@@ -102,11 +102,11 @@
 - [[_COMMUNITY_Community 90|Community 90]]
 - [[_COMMUNITY_Community 91|Community 91]]
 - [[_COMMUNITY_Community 92|Community 92]]
+- [[_COMMUNITY_Community 93|Community 93]]
 - [[_COMMUNITY_Community 94|Community 94]]
 - [[_COMMUNITY_Community 95|Community 95]]
 - [[_COMMUNITY_Community 96|Community 96]]
 - [[_COMMUNITY_Community 97|Community 97]]
-- [[_COMMUNITY_Community 98|Community 98]]
 - [[_COMMUNITY_Community 99|Community 99]]
 - [[_COMMUNITY_Community 100|Community 100]]
 - [[_COMMUNITY_Community 101|Community 101]]
@@ -126,75 +126,77 @@
 - [[_COMMUNITY_Community 115|Community 115]]
 - [[_COMMUNITY_Community 116|Community 116]]
 - [[_COMMUNITY_Community 117|Community 117]]
+- [[_COMMUNITY_Community 118|Community 118]]
 - [[_COMMUNITY_Community 119|Community 119]]
 - [[_COMMUNITY_Community 120|Community 120]]
 - [[_COMMUNITY_Community 121|Community 121]]
 - [[_COMMUNITY_Community 122|Community 122]]
-- [[_COMMUNITY_Community 131|Community 131]]
+- [[_COMMUNITY_Community 124|Community 124]]
+- [[_COMMUNITY_Community 125|Community 125]]
+- [[_COMMUNITY_Community 126|Community 126]]
+- [[_COMMUNITY_Community 127|Community 127]]
+- [[_COMMUNITY_Community 128|Community 128]]
+- [[_COMMUNITY_Community 137|Community 137]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `PostgresSheetReplicaImporter` - 42 edges
-2. `Booking` - 32 edges
-3. `$()` - 30 edges
+2. `$()` - 39 edges
+3. `Booking` - 32 edges
 4. `HttpRoutesTest` - 28 edges
 5. `SheetRowMapper` - 22 edges
 6. `Informe Final Consolidado — Benchmark Exhaustivo de 26 Cuentas de Instagram (Belleza y Maquillaje, Chile)` - 22 edges
-7. `Bitacora` - 19 edges
-8. `ServicesController` - 19 edges
-9. `AppFactory` - 18 edges
-10. `AvailabilityWindow` - 17 edges
+7. `api()` - 20 edges
+8. `Bitacora` - 19 edges
+9. `ServicesController` - 19 edges
+10. `AppFactory` - 18 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `waitForDatabase()` --calls--> `ConnectionFactory`  [INFERRED]
   tools/sync-worker.php → app/Infrastructure/Database/ConnectionFactory.php
+- `loadBitacoras()` --calls--> `api()`  [EXTRACTED]
+  public/assets/js/features/bitacora.js → public/assets/js/api.js
+- `addBitacoraNote()` --calls--> `api()`  [EXTRACTED]
+  public/assets/js/features/bitacora.js → public/assets/js/api.js
 - `loadBookings()` --calls--> `api()`  [EXTRACTED]
   public/assets/js/features/bookings.js → public/assets/js/api.js
 - `loadStaff()` --calls--> `api()`  [EXTRACTED]
   public/assets/js/features/bookings.js → public/assets/js/api.js
-- `loadHealth()` --calls--> `api()`  [EXTRACTED]
-  public/assets/js/features/dashboard.js → public/assets/js/api.js
-- `loadSyncStatus()` --calls--> `api()`  [EXTRACTED]
-  public/assets/js/features/dashboard.js → public/assets/js/api.js
 
-## Communities (144 total, 80 thin omitted)
+## Communities (150 total, 87 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.07
-Nodes (76): bookingMatches(), bookingPayload(), bookingSortValue(), bookingTrafficKind(), compareBookings(), editBooking(), fillStaffSelect(), isHistoricalBooking() (+68 more)
+Cohesion: 0.06
+Nodes (86): addBitacoraNote(), bitacoraPayload(), editBitacora(), fillBitacoraStaffSelects(), loadBitacoras(), renderBitacoras(), renderNotes(), resetBitacoraForm() (+78 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.05
-Nodes (7): AppFactory, BookingRoutesTest, ServicesRoutesTest, HttpRoutesTest, MockGasStreamWrapper, HttpTestCase, MockGasStreamWrapper
+Nodes (6): AppFactory, BookingRoutesTest, HttpRoutesTest, MockGasStreamWrapper, HttpTestCase, MockGasStreamWrapper
 
 ### Community 2 - "Community 2"
 Cohesion: 0.05
-Nodes (5): Booking, BookingId, BookingStatus, BookingTest, CreateBooking
+Nodes (8): ConnectionFactory, FinancePeriod, RebuildFinanceProjectionTest, FinanceController, PostgresSheetReplicaImporterTest, SyncWorkerIntegrationTest, emit_log(), waitForDatabase()
 
 ### Community 3 - "Community 3"
 Cohesion: 0.05
-Nodes (8): ConnectionFactory, FinancePeriod, RebuildFinanceProjectionTest, FinanceController, PostgresSheetReplicaImporterTest, SyncWorkerIntegrationTest, emit_log(), waitForDatabase()
-
-### Community 4 - "Community 4"
-Cohesion: 0.05
 Nodes (7): PostgresServiceRepository, CreateService, Service, ServiceDuration, ServiceId, ServiceName, ServiceTest
 
-### Community 6 - "Community 6"
+### Community 5 - "Community 5"
 Cohesion: 0.06
 Nodes (7): PostgresStaffRepository, CreateStaffMember, StaffDisplayName, StaffId, StaffMember, StaffMemberTest, StaffRole
 
-### Community 7 - "Community 7"
+### Community 6 - "Community 6"
 Cohesion: 0.05
 Nodes (38): 1. Resumen Ejecutivo y Hallazgo Metodológico, 1. Resumen Ejecutivo y Hallazgo Metodológico, 2. Auditoría Detallada: La Tabla General (26 Cuentas), 2. Auditoría Detallada: La Tabla General (26 Cuentas), 3. Depuración y Matriz de Banderas Rojas, 3. Depuración y Matriz de Banderas Rojas, 4. Análisis Profundo de Casos de Estudio (Deep Dives), 4. Análisis Profundo de Casos de Estudio (Deep Dives) (+30 more)
+
+### Community 7 - "Community 7"
+Cohesion: 0.07
+Nodes (27): 1. Resumen Ejecutivo, 2. Matriz Comparativa de Competencia, 3.1 Desconexión entre tamaño y claridad comercial (matizado ✅), 3.2 El patrón del CTA "escondido" (se mantiene, con matiz), 3.3 Highlight "Precios" es raro pero efectivo, 3.4 Contenido educativo &gt;&gt; Venta directa, 3.5 Testimonios y prueba social son AUSENTES en la mayoría, 3. Hallazgos Críticos (+19 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.07
 Nodes (27): 1. Resumen Ejecutivo, 2. Matriz Comparativa de Competencia, 3.1 Desconexión entre tamaño y claridad comercial (matizado ✅), 3.2 El patrón del CTA "escondido" (se mantiene, con matiz), 3.3 Highlight "Precios" es raro pero efectivo, 3.4 Contenido educativo &gt;&gt; Venta directa, 3.5 Testimonios y prueba social son AUSENTES en la mayoría, 3. Hallazgos Críticos (+19 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.07
-Nodes (27): 1. Resumen Ejecutivo, 2. Matriz Comparativa de Competencia, 3.1 Desconexión entre tamaño y claridad comercial (matizado ✅), 3.2 El patrón del CTA "escondido" (se mantiene, con matiz), 3.3 Highlight "Precios" es raro pero efectivo, 3.4 Contenido educativo &gt;&gt; Venta directa, 3.5 Testimonios y prueba social son AUSENTES en la mayoría, 3. Hallazgos Críticos (+19 more)
-
-### Community 10 - "Community 10"
 Cohesion: 0.11
 Nodes (3): AvailabilityCheckerTest, AvailabilityWindow, AvailabilityWindowTest
 
@@ -238,88 +240,88 @@ Nodes (12): 10. Matriz Comparativa de Modelos de Negocio, 13. Ranking de Mejores
 Cohesion: 0.18
 Nodes (10): Arquitectura, code:block1 (POST /api/v1/services (V2)), code:block2 (SHEETS_WRITE_SYNC_ENABLED=true), code:powershell (docker compose up -d --force-recreate app worker), code:powershell (curl -L -X POST "<GAS_CATALOG_WEBAPP_URL>" -H "Content-Type:), Pasos de activación (operador), Rollback, Runbook — Activar la escritura del catálogo hacia Sheets (GAS write-sync) (+2 more)
 
-### Community 44 - "Community 44"
+### Community 46 - "Community 46"
 Cohesion: 0.25
 Nodes (7): Architecture, Code Layout, Interface Contracts, Milestones, Project: QS Manager V2 Sincronizar Button & Audit, Scope: Milestone 1, WebUI ↔ API
 
-### Community 45 - "Community 45"
+### Community 47 - "Community 47"
 Cohesion: 0.25
 Nodes (7): Componentes V1 marcados "no migrar" — Fase 2, Razón: LatePoint, Razón: N8n, Razón: Qdrant, Razón: WordPress (hooks, `$wpdb`, admin pages, `register_rest_route`), Requiere revisión manual (no se deprecan directo — wiring DI mixto), Resumen
 
-### Community 49 - "Community 49"
+### Community 51 - "Community 51"
 Cohesion: 0.29
 Nodes (6): financeView, firstRowStatus, from, json, tabFinance, tableRows
 
-### Community 52 - "Community 52"
+### Community 54 - "Community 54"
 Cohesion: 0.29
 Nodes (7): 12.1 Embudo de conversión directa, 12.2 Embudo de servicio local, 12.3 Embudo educativo, 12.4 Embudo editorial/B2B, 12.5 Embudo recomendado para Qamiluna, 12.6 CTA sugeridos, 12. Arquitecturas de Conversión Observadas
 
-### Community 53 - "Community 53"
+### Community 55 - "Community 55"
 Cohesion: 0.29
 Nodes (7): 9.1 Competidores directos locales, 9.2 Referentes de contenido y marca personal, 9.3 Editorial, moda y B2B, 9.4 Marcas comerciales, 9.5 Negocios adyacentes, 9.6 Perfiles excluidos o no auditables, 9. Segmentación Estratégica del Universo
 
-### Community 54 - "Community 54"
+### Community 56 - "Community 56"
 Cohesion: 0.29
 Nodes (6): 1. Resumen Ejecutivo, 2. Auditoría Técnica y Funcional, 3. Auditoría Visual y Experiencia de Usuario (UX), 4. Mejoras Implementadas (Quick Wins), 5. Conclusión y Siguientes Pasos, Auditoría y Cierre QS Manager V2
 
-### Community 64 - "Community 64"
+### Community 68 - "Community 68"
 Cohesion: 0.33
 Nodes (6): 11.1 Contenido educativo, 11.2 Humor e identificación, 11.3 Procesos y backstage, 11.4 Storytelling emocional, 11.5 Resultado final sin narrativa, 11. Estrategias de Contenido Observadas
 
-### Community 65 - "Community 65"
-Cohesion: 0.33
-Nodes (6): 16.1 Indicadores de visibilidad, 16.2 Indicadores de interacción, 16.3 Indicadores de intención, 16.4 Indicadores de conversión, 16.5 Indicadores de fidelización, 16. Indicadores de Seguimiento
-
-### Community 66 - "Community 66"
+### Community 69 - "Community 69"
 Cohesion: 0.33
 Nodes (6): 14.1 Prioridad crítica: conversión, 14.2 Prioridad alta: contenido, 14.3 Prioridad alta: autoridad, 14.4 Prioridad media: automatización, 14.5 Prioridad media: prueba social, 14. Oportunidades Priorizadas para Qamiluna
 
-### Community 74 - "Community 74"
+### Community 70 - "Community 70"
+Cohesion: 0.33
+Nodes (6): 16.1 Indicadores de visibilidad, 16.2 Indicadores de interacción, 16.3 Indicadores de intención, 16.4 Indicadores de conversión, 16.5 Indicadores de fidelización, 16. Indicadores de Seguimiento
+
+### Community 79 - "Community 79"
 Cohesion: 0.4
 Nodes (4): canvas, clientInput, errorText, json
 
-### Community 80 - "Community 80"
-Cohesion: 0.4
-Nodes (5): 4. Análisis Profundo de Casos de Estudio (Deep Dives), A. El Benchmark de Conversión Directa: @deskin.cl, B. El Benchmark Editorial y B2B: @relbermakeup (Amanda Schrebler), C. La Fortaleza de las "Cuentas Pequeñas": @warni_beauty y @michabeautystudio, D. La Transición a "Lifestyle": @makeupbydaire y @eluniverso.defran
-
-### Community 81 - "Community 81"
+### Community 85 - "Community 85"
 Cohesion: 0.4
 Nodes (5): 8.1 Fuentes consideradas, 8.2 Variables analizadas, 8.3 Definición de engagement observable, 8.4 Niveles de confianza, 8. Metodología y Criterios de Evaluación
 
-### Community 105 - "Community 105"
-Cohesion: 0.5
-Nodes (4): 15. Hoja de Ruta de Implementación, Fase 1 — Orden comercial inmediato (0–30 días), Fase 2 — Sistema editorial (31–60 días), Fase 3 — Optimización y automatización (61–90 días)
+### Community 86 - "Community 86"
+Cohesion: 0.4
+Nodes (5): 4. Análisis Profundo de Casos de Estudio (Deep Dives), A. El Benchmark de Conversión Directa: @deskin.cl, B. El Benchmark Editorial y B2B: @relbermakeup (Amanda Schrebler), C. La Fortaleza de las "Cuentas Pequeñas": @warni_beauty y @michabeautystudio, D. La Transición a "Lifestyle": @makeupbydaire y @eluniverso.defran
 
-### Community 106 - "Community 106"
+### Community 110 - "Community 110"
 Cohesion: 0.5
 Nodes (4): 17.1 ¿Qué hacen mejor las cuentas analizadas?, 17.2 ¿Qué debilidades se repiten?, 17.3 ¿Qué debería hacer Qamiluna?, 17. Conclusiones Ejecutivas
 
-### Community 107 - "Community 107"
+### Community 111 - "Community 111"
+Cohesion: 0.5
+Nodes (4): 15. Hoja de Ruta de Implementación, Fase 1 — Orden comercial inmediato (0–30 días), Fase 2 — Sistema editorial (31–60 días), Fase 3 — Optimización y automatización (61–90 días)
+
+### Community 112 - "Community 112"
 Cohesion: 0.5
 Nodes (3): QS Manager V2 - Auditoría Final Superada, Resumen de Correcciones Estructurales, Verificación E2E Final
 
-### Community 122 - "Community 122"
+### Community 128 - "Community 128"
 Cohesion: 0.67
 Nodes (3): 7.1 Objetivo general, 7.2 Objetivos específicos, 7. Objetivos del Benchmark
 
 ## Knowledge Gaps
-- **275 isolated node(s):** `el`, `perPage`, `filtered`, `totalPages`, `bookingViewButton` (+270 more)
+- **278 isolated node(s):** `el`, `perPage`, `filtered`, `totalPages`, `bookingViewButton` (+273 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **80 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **87 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `ConnectionFactory` connect `Community 3` to `Community 1`?**
-  _High betweenness centrality (0.004) - this node is a cross-community bridge._
-- **Why does `AppFactory` connect `Community 1` to `Community 3`?**
+- **Why does `ConnectionFactory` connect `Community 2` to `Community 1`?**
+  _High betweenness centrality (0.003) - this node is a cross-community bridge._
+- **Why does `Booking` connect `Community 10` to `Community 32`, `Community 29`, `Community 78`, `Community 63`?**
   _High betweenness centrality (0.003) - this node is a cross-community bridge._
 - **Are the 5 inferred relationships involving `Booking` (e.g. with `.execute()` and `.fromRow()`) actually correct?**
   _`Booking` has 5 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `el`, `perPage`, `filtered` to the rest of the system?**
-  _275 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _278 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.07 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
   _Cohesion score 0.05 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
