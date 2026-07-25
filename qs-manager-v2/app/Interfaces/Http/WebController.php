@@ -66,6 +66,7 @@ final class WebController
       <button id="tab-finance" class="tab active" type="button">Finanzas</button>
       <button id="tab-services" class="tab" type="button">Servicios</button>
       <button id="tab-bookings" class="tab" type="button">Reservas</button>
+      <button id="tab-bitacora" class="tab" type="button">Bitácora</button>
     </div>
 
     <section id="finance-view">
@@ -383,6 +384,7 @@ final class WebController
           <label>Fecha y hora
             <input name="scheduled_for" type="datetime-local">
           </label>
+          <div id="booking-availability" class="availability-hint full hidden" aria-live="polite"></div>
           <label>Estado
             <select name="status" required>
               <option value="draft">draft</option>
@@ -433,6 +435,97 @@ final class WebController
             <button class="secondary" type="button" id="sync-booking" disabled>Sync GAS</button>
           </div>
         </form>
+      </aside>
+    </section>
+    <section id="bitacora-view" class="workspace hidden">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Bitácora</h2>
+          <div class="actions">
+            <button class="secondary" type="button" id="refresh-bitacoras">Recargar</button>
+            <button type="button" id="new-bitacora">Nueva</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Clienta</th>
+                <th>Equipo</th>
+                <th>Traslado</th>
+                <th>Precio</th>
+                <th>Margen</th>
+                <th>Notas</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="bitacoras-body"></tbody>
+          </table>
+          <div id="bitacoras-empty" class="empty">Sin bitácoras registradas.</div>
+        </div>
+      </div>
+
+      <aside class="panel side">
+        <div class="panel-head">
+          <h2 id="bitacora-form-title">Nueva bitácora</h2>
+          <button class="secondary" type="button" id="reset-bitacora">Limpiar</button>
+        </div>
+        <form id="bitacora-form">
+          <input type="hidden" name="id">
+          <label>Fecha servicio
+            <input name="fecha_servicio" type="date" required>
+          </label>
+          <label>Tipo servicio
+            <input name="tipo_servicio" maxlength="120" required>
+          </label>
+          <label class="full">Clienta
+            <input name="clienta_nombre" maxlength="160" required>
+          </label>
+          <label>MUA
+            <select name="mua_id" id="bitacora-mua-select"></select>
+          </label>
+          <label>Estilista
+            <select name="estilista_id" id="bitacora-estilista-select"></select>
+          </label>
+          <label class="full">Dirección servicio
+            <input name="direccion_servicio" maxlength="240" required>
+          </label>
+          <label class="full">Punto de salida
+            <input name="punto_salida" maxlength="240" required>
+          </label>
+          <label class="full">Orden de recogida
+            <input name="orden_recogida" placeholder="Ej: MUA primero, luego estilista">
+          </label>
+          <label>Traslado (min)
+            <input name="tiempo_traslado_min" type="number" min="0" step="1" value="0">
+          </label>
+          <label>Hora llegada
+            <input name="hora_llegada" type="time">
+          </label>
+          <label>Costo staff
+            <input name="costo_staff_clp" type="number" min="0" step="1" value="0">
+          </label>
+          <label>Precio cliente
+            <input name="precio_cliente_clp" type="number" min="0" step="1" value="0">
+          </label>
+          <label class="full">Notas logísticas
+            <textarea name="notas_logisticas" rows="2"></textarea>
+          </label>
+          <div class="actions full">
+            <button type="submit" id="save-bitacora">Guardar</button>
+          </div>
+        </form>
+        <div id="bitacora-notes-panel" class="bitacora-notes hidden">
+          <h3>Notas de traslado</h3>
+          <ul id="bitacora-notes-list"></ul>
+          <div class="actions">
+            <input id="bitacora-note-message" placeholder="Ej: esperar en la reja principal" maxlength="500">
+            <button type="button" class="secondary" id="add-bitacora-note">Agregar nota</button>
+          </div>
+        </div>
       </aside>
     </section>
     <dialog id="sync-modal" class="modal">

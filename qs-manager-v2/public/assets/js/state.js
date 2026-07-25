@@ -7,6 +7,7 @@ export const state = {
   },
   staff: [],
   bookings: [],
+  bitacoras: [],
   bookingsView: 'upcoming',
   activeTab: 'services',
   bookingsPagination: {

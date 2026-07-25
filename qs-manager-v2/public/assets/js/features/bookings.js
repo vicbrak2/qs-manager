@@ -239,6 +239,60 @@ export function renderBookings() {
   }).join('');
 }
 
+export async function refreshStaffAvailability() {
+  const box = $('#booking-availability');
+  if (!box) return;
+  const fields = $('#booking-form').elements;
+  const staffId = idOrNull(fields.staff_id.value);
+  const iso = fromDateTimeLocal(fields.scheduled_for.value);
+  if (!staffId || !iso) {
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    return;
+  }
+
+  // La API trabaja en UTC; la fecha/hora consultada sale del mismo ISO que
+  // se enviara al guardar, asi el aviso coincide con lo que validara el
+  // backend al crear.
+  const params = new URLSearchParams({ date: iso.slice(0, 10), time: iso.slice(11, 16) });
+  const service = state.services.find((item) => item.id === idOrNull(fields.service_id.value));
+  if (service && service.duration_minutes) params.set('duration_minutes', service.duration_minutes);
+
+  let data;
+  try {
+    data = await api(`/api/v1/team/${staffId}/availability?${params}`);
+  } catch (error) {
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    return;
+  }
+
+  // Al editar, la propia reserva aparece como bloque ocupado: se filtra por
+  // su instante de inicio y en ese caso el aviso de choque no es confiable
+  // (available considera tambien el bloque propio), asi que solo se listan
+  // los bloques.
+  const editingId = idOrNull(fields.id.value);
+  const own = editingId ? state.bookings.find((item) => item.id === editingId) : null;
+  const ownStart = own && own.scheduled_for ? Date.parse(own.scheduled_for) : null;
+  const busy = data.busy.filter((slot) => ownStart === null || Date.parse(slot.start_at) !== ownStart);
+
+  box.classList.remove('hidden');
+  if (!busy.length) {
+    box.className = 'availability-hint full ok';
+    box.textContent = 'Sin otras reservas ese día para esta profesional.';
+    return;
+  }
+
+  const conflicts = !data.available && busy.length === data.busy.length;
+  box.className = `availability-hint full${conflicts ? ' warn' : ''}`;
+  box.innerHTML = `
+    <strong>${conflicts ? '⚠ El horario elegido choca con una reserva existente.' : 'Bloques ocupados ese día:'}</strong>
+    <span class="availability-chips">${busy.map((slot) =>
+      `<span class="badge ${conflicts ? 'warn' : 'muted'}" title="${escapeHtml(slot.label)}">${formatTime(slot.start_at)}–${formatTime(slot.end_at)}</span>`
+    ).join('')}</span>
+  `;
+}
+
 export function fillStaffSelect() {
   const activeStaff = state.staff.filter((person) => person.active);
   $('#booking-staff-select').innerHTML = '<option value="">Sin staff</option>' + activeStaff
@@ -257,6 +311,11 @@ export function resetBookingForm() {
   $('#booking-form-title').textContent = 'Nueva reserva';
   $('#delete-booking').disabled = true;
   $('#sync-booking').disabled = true;
+  const availabilityBox = $('#booking-availability');
+  if (availabilityBox) {
+    availabilityBox.classList.add('hidden');
+    availabilityBox.innerHTML = '';
+  }
 }
 
 export function editBooking(id) {
@@ -287,6 +346,7 @@ export function editBooking(id) {
   $('#booking-form-title').textContent = `Reserva #${booking.id}`;
   $('#delete-booking').disabled = false;
   $('#sync-booking').disabled = false;
+  refreshStaffAvailability();
 }
 
 export function bookingPayload() {

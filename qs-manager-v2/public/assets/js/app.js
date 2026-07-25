@@ -7,13 +7,15 @@ import { clearFormErrors, showFormErrors } from './ui/validation.js';
 
 import { setTab, loadHealth, loadSyncStatus } from './features/dashboard.js';
 import { loadServices, resetServiceForm, editService, servicePayload, renderServices, toggleServiceSort } from './features/services.js';
-import { loadStaff, loadBookings, resetBookingForm, editBooking, bookingPayload, renderBookings, visibleBookings, toggleBookingSort, setBookingsView } from './features/bookings.js';
+import { loadStaff, loadBookings, resetBookingForm, editBooking, bookingPayload, renderBookings, visibleBookings, toggleBookingSort, setBookingsView, refreshStaffAvailability } from './features/bookings.js';
+import { loadBitacoras, resetBitacoraForm, editBitacora, bitacoraPayload, fillBitacoraStaffSelects, addBitacoraNote } from './features/bitacora.js';
 import { syncAll, renderSyncModal, syncBookingGas } from './features/sync.js';
 import { initFinanceDetails, loadFinanceDashboard } from './features/finance.js';
 
 async function boot() {
   initFinanceDetails();
   await Promise.all([loadHealth(), loadSyncStatus(), loadServices(), loadStaff(), loadBookings(), loadFinanceDashboard()]);
+  fillBitacoraStaffSelects();
 }
 
 $('#tab-finance').addEventListener('click', () => {
@@ -25,6 +27,21 @@ $('#tab-finance').addEventListener('click', () => {
 });
 $('#tab-services').addEventListener('click', () => setTab('services'));
 $('#tab-bookings').addEventListener('click', () => setTab('bookings'));
+$('#tab-bitacora').addEventListener('click', () => {
+  setTab('bitacora');
+  if (!$('#bitacoras-body').dataset.loaded) {
+    loadBitacoras().catch((error) => notify(error.message, true));
+    $('#bitacoras-body').dataset.loaded = 'true';
+  }
+});
+$('#refresh-bitacoras').addEventListener('click', () => loadBitacoras().catch((error) => notify(error.message, true)));
+$('#new-bitacora').addEventListener('click', resetBitacoraForm);
+$('#reset-bitacora').addEventListener('click', resetBitacoraForm);
+$('#add-bitacora-note').addEventListener('click', addBitacoraNote);
+
+['staff_id', 'scheduled_for', 'service_id'].forEach((name) => {
+  $('#booking-form').elements[name].addEventListener('change', refreshStaffAvailability);
+});
 $('#sync-all').addEventListener('click', syncAll);
 $('#refresh-finance').addEventListener('click', loadFinanceDashboard);
 $('#refresh-services').addEventListener('click', loadServices);
@@ -90,6 +107,9 @@ document.addEventListener('click', async (event) => {
 
   const bookingButton = event.target.closest('[data-edit-booking]');
   if (bookingButton) editBooking(Number(bookingButton.dataset.editBooking));
+
+  const bitacoraButton = event.target.closest('[data-edit-bitacora]');
+  if (bitacoraButton) editBitacora(Number(bitacoraButton.dataset.editBitacora));
 
   const syncRowButton = event.target.closest('[data-sync-booking-id]');
   if (syncRowButton) {
@@ -158,6 +178,31 @@ $('#booking-form').addEventListener('submit', async (event) => {
     notify(id ? 'Reserva actualizada.' : 'Reserva creada.');
     resetBookingForm();
     await loadBookings();
+  } catch (error) {
+    notify(error.message, true);
+    if (error.errors) {
+      showFormErrors(form, error.errors);
+    }
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+$('#bitacora-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = $('#bitacora-form');
+  const submitBtn = $('#save-bitacora');
+  submitBtn.disabled = true;
+  clearFormErrors(form);
+  const id = form.querySelector('[name=id]').value;
+  try {
+    await api(id ? `/api/v1/bitacoras/${id}` : '/api/v1/bitacoras', {
+      method: id ? 'PUT' : 'POST',
+      body: JSON.stringify(bitacoraPayload()),
+    });
+    notify(id ? 'Bitácora actualizada.' : 'Bitácora creada.');
+    resetBitacoraForm();
+    await loadBitacoras();
   } catch (error) {
     notify(error.message, true);
     if (error.errors) {

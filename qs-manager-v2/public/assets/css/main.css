@@ -1128,3 +1128,25 @@
       .finance-details-head { gap: 10px; }
       .finance-details-adjustments dl { grid-template-columns: 1fr 1fr; }
     }
+
+    /* Bitácora + disponibilidad de staff */
+    .availability-hint {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--soft);
+      font-size: 0.85rem;
+    }
+    .availability-hint.ok { color: var(--ok); }
+    .availability-hint.warn { background: var(--warn-soft); color: var(--warn); }
+    .availability-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .bitacora-notes { margin-top: 16px; }
+    .bitacora-notes h3 { margin: 0 0 8px; font-size: 0.9rem; }
+    .bitacora-notes ul { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+    .bitacora-notes li { background: var(--soft); border-radius: 8px; padding: 8px 10px; font-size: 0.85rem; }
+    .bitacora-notes li small { display: block; color: var(--muted); margin-top: 2px; }
+    .bitacora-notes .actions { display: flex; gap: 8px; }
+    .bitacora-notes .actions input { flex: 1; }
+    #bitacora-form textarea { resize: vertical; font: inherit; }
