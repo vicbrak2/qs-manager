@@ -12,6 +12,7 @@ use QSManager\Domain\Bitacora\PickupPoint;
 use QSManager\Domain\Bitacora\RoutePlan;
 use QSManager\Domain\Bitacora\ServiceAddress;
 use QSManager\Domain\Bitacora\TravelDuration;
+use QSManager\Domain\Bitacora\TravelItinerary;
 
 final class BitacoraPolicyTest extends TestCase
 {
@@ -116,6 +117,11 @@ final class BitacoraPolicyTest extends TestCase
                 new TravelDuration(20),
                 null
             ),
+            horaInicioServicio: null,
+            horaFinServicio: null,
+            itinerario: new TravelItinerary(),
+            objetivo: null,
+            consideraciones: null,
             notasLogisticas: null,
             costoStaffClp: 50_000,
             precioClienteClp: 80_000,

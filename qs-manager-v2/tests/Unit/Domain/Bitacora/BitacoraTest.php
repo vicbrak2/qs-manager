@@ -11,6 +11,7 @@ use QSManager\Domain\Bitacora\PickupPoint;
 use QSManager\Domain\Bitacora\RoutePlan;
 use QSManager\Domain\Bitacora\ServiceAddress;
 use QSManager\Domain\Bitacora\TravelDuration;
+use QSManager\Domain\Bitacora\TravelItinerary;
 use QSManager\Domain\Bitacora\TravelNote;
 
 final class BitacoraTest extends TestCase
@@ -61,6 +62,11 @@ final class BitacoraTest extends TestCase
             clientaNombre: 'Clienta de prueba',
             serviceAddress: new ServiceAddress('Av. Providencia 1234'),
             routePlan: new RoutePlan(new PickupPoint('Metro Manquehue'), null, new TravelDuration(20), null),
+            horaInicioServicio: null,
+            horaFinServicio: null,
+            itinerario: new TravelItinerary(),
+            objetivo: null,
+            consideraciones: null,
             notasLogisticas: null,
             costoStaffClp: $costoStaffClp,
             precioClienteClp: $precioClienteClp,

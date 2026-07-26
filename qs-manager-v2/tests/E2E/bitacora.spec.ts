@@ -203,4 +203,51 @@ test.describe('Bitácora y disponibilidad de staff', () => {
     await expect(page.locator('#bitacora-form-title')).toHaveText('Bitácora #1');
     await expect(page.locator('#bitacora-booking-link')).toContainText('Vinculada a reserva #44');
   });
+
+  test('el plan de traslado calcula salida y llegada, y arma el texto del equipo', async ({ page }) => {
+    await page.route('/api/v1/bitacoras', (route) => route.fulfill({ json: { bitacoras: [] } }));
+
+    await page.goto('/');
+    await page.click('#tab-bitacora');
+
+    // Sin datos suficientes, el plan lista lo que falta.
+    await page.fill('#bitacora-form [name=clienta_nombre]', 'Sara Martinez');
+    const plan = page.locator('#bitacora-plan');
+    await expect(plan).toContainText('Falta para armar la bitácora');
+    await expect(plan).toContainText('hora de inicio del servicio');
+
+    await page.fill('#bitacora-form [name=fecha_servicio]', '2026-05-22');
+    await page.fill('#bitacora-form [name=tipo_servicio]', 'Prueba Novia (Maquillaje + Peinado)');
+    await page.fill('#bitacora-form [name=direccion_servicio]', 'Padre Fernando Cifuentes Grez 4861, Macul');
+    await page.fill('#bitacora-form [name=punto_salida]', 'Metro Macul');
+    await page.fill('#bitacora-form [name=hora_inicio_servicio]', '16:00');
+    await page.fill('#bitacora-form [name=hora_fin_servicio]', '18:00');
+    await page.selectOption('#bitacora-mua-select', '3');
+
+    // Falta el tramo: ya puede anticipar la llegada, no la salida.
+    await expect(plan).toContainText('Llegada objetivo: 15:45');
+    await expect(plan).toContainText('al menos un tramo');
+
+    await page.click('#add-tramo');
+    await page.fill('.tramo-row .tramo-nombre', 'Metro Macul → Macul');
+    await page.fill('.tramo-row .tramo-min', '10');
+
+    // 16:00 − 15 (llegada) − 10 (tramo) − 15 (holgura) = 15:20.
+    await expect(plan).toContainText('Plan de traslado completo');
+    await expect(plan).toContainText('Salida sugerida: 15:20');
+    await expect(plan).toContainText('Llegada: 15:45');
+
+    await page.click('#copy-bitacora-team');
+    const preview = page.locator('#bitacora-team-preview');
+    await expect(preview).toContainText('✨ Bitácora — Prueba Novia (Maquillaje + Peinado) — Sara Martinez');
+    await expect(preview).toContainText('⏰ Horario del servicio: 16:00 - 18:00 hrs');
+    await expect(preview).toContainText('🧑‍🎨 Profesionales: Fernanda Rojas (maquilladora)');
+    await expect(preview).toContainText('🕐 Hora de salida: 15:20 hrs');
+    await expect(preview).toContainText('🕒 Hora de llegada estimada: 15:45 hrs (15 minutos antes del inicio)');
+    await expect(preview).toContainText('🗺️ Orden de traslado: Metro Macul → Macul');
+
+    // Quitar el tramo vuelve a dejar el plan incompleto.
+    await page.click('[data-remove-tramo]');
+    await expect(plan).toContainText('al menos un tramo');
+  });
 });

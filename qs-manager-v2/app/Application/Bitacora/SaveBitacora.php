@@ -13,6 +13,7 @@ use QSManager\Domain\Bitacora\PickupPoint;
 use QSManager\Domain\Bitacora\RoutePlan;
 use QSManager\Domain\Bitacora\ServiceAddress;
 use QSManager\Domain\Bitacora\TravelDuration;
+use QSManager\Domain\Bitacora\TravelItinerary;
 use QSManager\Domain\Booking\BookingRepository;
 
 final class SaveBitacora
@@ -54,6 +55,13 @@ final class SaveBitacora
             }
         }
 
+        // Los tramos son la fuente de verdad del tiempo de viaje cuando
+        // existen: el total legacy (tiempo_traslado_min) se deriva de ellos.
+        $itinerario = TravelItinerary::fromArray($data['tramos']);
+        $tiempoTrasladoMin = $itinerario->isEmpty()
+            ? $data['tiempo_traslado_min']
+            : $itinerario->totalMinutes();
+
         $bitacora = new Bitacora(
             $id,
             $data['booking_id'],
@@ -67,9 +75,14 @@ final class SaveBitacora
             new RoutePlan(
                 new PickupPoint($data['punto_salida']),
                 $data['orden_recogida'],
-                new TravelDuration($data['tiempo_traslado_min']),
+                new TravelDuration($tiempoTrasladoMin),
                 $data['hora_llegada'],
             ),
+            $data['hora_inicio_servicio'],
+            $data['hora_fin_servicio'],
+            $itinerario,
+            $data['objetivo'],
+            $data['consideraciones'],
             $data['notas_logisticas'],
             $data['costo_staff_clp'],
             $data['precio_cliente_clp'],

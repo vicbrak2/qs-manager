@@ -12,6 +12,7 @@ use QSManager\Domain\Bitacora\PickupPoint;
 use QSManager\Domain\Bitacora\RoutePlan;
 use QSManager\Domain\Bitacora\ServiceAddress;
 use QSManager\Domain\Bitacora\TravelDuration;
+use QSManager\Domain\Bitacora\TravelItinerary;
 use QSManager\Domain\Bitacora\TravelNote;
 
 final class PostgresBitacoraRepository implements BitacoraRepository
@@ -80,6 +81,11 @@ final class PostgresBitacoraRepository implements BitacoraRepository
             'orden_recogida' => $bitacora->routePlan()->pickupOrder(),
             'tiempo_traslado_min' => $bitacora->routePlan()->travelDuration()->minutes(),
             'hora_llegada' => $bitacora->routePlan()->arrivalTime(),
+            'hora_inicio_servicio' => $bitacora->horaInicioServicio(),
+            'hora_fin_servicio' => $bitacora->horaFinServicio(),
+            'tramos' => json_encode($bitacora->itinerario()->toArray(), JSON_THROW_ON_ERROR),
+            'objetivo' => $bitacora->objetivo(),
+            'consideraciones' => $bitacora->consideraciones(),
             'notas_logisticas' => $bitacora->notasLogisticas(),
             'costo_staff_clp' => $bitacora->costoStaffClp(),
             'precio_cliente_clp' => $bitacora->precioClienteClp(),
@@ -90,11 +96,13 @@ final class PostgresBitacoraRepository implements BitacoraRepository
                 'insert into qs_bitacoras (
                     booking_id, booking_external_id, fecha_servicio, tipo_servicio, mua_id, estilista_id, clienta_nombre,
                     direccion_servicio, punto_salida, orden_recogida, tiempo_traslado_min,
-                    hora_llegada, notas_logisticas, costo_staff_clp, precio_cliente_clp
+                    hora_llegada, hora_inicio_servicio, hora_fin_servicio, tramos, objetivo,
+                    consideraciones, notas_logisticas, costo_staff_clp, precio_cliente_clp
                 ) values (
                     :booking_id, :booking_external_id, :fecha_servicio, :tipo_servicio, :mua_id, :estilista_id, :clienta_nombre,
                     :direccion_servicio, :punto_salida, :orden_recogida, :tiempo_traslado_min,
-                    :hora_llegada, :notas_logisticas, :costo_staff_clp, :precio_cliente_clp
+                    :hora_llegada, :hora_inicio_servicio, :hora_fin_servicio, :tramos, :objetivo,
+                    :consideraciones, :notas_logisticas, :costo_staff_clp, :precio_cliente_clp
                 ) returning id'
             );
             $statement->execute($params);
@@ -115,6 +123,11 @@ final class PostgresBitacoraRepository implements BitacoraRepository
                     orden_recogida = :orden_recogida,
                     tiempo_traslado_min = :tiempo_traslado_min,
                     hora_llegada = :hora_llegada,
+                    hora_inicio_servicio = :hora_inicio_servicio,
+                    hora_fin_servicio = :hora_fin_servicio,
+                    tramos = :tramos,
+                    objetivo = :objetivo,
+                    consideraciones = :consideraciones,
                     notas_logisticas = :notas_logisticas,
                     costo_staff_clp = :costo_staff_clp,
                     precio_cliente_clp = :precio_cliente_clp,
@@ -202,6 +215,11 @@ final class PostgresBitacoraRepository implements BitacoraRepository
                 new TravelDuration((int) $row['tiempo_traslado_min']),
                 $row['hora_llegada'] === null ? null : (string) $row['hora_llegada'],
             ),
+            $row['hora_inicio_servicio'] === null ? null : (string) $row['hora_inicio_servicio'],
+            $row['hora_fin_servicio'] === null ? null : (string) $row['hora_fin_servicio'],
+            TravelItinerary::fromArray(json_decode((string) ($row['tramos'] ?? '[]'), true) ?: []),
+            $row['objetivo'] === null ? null : (string) $row['objetivo'],
+            $row['consideraciones'] === null ? null : (string) $row['consideraciones'],
             $row['notas_logisticas'] === null ? null : (string) $row['notas_logisticas'],
             (int) $row['costo_staff_clp'],
             (int) $row['precio_cliente_clp'],

@@ -60,6 +60,13 @@ final class BitacoraRequestValidator
         $horaLlegada = $this->stringField($body, 'hora_llegada', false, $errors);
         $this->maxLength($horaLlegada, 'hora_llegada', 20, $errors);
 
+        $horaInicioServicio = $this->timeField($body, 'hora_inicio_servicio', $errors);
+        $horaFinServicio = $this->timeField($body, 'hora_fin_servicio', $errors);
+        $tramos = $this->tramosField($body, $errors);
+
+        $objetivo = $this->stringField($body, 'objetivo', false, $errors);
+        $consideraciones = $this->stringField($body, 'consideraciones', false, $errors);
+
         $notasLogisticas = $this->stringField($body, 'notas_logisticas', false, $errors);
 
         $costoStaffClp = $this->optionalNonNegativeInt($body, 'costo_staff_clp', 'Costo staff clp', $errors);
@@ -81,10 +88,72 @@ final class BitacoraRequestValidator
             'orden_recogida' => $ordenRecogida,
             'tiempo_traslado_min' => $tiempoTrasladoMin ?? 0,
             'hora_llegada' => $horaLlegada,
+            'hora_inicio_servicio' => $horaInicioServicio,
+            'hora_fin_servicio' => $horaFinServicio,
+            'tramos' => $tramos,
+            'objetivo' => $objetivo,
+            'consideraciones' => $consideraciones,
             'notas_logisticas' => $notasLogisticas,
             'costo_staff_clp' => $costoStaffClp ?? 0,
             'precio_cliente_clp' => $precioClienteClp ?? 0,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     * @param array<string, list<string>> $errors
+     */
+    private function timeField(array $body, string $field, array &$errors): ?string
+    {
+        $value = $this->stringField($body, $field, false, $errors);
+        if ($value !== null && preg_match('/^\d{1,2}:\d{2}$/', $value) !== 1) {
+            $errors[$field][] = ucfirst(str_replace('_', ' ', $field)) . ' must use HH:MM format.';
+            return null;
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     * @param array<string, list<string>> $errors
+     * @return list<array{nombre: string, minutos: int}>
+     */
+    private function tramosField(array $body, array &$errors): array
+    {
+        if (!array_key_exists('tramos', $body) || $body['tramos'] === null) {
+            return [];
+        }
+
+        if (!is_array($body['tramos'])) {
+            $errors['tramos'][] = 'Tramos must be a list of {nombre, minutos}.';
+            return [];
+        }
+
+        $tramos = [];
+        foreach (array_values($body['tramos']) as $index => $row) {
+            $position = $index + 1;
+            if (!is_array($row)) {
+                $errors['tramos'][] = "Tramo $position must be an object with nombre and minutos.";
+                continue;
+            }
+
+            $nombre = isset($row['nombre']) && is_string($row['nombre']) ? trim($row['nombre']) : '';
+            if ($nombre === '' || mb_strlen($nombre) > 160) {
+                $errors['tramos'][] = "Tramo $position: nombre is required (max 160 characters).";
+                continue;
+            }
+
+            $minutos = $row['minutos'] ?? null;
+            if (filter_var($minutos, FILTER_VALIDATE_INT) === false || (int) $minutos < 0) {
+                $errors['tramos'][] = "Tramo $position: minutos must be a non-negative integer.";
+                continue;
+            }
+
+            $tramos[] = ['nombre' => $nombre, 'minutos' => (int) $minutos];
+        }
+
+        return $tramos;
     }
 
     /**

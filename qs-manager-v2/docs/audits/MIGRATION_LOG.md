@@ -245,10 +245,33 @@ También en 2026-07-24, fuera del plan original:
   (workflows n8n/WhatsApp que exceden al plugin) y `docs/` (documentación
   histórica) — decidir su destino es una conversación aparte.
 
+- ✅ **Plan de traslado en la bitácora** (2026-07-26): migración `0017`
+  (`hora_inicio_servicio`, `hora_fin_servicio`, `tramos` jsonb, `objetivo`,
+  `consideraciones`) + dominio `TravelLeg`/`TravelItinerary`/
+  `TravelPlanCalculator`. La regla operativa quedó codificada en un solo
+  lugar (`TravelPlanCalculator`, replicada en `bitacora.js` para el cálculo
+  en vivo): **llegada = inicio − 15 min**, **salida = llegada − suma de
+  tramos − 15 min de holgura por tráfico** (la holgura se diluye en el
+  viaje, no se muestra por tramo). Las horas calculadas NO se persisten:
+  se derivan siempre de `hora_inicio_servicio` + tramos, así que corregir
+  un tiempo de tramo replanifica sola la salida. UI: editor de tramos,
+  panel que lista lo que falta para armar la bitácora, y botón "Copiar
+  para el equipo" que arma el texto con emojis del formato acordado.
+
 Sigue pendiente:
-1. El chequeo de conflictos en el update de reservas (PUT) no existe aún
+1. **Bitácoras de pruebas (a domicilio / en estudio) — EN PAUSA por decisión
+   del usuario (2026-07-26).** Las pruebas también generan bitácora, pero
+   antes hay que resolver un tema de negocio, no técnico: cuando el servicio
+   requiere prueba presencial (en el estudio o a domicilio), a la
+   profesional se le paga **una parte** del servicio en esa instancia y el
+   **resto el día del evento** (matrimonio). Hasta definir cómo se registran
+   esos dos pagos parciales contra un mismo servicio, no se modela la
+   bitácora de prueba — de lo contrario los números de costo staff / margen
+   quedarían mal. Al retomar, decidir primero el modelo de pagos y recién
+   después la bitácora.
+2. El chequeo de conflictos en el update de reservas (PUT) no existe aún
    (solo en creación).
-2. **Discrepancia de puerto de Jarvis** — de otro repo (`llm-virtual-brain`),
+3. **Discrepancia de puerto de Jarvis** — de otro repo (`llm-virtual-brain`),
    fuera del alcance de este plan.
 
 ## Cómo retomar en otra sesión

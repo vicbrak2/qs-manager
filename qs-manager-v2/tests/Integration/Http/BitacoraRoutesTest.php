@@ -178,4 +178,94 @@ final class BitacoraRoutesTest extends HttpTestCase
         self::assertSame(404, $this->json('PUT', '/api/v1/bitacoras/999999', $base)->getStatusCode());
         self::assertSame(404, $this->json('POST', '/api/v1/bitacoras/999999/notes', ['message' => 'x'])->getStatusCode());
     }
+
+    public function testTravelPlanDerivesDepartureFromLegsAndServiceStart(): void
+    {
+        $staffId = $this->payload($this->json('POST', '/api/v1/team', [
+            'display_name' => 'Paz Contreras',
+            'role' => 'staff',
+        ]))['staff_member']['id'];
+
+        // Caso real de la operacion: servicio 16:00 con un tramo de 10 min
+        // -> llegada 15:45 (15 antes) y salida 15:20 (15 + 10 + 15 holgura).
+        $created = $this->json('POST', '/api/v1/bitacoras', [
+            'fecha_servicio' => '2026-05-22',
+            'tipo_servicio' => 'Prueba Novia (Maquillaje + Peinado)',
+            'clienta_nombre' => 'Sara Martinez',
+            'direccion_servicio' => 'Padre Fernando Cifuentes Grez 4861, Macul',
+            'punto_salida' => 'Metro Macul',
+            'mua_id' => $staffId,
+            'hora_inicio_servicio' => '16:00',
+            'hora_fin_servicio' => '18:00',
+            'tramos' => [['nombre' => 'Metro Macul -> Macul', 'minutos' => 10]],
+            'objetivo' => 'Llegar con anticipacion para preparar materiales',
+            'consideraciones' => 'Confirmar acceso al domicilio',
+        ]);
+
+        self::assertSame(201, $created->getStatusCode());
+        $bitacora = $this->payload($created)['bitacora'];
+        self::assertSame('15:45', $bitacora['hora_llegada_objetivo']);
+        self::assertSame('15:20', $bitacora['hora_salida_sugerida']);
+        self::assertSame([['nombre' => 'Metro Macul -> Macul', 'minutos' => 10]], $bitacora['tramos']);
+        // El total de traslado se deriva de los tramos, no del campo legacy.
+        self::assertSame(10, $bitacora['route_plan']['travel_duration_min']);
+
+        // Varios tramos: 16:00 - 15 - (20+25) - 15 = 14:45.
+        $updated = $this->json('PUT', '/api/v1/bitacoras/' . $bitacora['id'], [
+            'fecha_servicio' => '2026-05-22',
+            'tipo_servicio' => 'Prueba Novia (Maquillaje + Peinado)',
+            'clienta_nombre' => 'Sara Martinez',
+            'direccion_servicio' => 'Padre Fernando Cifuentes Grez 4861, Macul',
+            'punto_salida' => 'Estudio Qamiluna',
+            'mua_id' => $staffId,
+            'hora_inicio_servicio' => '16:00',
+            'tramos' => [
+                ['nombre' => 'Estudio -> Metro Macul', 'minutos' => 20],
+                ['nombre' => 'Metro Macul -> domicilio', 'minutos' => 25],
+            ],
+        ]);
+        self::assertSame(200, $updated->getStatusCode());
+        $replanned = $this->payload($updated)['bitacora'];
+        self::assertSame('14:45', $replanned['hora_salida_sugerida']);
+        self::assertSame(45, $replanned['route_plan']['travel_duration_min']);
+
+        // Sin hora de inicio no hay plan calculable, pero la bitacora vive.
+        $sinHorario = $this->json('POST', '/api/v1/bitacoras', [
+            'fecha_servicio' => '2026-05-23',
+            'tipo_servicio' => 'Social',
+            'clienta_nombre' => 'Otra clienta',
+            'direccion_servicio' => 'Direccion 1',
+            'punto_salida' => 'Estudio',
+            'mua_id' => $staffId,
+        ]);
+        self::assertSame(201, $sinHorario->getStatusCode());
+        $sinPlan = $this->payload($sinHorario)['bitacora'];
+        self::assertNull($sinPlan['hora_llegada_objetivo']);
+        self::assertNull($sinPlan['hora_salida_sugerida']);
+        self::assertSame([], $sinPlan['tramos']);
+    }
+
+    public function testTravelPlanRejectsMalformedTimesAndLegs(): void
+    {
+        $base = [
+            'fecha_servicio' => '2026-05-22',
+            'tipo_servicio' => 'Novia',
+            'clienta_nombre' => 'Sara Martinez',
+            'direccion_servicio' => 'Direccion 1',
+            'punto_salida' => 'Estudio',
+        ];
+
+        $badTime = $this->json('POST', '/api/v1/bitacoras', $base + ['hora_inicio_servicio' => '16 hrs']);
+        self::assertSame(422, $badTime->getStatusCode());
+        self::assertArrayHasKey('hora_inicio_servicio', $this->payload($badTime)['errors']);
+
+        $badLegs = $this->json('POST', '/api/v1/bitacoras', $base + [
+            'tramos' => [
+                ['nombre' => '', 'minutos' => 10],
+                ['nombre' => 'Tramo sin minutos', 'minutos' => -5],
+            ],
+        ]);
+        self::assertSame(422, $badLegs->getStatusCode());
+        self::assertCount(2, $this->payload($badLegs)['errors']['tramos']);
+    }
 }

@@ -504,11 +504,22 @@ final class WebController
             <input name="orden_recogida" placeholder="Ej: MUA primero, luego estilista">
           </label>
           <label>Traslado (min)
-            <input name="tiempo_traslado_min" type="number" min="0" step="1" value="0">
+            <input name="tiempo_traslado_min" type="number" min="0" step="1" value="0" title="Se calcula solo cuando registras tramos">
           </label>
           <label>Hora llegada
             <input name="hora_llegada" type="time">
           </label>
+          <label>⏰ Inicio servicio
+            <input name="hora_inicio_servicio" type="time">
+          </label>
+          <label>Fin servicio
+            <input name="hora_fin_servicio" type="time">
+          </label>
+          <div class="full bitacora-tramos">
+            <div class="tramos-head"><span>🚗 Tramos del traslado (min reales)</span><button type="button" class="secondary btn-sm" id="add-tramo">+ Agregar tramo</button></div>
+            <div id="tramos-list"></div>
+          </div>
+          <div id="bitacora-plan" class="availability-hint full hidden" aria-live="polite"></div>
           <label>Costo staff
             <input name="costo_staff_clp" type="number" min="0" step="1" value="0">
           </label>
@@ -518,10 +529,18 @@ final class WebController
           <label class="full">Notas logísticas
             <textarea name="notas_logisticas" rows="2"></textarea>
           </label>
+          <label class="full">🎯 Objetivo principal
+            <textarea name="objetivo" rows="2"></textarea>
+          </label>
+          <label class="full">📝 Consideraciones
+            <textarea name="consideraciones" rows="2"></textarea>
+          </label>
           <div class="actions full">
             <button type="submit" id="save-bitacora">Guardar</button>
+            <button type="button" class="secondary" id="copy-bitacora-team">📋 Copiar para el equipo</button>
           </div>
         </form>
+        <pre id="bitacora-team-preview" class="bitacora-team-preview hidden"></pre>
         <div id="bitacora-notes-panel" class="bitacora-notes hidden">
           <h3>Notas de traslado</h3>
           <ul id="bitacora-notes-list"></ul>

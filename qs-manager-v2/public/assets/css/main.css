@@ -1156,3 +1156,11 @@
     .bitacora-notes .actions { display: flex; gap: 8px; }
     .bitacora-notes .actions input { flex: 1; }
     #bitacora-form textarea { resize: vertical; font: inherit; }
+
+    /* Plan de traslado (tramos + bitácora de equipo) */
+    .bitacora-tramos .tramos-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.85rem; font-weight: 600; }
+    .tramo-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+    .tramo-row .tramo-nombre { flex: 1; }
+    .tramo-row .tramo-min { width: 72px; }
+    .tramo-row .tramo-remove { flex: 0 0 auto; }
+    .bitacora-team-preview { margin-top: 12px; background: var(--soft); border-radius: 10px; padding: 12px; font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; font-family: inherit; }

@@ -28,6 +28,11 @@ final class Bitacora
         private readonly string $clientaNombre,
         private readonly ServiceAddress $serviceAddress,
         private readonly RoutePlan $routePlan,
+        private readonly ?string $horaInicioServicio,
+        private readonly ?string $horaFinServicio,
+        private readonly TravelItinerary $itinerario,
+        private readonly ?string $objetivo,
+        private readonly ?string $consideraciones,
         private readonly ?string $notasLogisticas,
         private readonly int $costoStaffClp,
         private readonly int $precioClienteClp,
@@ -87,6 +92,31 @@ final class Bitacora
         return $this->routePlan;
     }
 
+    public function horaInicioServicio(): ?string
+    {
+        return $this->horaInicioServicio;
+    }
+
+    public function horaFinServicio(): ?string
+    {
+        return $this->horaFinServicio;
+    }
+
+    public function itinerario(): TravelItinerary
+    {
+        return $this->itinerario;
+    }
+
+    public function objetivo(): ?string
+    {
+        return $this->objetivo;
+    }
+
+    public function consideraciones(): ?string
+    {
+        return $this->consideraciones;
+    }
+
     public function notasLogisticas(): ?string
     {
         return $this->notasLogisticas;
@@ -135,6 +165,8 @@ final class Bitacora
      */
     public function toArray(): array
     {
+        $calculadora = new TravelPlanCalculator();
+
         return [
             'id' => $this->id,
             'booking_id' => $this->bookingId,
@@ -146,6 +178,13 @@ final class Bitacora
             'clienta_nombre' => $this->clientaNombre,
             'direccion_servicio' => $this->serviceAddress->value(),
             'route_plan' => $this->routePlan->toArray(),
+            'hora_inicio_servicio' => $this->horaInicioServicio,
+            'hora_fin_servicio' => $this->horaFinServicio,
+            'tramos' => $this->itinerario->toArray(),
+            'hora_llegada_objetivo' => $calculadora->llegadaObjetivo($this->horaInicioServicio),
+            'hora_salida_sugerida' => $calculadora->salidaSugerida($this->horaInicioServicio, $this->itinerario),
+            'objetivo' => $this->objetivo,
+            'consideraciones' => $this->consideraciones,
             'notas_logisticas' => $this->notasLogisticas,
             'costo_staff_clp' => $this->costoStaffClp,
             'precio_cliente_clp' => $this->precioClienteClp,

@@ -8,7 +8,7 @@ import { clearFormErrors, showFormErrors } from './ui/validation.js';
 import { setTab, loadHealth, loadSyncStatus } from './features/dashboard.js';
 import { loadServices, resetServiceForm, editService, servicePayload, renderServices, toggleServiceSort } from './features/services.js';
 import { loadStaff, loadBookings, resetBookingForm, editBooking, bookingPayload, renderBookings, visibleBookings, toggleBookingSort, setBookingsView, refreshStaffAvailability } from './features/bookings.js';
-import { loadBitacoras, resetBitacoraForm, editBitacora, startBitacoraFromBooking, bitacoraPayload, fillBitacoraStaffSelects, addBitacoraNote } from './features/bitacora.js';
+import { loadBitacoras, resetBitacoraForm, editBitacora, startBitacoraFromBooking, bitacoraPayload, fillBitacoraStaffSelects, addBitacoraNote, addTramoRow, updateBitacoraPlan, copyTeamBitacora } from './features/bitacora.js';
 import { syncAll, renderSyncModal, syncBookingGas } from './features/sync.js';
 import { initFinanceDetails, loadFinanceDashboard } from './features/finance.js';
 
@@ -38,6 +38,19 @@ $('#refresh-bitacoras').addEventListener('click', () => loadBitacoras().catch((e
 $('#new-bitacora').addEventListener('click', resetBitacoraForm);
 $('#reset-bitacora').addEventListener('click', resetBitacoraForm);
 $('#add-bitacora-note').addEventListener('click', addBitacoraNote);
+$('#add-tramo').addEventListener('click', () => {
+  addTramoRow();
+  updateBitacoraPlan();
+});
+$('#copy-bitacora-team').addEventListener('click', copyTeamBitacora);
+
+// El plan (salida/llegada/faltantes) se recalcula con cualquier dato que
+// participe del calculo, incluidos los tramos que se crean dinamicamente.
+$('#bitacora-form').addEventListener('input', (event) => {
+  if (event.target.closest('#tramos-list') || event.target.matches('[name=hora_inicio_servicio], [name=clienta_nombre], [name=direccion_servicio], [name=punto_salida]')) {
+    updateBitacoraPlan();
+  }
+});
 
 ['staff_id', 'scheduled_for', 'service_id'].forEach((name) => {
   $('#booking-form').elements[name].addEventListener('change', refreshStaffAvailability);
@@ -133,6 +146,12 @@ document.addEventListener('click', async (event) => {
 
   const bitacoraButton = event.target.closest('[data-edit-bitacora]');
   if (bitacoraButton) editBitacora(Number(bitacoraButton.dataset.editBitacora));
+
+  const removeTramoButton = event.target.closest('[data-remove-tramo]');
+  if (removeTramoButton) {
+    removeTramoButton.closest('[data-tramo]').remove();
+    updateBitacoraPlan();
+  }
 
   const bitacoraBookingLink = event.target.closest('[data-bitacora-booking-link]');
   if (bitacoraBookingLink) {
