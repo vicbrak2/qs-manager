@@ -250,4 +250,36 @@ test.describe('Bitácora y disponibilidad de staff', () => {
     await page.click('[data-remove-tramo]');
     await expect(plan).toContainText('al menos un tramo');
   });
+
+  test('genera la imagen de la bitácora para mandar al equipo', async ({ page }) => {
+    await page.route('/api/v1/bitacoras', (route) => route.fulfill({ json: { bitacoras: [] } }));
+
+    await page.goto('/');
+    await page.click('#tab-bitacora');
+
+    await page.fill('#bitacora-form [name=fecha_servicio]', '2026-07-27');
+    await page.fill('#bitacora-form [name=tipo_servicio]', 'Novia Civil Maquillaje Peinado');
+    await page.fill('#bitacora-form [name=clienta_nombre]', 'Nadia Palomino');
+    await page.fill('#bitacora-form [name=direccion_servicio]', 'Gerónimo de Alderete 208, La Florida');
+    await page.fill('#bitacora-form [name=punto_salida]', 'Estudio Qamiluna');
+    await page.fill('#bitacora-form [name=hora_inicio_servicio]', '08:00');
+    await page.selectOption('#bitacora-mua-select', '3');
+    await page.click('#add-tramo');
+    await page.fill('.tramo-row .tramo-nombre', 'Estudio → La Florida');
+    await page.fill('.tramo-row .tramo-min', '40');
+
+    await page.click('#image-bitacora-team');
+
+    const canvas = page.locator('#bitacora-image-preview canvas');
+    await expect(canvas).toBeVisible();
+    // El alto depende del contenido: si el render falla queda en 0.
+    const size = await canvas.evaluate((el: HTMLCanvasElement) => ({ w: el.width, h: el.height }));
+    expect(size.w).toBeGreaterThan(0);
+    expect(size.h).toBeGreaterThan(400);
+
+    // La imagen se ofrece como PNG descargable.
+    const link = page.locator('#bitacora-image-preview a');
+    await expect(link).toHaveAttribute('download', /bitacora-2026-07-27\.png/);
+    await expect(link).toHaveAttribute('href', /^data:image\/png;base64,/);
+  });
 });

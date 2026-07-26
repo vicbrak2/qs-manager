@@ -6,6 +6,7 @@ import { escapeHtml, money, badge, dash, toDateTimeLocal } from '../ui/formattin
 import { notify } from '../ui/notifications.js';
 import { clearFormErrors } from '../ui/validation.js';
 import { setTab } from './dashboard.js';
+import { buildBitacoraImage } from './bitacora-image.js';
 
 export async function loadBitacoras() {
   const data = await api('/api/v1/bitacoras');
@@ -234,6 +235,89 @@ function selectedName(select) {
   return select.value && option ? option.textContent.trim() : null;
 }
 
+// Extraccion unica de los datos de la bitacora: la usan tanto el texto
+// copiable como la imagen, para que no puedan divergir.
+function bitacoraFields() {
+  const fields = $('#bitacora-form').elements;
+  const tramos = collectTramos();
+  const inicio = fields.hora_inicio_servicio.value;
+  const fin = fields.hora_fin_servicio.value;
+  const totalTramos = tramos.reduce((sum, t) => sum + t.minutos, 0);
+  const llegada = inicio ? timeMinus(inicio, ARRIVAL_BUFFER_MIN) : null;
+  const salida = inicio && tramos.length
+    ? timeMinus(inicio, ARRIVAL_BUFFER_MIN + totalTramos + SLACK_MIN)
+    : null;
+
+  const mua = selectedName(fields.mua_id);
+  const estilista = selectedName(fields.estilista_id);
+
+  return {
+    tipo: fields.tipo_servicio.value.trim(),
+    clienta: fields.clienta_nombre.value.trim(),
+    fecha: fields.fecha_servicio.value,
+    direccion: fields.direccion_servicio.value.trim(),
+    puntoSalida: fields.punto_salida.value.trim(),
+    ordenManual: fields.orden_recogida.value.trim(),
+    objetivo: fields.objetivo.value.trim(),
+    consideraciones: fields.consideraciones.value.trim(),
+    notas: fields.notas_logisticas.value.trim(),
+    inicio,
+    fin,
+    llegada,
+    salida,
+    tramos,
+    totalTramos,
+    profesionales: [
+      mua ? `${mua} (maquilladora)` : null,
+      estilista ? `${estilista} (estilista)` : null,
+    ].filter(Boolean).join(', '),
+  };
+}
+
+function fechaLarga(iso) {
+  if (!iso) return '—';
+  const date = new Date(`${iso}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return iso;
+  const texto = date.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+/**
+ * Filas del documento que se manda al equipo, en el orden acordado.
+ */
+export function bitacoraImageData() {
+  const f = bitacoraFields();
+  // Un tramo por linea: el nombre del tramo ya suele traer su propia flecha
+  // ("Estudio -> Metro"), asi que unirlos con otra flecha se lee pesimo.
+  const ruta = f.tramos.length
+    ? f.tramos.map((t) => `${t.nombre} — ${t.minutos} min`).join('\n')
+      + `\nTotal ${f.totalTramos} min + ${SLACK_MIN} de holgura por tráfico`
+    : '—';
+
+  const filas = [
+    { campo: '📅 Fecha', valor: fechaLarga(f.fecha) },
+    { campo: '💄 Tipo de actividad', valor: f.tipo || '—' },
+    { campo: '👰 Clienta', valor: f.clienta || '—' },
+    { campo: '📍 Dirección del servicio', valor: f.direccion || '—' },
+    { campo: '⏰ Horario del servicio', valor: f.inicio ? `${f.inicio}${f.fin ? ` - ${f.fin}` : ''} hrs` : '—' },
+    { campo: '🧑‍🎨 Profesionales', valor: f.profesionales || '—' },
+    { campo: '🚪 Punto de salida', valor: f.puntoSalida || '—' },
+    { campo: '🗺️ Orden de traslado', valor: f.ordenManual || (f.tramos.length ? f.tramos.map((t) => t.nombre).join('  ·  ') : '—') },
+    { campo: '🕐 Hora de salida', valor: f.salida ? `${f.salida} hrs` : '—' },
+    { campo: '🕒 Hora de llegada estimada', valor: f.llegada ? `${f.llegada} hrs (15 minutos antes del inicio)` : '—' },
+    { campo: '🚗 Ruta estimada', valor: ruta },
+  ];
+
+  if (f.objetivo) filas.push({ campo: '🎯 Objetivo principal', valor: f.objetivo });
+  if (f.consideraciones) filas.push({ campo: '📝 Consideraciones', valor: f.consideraciones });
+  if (f.notas) filas.push({ campo: '🧭 Notas logísticas', valor: f.notas });
+
+  return {
+    titulo: `✨ Bitácora - ${f.tipo || 'Servicio'} - ${f.clienta || 'Sin clienta'}`,
+    filas,
+  };
+}
+
 function teamBitacoraText() {
   const fields = $('#bitacora-form').elements;
   const tramos = collectTramos();
@@ -285,6 +369,28 @@ export async function copyTeamBitacora() {
   } catch (error) {
     notify('No se pudo copiar automáticamente: usa la vista previa de abajo.', true);
   }
+}
+
+export function generateBitacoraImage() {
+  const data = bitacoraImageData();
+  const canvas = buildBitacoraImage(data);
+  const holder = $('#bitacora-image-preview');
+
+  canvas.style.width = '100%';
+  canvas.style.borderRadius = '10px';
+  canvas.style.border = '1px solid var(--border-light)';
+
+  const link = document.createElement('a');
+  link.className = 'secondary btn-sm';
+  link.textContent = '⬇️ Descargar imagen';
+  link.download = `bitacora-${$('#bitacora-form').elements.fecha_servicio.value || 'servicio'}.png`;
+  link.href = canvas.toDataURL('image/png');
+
+  holder.innerHTML = '';
+  holder.appendChild(canvas);
+  holder.appendChild(link);
+  holder.classList.remove('hidden');
+  notify('🖼️ Imagen generada: descárgala y mándala al equipo.');
 }
 
 export function bitacoraPayload() {

@@ -8,7 +8,7 @@ import { clearFormErrors, showFormErrors } from './ui/validation.js';
 import { setTab, loadHealth, loadSyncStatus } from './features/dashboard.js';
 import { loadServices, resetServiceForm, editService, servicePayload, renderServices, toggleServiceSort } from './features/services.js';
 import { loadStaff, loadBookings, resetBookingForm, editBooking, bookingPayload, renderBookings, visibleBookings, toggleBookingSort, setBookingsView, refreshStaffAvailability } from './features/bookings.js';
-import { loadBitacoras, resetBitacoraForm, editBitacora, startBitacoraFromBooking, bitacoraPayload, fillBitacoraStaffSelects, addBitacoraNote, addTramoRow, updateBitacoraPlan, copyTeamBitacora } from './features/bitacora.js';
+import { loadBitacoras, resetBitacoraForm, editBitacora, startBitacoraFromBooking, bitacoraPayload, fillBitacoraStaffSelects, addBitacoraNote, addTramoRow, updateBitacoraPlan, copyTeamBitacora, generateBitacoraImage } from './features/bitacora.js';
 import { syncAll, renderSyncModal, syncBookingGas } from './features/sync.js';
 import { initFinanceDetails, loadFinanceDashboard } from './features/finance.js';
 
@@ -43,6 +43,7 @@ $('#add-tramo').addEventListener('click', () => {
   updateBitacoraPlan();
 });
 $('#copy-bitacora-team').addEventListener('click', copyTeamBitacora);
+$('#image-bitacora-team').addEventListener('click', generateBitacoraImage);
 
 // El plan (salida/llegada/faltantes) se recalcula con cualquier dato que
 // participe del calculo, incluidos los tramos que se crean dinamicamente.

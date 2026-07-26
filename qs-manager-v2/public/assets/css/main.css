@@ -1165,3 +1165,5 @@
     .tramo-row .tramo-min { width: 72px; }
     .tramo-row .tramo-remove { flex: 0 0 auto; }
     .bitacora-team-preview { margin-top: 12px; background: var(--soft); border-radius: 10px; padding: 12px; font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; font-family: inherit; }
+    .bitacora-image-preview { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+    .bitacora-image-preview a { text-decoration: none; display: inline-block; padding: 6px 12px; }

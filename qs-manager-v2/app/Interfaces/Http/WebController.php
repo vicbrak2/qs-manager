@@ -538,10 +538,12 @@ final class WebController
           </label>
           <div class="actions full">
             <button type="submit" id="save-bitacora">Guardar</button>
-            <button type="button" class="secondary" id="copy-bitacora-team">📋 Copiar para el equipo</button>
+            <button type="button" class="secondary" id="copy-bitacora-team">📋 Copiar texto</button>
+            <button type="button" class="secondary" id="image-bitacora-team">🖼️ Generar imagen</button>
           </div>
         </form>
         <pre id="bitacora-team-preview" class="bitacora-team-preview hidden"></pre>
+        <div id="bitacora-image-preview" class="bitacora-image-preview hidden"></div>
         <div id="bitacora-notes-panel" class="bitacora-notes hidden">
           <h3>Notas de traslado</h3>
           <ul id="bitacora-notes-list"></ul>
