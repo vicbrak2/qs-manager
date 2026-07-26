@@ -8,6 +8,7 @@ use PDO;
 use QSManager\Application\Sheets\SheetCsvReader;
 use QSManager\Application\Sheets\SheetReplicaImporter;
 use QSManager\Application\Sheets\SheetSyncResult;
+use QSManager\Domain\Team\StaffAssignment;
 use QSManager\Infrastructure\Sheets\Importers\AgendaMonthImporter;
 use QSManager\Infrastructure\Sheets\Importers\BitacoraImporter;
 use QSManager\Infrastructure\Sheets\Importers\CashTrackingImporter;
@@ -134,6 +135,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
                 $this->connection->beginTransaction();
                 try {
                     $this->reconcileOperationalProjections();
+                    $this->syncStaffDirectoryFromSheets();
                     $this->relinkBitacorasToImportedBookings();
                     $this->connection->commit();
                 } catch (Throwable $exception) {
@@ -278,6 +280,82 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
                 or service_id is null
              )"
         );
+    }
+
+    /**
+     * Las planillas guardan la encargada como texto libre y con las dos
+     * profesionales juntas ("Cami - Paz"), asi que qs_staff quedaba vacio y
+     * ninguna reserva tenia equipo asignado. Aca se puebla el directorio a
+     * partir de los nombres reales de las hojas y se asigna a cada reserva
+     * la maquilladora (primer nombre del campo, ver StaffAssignment).
+     */
+    public function syncStaffDirectoryFromSheets(): void
+    {
+        $rawValues = $this->connection->query(
+            "select distinct staff_name from v_bitacora_latest where staff_name is not null
+             union
+             select distinct staff_name from v_agenda_latest where staff_name is not null"
+        )->fetchAll(PDO::FETCH_COLUMN);
+
+        $staffIds = [];
+        foreach ($rawValues as $rawValue) {
+            $assignment = StaffAssignment::fromSheetValue((string) $rawValue);
+            if ($assignment->isEmpty()) {
+                continue;
+            }
+
+            foreach ($assignment->names() as $name) {
+                $key = mb_strtolower($name);
+                if (!isset($staffIds[$key])) {
+                    $staffIds[$key] = $this->staffIdByName($name);
+                }
+            }
+
+            $muaId = $staffIds[mb_strtolower((string) $assignment->mua())] ?? null;
+            if ($muaId !== null) {
+                $this->assignStaffToBookings((string) $rawValue, $muaId);
+            }
+        }
+    }
+
+    private function staffIdByName(string $name): int
+    {
+        $statement = $this->connection->prepare(
+            'select id from qs_staff where lower(trim(display_name)) = lower(trim(:name)) order by id asc limit 1'
+        );
+        $statement->execute(['name' => $name]);
+        $id = $statement->fetchColumn();
+
+        if ($id !== false) {
+            return (int) $id;
+        }
+
+        $insert = $this->connection->prepare(
+            "insert into qs_staff (display_name, role, active) values (:name, 'staff', true) returning id"
+        );
+        $insert->execute(['name' => $name]);
+
+        return (int) $insert->fetchColumn();
+    }
+
+    private function assignStaffToBookings(string $rawStaffName, int $staffId): void
+    {
+        $this->connection->prepare(
+            'update qs_bookings k set staff_id = :staff_id
+             from v_bitacora_latest r
+             where k.sheet_external_id = r.qs_external_id
+               and r.staff_name = :raw
+               and k.staff_id is distinct from :staff_id'
+        )->execute(['staff_id' => $staffId, 'raw' => $rawStaffName]);
+
+        $this->connection->prepare(
+            'update qs_bookings k set staff_id = :staff_id
+             from v_agenda_latest r
+             where k.source_sheet = r.source_sheet
+               and k.source_row = r.source_row
+               and r.staff_name = :raw
+               and k.staff_id is distinct from :staff_id'
+        )->execute(['staff_id' => $staffId, 'raw' => $rawStaffName]);
     }
 
     public function relinkBitacorasToImportedBookings(): void

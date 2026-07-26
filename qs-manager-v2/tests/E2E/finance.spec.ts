@@ -70,6 +70,12 @@ test.describe('Finance Dashboard', () => {
     await expect(page.locator('#finance-val-net')).toContainText('$30.000');
     await expect(page.locator('#finance-val-margin')).toContainText('75,0%');
 
+    // Cadena recibido -> retenido -> liberado: los $10.000 de abono no son
+    // plata disponible hasta que el servicio se realice.
+    await expect(page.locator('#finance-val-committed')).toContainText('$10.000');
+    await expect(page.locator('#finance-val-released')).toContainText('$30.000');
+    await expect(page.locator('#finance-story-title')).toContainText('abonos retenidos');
+
     // Check reconciliation table
     const tableRows = page.locator('#finance-reconciliation-body tr');
     await expect(tableRows).toHaveCount(6);

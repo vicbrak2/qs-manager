@@ -258,6 +258,50 @@ final class PostgresSheetReplicaImporterTest extends TestCase
         );
     }
 
+    public function testStaffDirectoryIsBuiltFromSheetNamesAndAssignedToBookings(): void
+    {
+        $this->connection->exec('TRUNCATE TABLE qs_staff, qs_bookings, qs_sheet_bitacora_rows CASCADE');
+        $this->connection->exec(
+            "INSERT INTO qs_sheet_sources (id, spreadsheet_id, spreadsheet_title, sheet_name, purpose)
+             VALUES (900, 'mock', 'mock', 'Bitácora QS — Servicios', 'bitacora')"
+        );
+        $this->connection->exec("INSERT INTO qs_sheet_import_runs (id, source_id, status) VALUES (900, 900, 'completed')");
+
+        // La planilla escribe la encargada en un solo campo y con variantes
+        // de separador/mayusculas para la misma persona.
+        $this->connection->exec(
+            "INSERT INTO qs_sheet_bitacora_rows (import_run_id, source_row, qs_external_id, service_date, staff_name)
+             VALUES (900, 2, 'QS-900', '2026-07-27', 'Cami - Paz'),
+                    (900, 3, 'QS-901', '2026-07-28', 'cami -paz'),
+                    (900, 4, 'QS-902', '2026-07-29', 'Mou')"
+        );
+        $this->connection->exec(
+            "INSERT INTO qs_bookings (customer_name, scheduled_for, status, sheet_external_id)
+             VALUES ('Nadia', '2026-07-27 12:00:00+00', 'confirmed', 'QS-900'),
+                    ('Otra', '2026-07-29 12:00:00+00', 'confirmed', 'QS-902')"
+        );
+
+        $importer = new PostgresSheetReplicaImporter($this->connection, $this->createMock(SheetCsvReader::class));
+        $importer->syncStaffDirectoryFromSheets();
+
+        // Cami/Paz una sola vez pese a las variantes de escritura.
+        $staff = $this->connection->query('SELECT display_name FROM qs_staff ORDER BY display_name')
+            ->fetchAll(PDO::FETCH_COLUMN);
+        self::assertSame(['Cami', 'Mou', 'Paz'], $staff);
+
+        // La reserva recibe la MUA (primer nombre del campo), no la estilista.
+        $assigned = $this->connection->query(
+            "SELECT b.sheet_external_id, s.display_name
+             FROM qs_bookings b JOIN qs_staff s ON s.id = b.staff_id
+             ORDER BY b.sheet_external_id"
+        )->fetchAll(PDO::FETCH_KEY_PAIR);
+        self::assertSame(['QS-900' => 'Cami', 'QS-902' => 'Mou'], $assigned);
+
+        // Idempotente: correrlo de nuevo no duplica profesionales.
+        $importer->syncStaffDirectoryFromSheets();
+        self::assertSame(3, (int) $this->connection->query('SELECT COUNT(*) FROM qs_staff')->fetchColumn());
+    }
+
     public function testExecutedSheetStatusMapsToCompletedBooking(): void
     {
         // bookingStatus() vive en SheetRowMapper desde Fase 4.

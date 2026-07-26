@@ -190,6 +190,11 @@ export async function loadFinanceDashboard() {
     $('#finance-val-contracted').textContent = formatCurrency(data.metrics.contracted_sales);
     $('#finance-val-collected').textContent = formatCurrency(data.metrics.collected_revenue);
     $('#finance-val-committed').textContent = formatCurrency(data.metrics.committed_deposits);
+    // Liberado = lo recibido cuyo servicio ya se realizo. Se deriva aca en
+    // vez de pedir otra metrica: recibido - retenido, por definicion.
+    $('#finance-val-released').textContent = formatCurrency(
+      Number(data.metrics.collected_revenue || 0) - Number(data.metrics.committed_deposits || 0)
+    );
     $('#finance-val-receivable').textContent = formatCurrency(data.metrics.accounts_receivable);
     $('#finance-val-realized').textContent = formatCurrency(data.metrics.realized_revenue);
     $('#finance-val-costs').textContent = formatCurrency(data.metrics.direct_costs);
@@ -211,10 +216,16 @@ export async function loadFinanceDashboard() {
     const pending = Number(data.metrics.accounts_receivable || 0);
     const available = Number(data.metrics.net_result || 0);
     const committed = Number(data.metrics.committed_deposits || 0);
-    $('#finance-story-title').textContent = `Ingresaron ${formatCurrency(received)}; ${formatCurrency(available)} corresponden a utilidad realizada.`;
-    $('#finance-story-copy').textContent = pending > 0
-      ? `${formatCurrency(committed)} están comprometidos en servicios futuros y ${formatCurrency(pending)} siguen pendientes de cobro.`
-      : `${formatCurrency(committed)} están comprometidos en servicios futuros.`;
+    const released = received - committed;
+    $('#finance-story-title').textContent = committed > 0
+      ? `Ingresaron ${formatCurrency(received)}, pero ${formatCurrency(committed)} son abonos retenidos: disponible ${formatCurrency(released)}.`
+      : `Ingresaron ${formatCurrency(received)}, sin abonos retenidos.`;
+
+    const partes = [];
+    if (committed > 0) partes.push(`${formatCurrency(committed)} corresponden a reservas de servicios que aún no se realizan y se liberan al terminarlos`);
+    if (pending > 0) partes.push(`${formatCurrency(pending)} siguen pendientes de cobro`);
+    partes.push(`el resultado del período es ${formatCurrency(available)}`);
+    $('#finance-story-copy').textContent = `${partes.join('; ')}.`;
 
     // Render Chart
     updateFinanceChart(data.metrics);

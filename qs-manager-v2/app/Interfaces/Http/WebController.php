@@ -105,8 +105,9 @@ final class WebController
             </div>
             <div class="finance-flow-grid">
               <div class="finance-card finance-card--sales"><div class="finance-card-title">Vendido</div><div class="finance-val" id="finance-val-contracted">$ 0</div><p>Valor total de los servicios registrados.</p></div>
-              <div class="finance-card finance-card--collected"><div class="finance-card-title">Dinero recibido</div><div class="finance-val" id="finance-val-collected">$ 0</div><p>Pagos y abonos que ya ingresaron.</p></div>
-              <div class="finance-card finance-card--committed"><div class="finance-card-title">Abonos comprometidos</div><div class="finance-val" id="finance-val-committed">$ 0</div><p>Abonos de servicios que todavía no han finalizado.</p></div>
+              <div class="finance-card finance-card--collected"><div class="finance-card-title">Dinero recibido</div><div class="finance-val" id="finance-val-collected">$ 0</div><p>Todo lo que ingresó en el período: abonos de reserva y pagos completos.</p></div>
+              <div class="finance-card finance-card--committed"><div class="finance-card-title">🔒 Retenido como reserva</div><div class="finance-val" id="finance-val-committed">$ 0</div><p>Abonos de servicios que aún no se realizan. <strong>No es plata disponible:</strong> se libera al terminar el servicio.</p></div>
+              <div class="finance-card finance-card--released"><div class="finance-card-title">✅ Liberado</div><div class="finance-val" id="finance-val-released">$ 0</div><p>Parte de lo recibido cuyo servicio ya se realizó. Es lo que entra al resultado.</p></div>
               <div class="finance-card finance-card--pending"><div class="finance-card-title">Pendiente de cobro</div><div class="finance-val" id="finance-val-receivable">$ 0</div><p>Parte vendida que todavía no aparece pagada.</p></div>
             </div>
           </section>
@@ -119,7 +120,7 @@ final class WebController
               <div class="finance-card finance-card--expense"><div class="finance-card-title">Gastos fijos</div><div class="finance-val" id="finance-val-fixed-expenses">$ 0</div><p>Arriendo y suscripciones mensuales confirmadas.</p><small id="finance-fixed-expense-status">Sin partidas pendientes</small></div>
               <div class="finance-card finance-card--expense"><div class="finance-card-title">Otros gastos</div><div class="finance-val" id="finance-val-expenses">$ 0</div><p>Gastos variables pagados durante el período.</p></div>
               <div class="finance-card finance-card--expense"><div class="finance-card-title">Devoluciones</div><div class="finance-val" id="finance-val-refunds">$ 0</div><p>Dinero devuelto a clientes.</p></div>
-              <div class="finance-card finance-card--result"><div class="finance-card-title">Resultado disponible</div><div class="finance-val" id="finance-val-net">$ 0</div><p>Recibido menos costos, gastos y devoluciones.</p><button type="button" class="finance-detail-button" id="finance-details-toggle" aria-expanded="false" aria-controls="finance-available-details">Ver detalle por servicio</button></div>
+              <div class="finance-card finance-card--result"><div class="finance-card-title">Resultado disponible</div><div class="finance-val" id="finance-val-net">$ 0</div><p>Ingresos realizados menos costos, gastos y devoluciones. Los abonos retenidos no entran acá.</p><button type="button" class="finance-detail-button" id="finance-details-toggle" aria-expanded="false" aria-controls="finance-available-details">Ver detalle por servicio</button></div>
               <div class="finance-card finance-card--margin"><div class="finance-card-title">Margen sobre lo cobrado</div><div class="finance-val" id="finance-val-margin">0%</div><p>Porcentaje del cobro que quedó disponible.</p></div>
             </div>
           </section>

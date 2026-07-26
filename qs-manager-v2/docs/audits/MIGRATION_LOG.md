@@ -258,6 +258,16 @@ También en 2026-07-24, fuera del plan original:
   panel que lista lo que falta para armar la bitácora, y botón "Copiar
   para el equipo" que arma el texto con emojis del formato acordado.
 
+- ✅ **Revisión de cuentas + directorio de profesionales** (2026-07-26):
+  el motor financiero ya excluía correctamente los abonos no liberados del
+  resultado, pero la UI lo contradecía (la tarjeta decía "Recibido menos
+  costos" cuando la fórmula usa lo *realizado*). Se agregó la cadena
+  **Recibido → 🔒 Retenido → ✅ Liberado** y se corrigieron los textos falsos.
+  Además `qs_staff` estaba vacía: ahora el sync puebla el directorio desde
+  los nombres reales de las hojas y asigna la MUA a cada reserva.
+  **Todo el modelo quedó documentado en `docs/finance/modelo-financiero.md`
+  — leerlo antes de tocar cualquier cálculo de finanzas.**
+
 Sigue pendiente:
 1. **Bitácoras de pruebas (a domicilio / en estudio) — EN PAUSA por decisión
    del usuario (2026-07-26).** Las pruebas también generan bitácora, pero
