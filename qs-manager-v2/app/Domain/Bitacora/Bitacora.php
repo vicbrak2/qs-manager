@@ -19,6 +19,8 @@ final class Bitacora
      */
     public function __construct(
         private readonly ?int $id,
+        private readonly ?int $bookingId,
+        private readonly ?string $bookingExternalId,
         private readonly string $fechaServicio,
         private readonly string $tipoServicio,
         private readonly ?int $muaId,
@@ -38,6 +40,16 @@ final class Bitacora
     public function id(): ?int
     {
         return $this->id;
+    }
+
+    public function bookingId(): ?int
+    {
+        return $this->bookingId;
+    }
+
+    public function bookingExternalId(): ?string
+    {
+        return $this->bookingExternalId;
     }
 
     public function fechaServicio(): string
@@ -125,6 +137,8 @@ final class Bitacora
     {
         return [
             'id' => $this->id,
+            'booking_id' => $this->bookingId,
+            'booking_external_id' => $this->bookingExternalId,
             'fecha_servicio' => $this->fechaServicio,
             'tipo_servicio' => $this->tipoServicio,
             'mua_id' => $this->muaId,

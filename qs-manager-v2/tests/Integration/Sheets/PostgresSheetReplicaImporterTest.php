@@ -266,4 +266,44 @@ final class PostgresSheetReplicaImporterTest extends TestCase
         self::assertSame('completed', $mapper->bookingStatus('Ejecutado'));
         self::assertSame('completed', $mapper->bookingStatus('Ejecutada'));
     }
+
+    public function testBitacoraBookingLinkIsRestoredAfterImportedBookingReinsert(): void
+    {
+        $serviceId = (int) $this->connection->query(
+            "INSERT INTO qs_services (name, quantity, active) VALUES ('Novia', 1, true) RETURNING id"
+        )->fetchColumn();
+
+        $bookingId = (int) $this->connection->query(
+            "INSERT INTO qs_bookings (service_id, customer_name, status, sheet_external_id, source_sheet, source_row)
+             VALUES ($serviceId, 'Camila Soto', 'confirmed', 'QS-123', 'Bitácora QS — Servicios', 2)
+             RETURNING id"
+        )->fetchColumn();
+
+        $this->connection->exec(
+            "INSERT INTO qs_bitacoras (
+                booking_id, booking_external_id, fecha_servicio, tipo_servicio, clienta_nombre,
+                direccion_servicio, punto_salida, tiempo_traslado_min
+             ) VALUES (
+                $bookingId, 'QS-123', '2026-09-12', 'Novia', 'Camila Soto',
+                'Av. Siempre Viva 123', 'Estudio Qamiluna', 0
+             )"
+        );
+
+        $this->connection->exec("DELETE FROM qs_bookings WHERE source_sheet = 'Bitácora QS — Servicios'");
+        self::assertNull($this->connection->query('SELECT booking_id FROM qs_bitacoras')->fetchColumn());
+
+        $newBookingId = (int) $this->connection->query(
+            "INSERT INTO qs_bookings (service_id, customer_name, status, sheet_external_id, source_sheet, source_row)
+             VALUES ($serviceId, 'Camila Soto', 'confirmed', 'QS-123', 'Bitácora QS — Servicios', 2)
+             RETURNING id"
+        )->fetchColumn();
+
+        $importer = new PostgresSheetReplicaImporter($this->connection, $this->createMock(SheetCsvReader::class));
+        $importer->relinkBitacorasToImportedBookings();
+
+        self::assertSame(
+            $newBookingId,
+            (int) $this->connection->query('SELECT booking_id FROM qs_bitacoras')->fetchColumn()
+        );
+    }
 }

@@ -8,8 +8,8 @@
     "hash": "894165dba7e7e2bfbe73a3bee4a1b42e"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Bitacora\\SaveBitacora.php": {
-    "mtime": 1784934117.8135037,
-    "hash": "6d3edbfb8ae11de2e3741fc13ba390be"
+    "mtime": 1785016644.3689892,
+    "hash": "3e5cb1e3ca98b0f80631811160e51125"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Application\\Booking\\BookingGasGateway.php": {
     "mtime": 1783911993.4230065,
@@ -108,16 +108,16 @@
     "hash": "15bf22d2e0c14e2eac9047b08ebac695"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Bitacora\\Bitacora.php": {
-    "mtime": 1784934063.9905052,
-    "hash": "fc01a253cf6260a2cc4a7399c5592322"
+    "mtime": 1785016608.349416,
+    "hash": "825a211646b8defb601c0f414fa9cf59"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Bitacora\\BitacoraPolicy.php": {
     "mtime": 1784926948.5360403,
     "hash": "3f7141952622c3799deb543d0f677acd"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Bitacora\\BitacoraRepository.php": {
-    "mtime": 1784934058.7532113,
-    "hash": "bd0e8cff2071c71f41d5dc4919e9a319"
+    "mtime": 1785016608.3526666,
+    "hash": "bfe01ca82135db6db863e941ec0c4370"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Bitacora\\PickupPoint.php": {
     "mtime": 1784926891.1550574,
@@ -140,8 +140,8 @@
     "hash": "93c865e032c8da7a7bba28685a4ba706"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Booking\\Booking.php": {
-    "mtime": 1783916231.6189241,
-    "hash": "28961a6902e9170a3a4045f3e8ba1ac2"
+    "mtime": 1785016608.3526666,
+    "hash": "cc85185c1d5cb12a790833aea7537e8d"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Domain\\Booking\\BookingConflictException.php": {
     "mtime": 1784927459.2086139,
@@ -252,8 +252,8 @@
     "hash": "a09f3b416684ae49084121964404dd97"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Http\\AppFactory.php": {
-    "mtime": 1784934298.2989156,
-    "hash": "b6a259bf63fb173547317b6fd244703d"
+    "mtime": 1785016644.371535,
+    "hash": "5ca814e6e84b0e4c764013bc8707112f"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Http\\CurlHttpClient.php": {
     "mtime": 1783976815.871631,
@@ -264,12 +264,12 @@
     "hash": "b2197b102d8bcbbd53e2481db6407faf"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Persistence\\Postgres\\PostgresBitacoraRepository.php": {
-    "mtime": 1784934086.3859577,
-    "hash": "5fb581a46a09c7fa780520b88b687d22"
+    "mtime": 1785016608.3526666,
+    "hash": "102d64e4a33704f6280de3e5eb0a4f83"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Persistence\\Postgres\\PostgresBookingRepository.php": {
-    "mtime": 1784933246.3903508,
-    "hash": "3bc6db288b96593beebe3a78131ecd91"
+    "mtime": 1785016608.3526666,
+    "hash": "040d84aca089af842cd7524aeacb55a7"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Persistence\\Postgres\\PostgresFinanceReadRepository.php": {
     "mtime": 1784392406.2286117,
@@ -292,8 +292,8 @@
     "hash": "dc6769ff353ca4f72d02dc4c8e60eded"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\PostgresSheetReplicaImporter.php": {
-    "mtime": 1784928080.5004306,
-    "hash": "13afccbf79fe503fa1114da2d2abb34f"
+    "mtime": 1785016644.371535,
+    "hash": "f260c5648a135aeff6ca23bf0a801e40"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Infrastructure\\Sheets\\PostgresSyncQueue.php": {
     "mtime": 1783992459.9197128,
@@ -344,8 +344,8 @@
     "hash": "710f979ad510617a7a803ab9c3f2dc6e"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\BitacoraController.php": {
-    "mtime": 1784934138.3720045,
-    "hash": "a2375b66d568c8f37a572b71aeb9710a"
+    "mtime": 1785016644.371535,
+    "hash": "b86a227715a02ac2df61a266757c9f2e"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\BookingController.php": {
     "mtime": 1784933276.0911386,
@@ -376,12 +376,12 @@
     "hash": "d97980253e6c74e35034003be8a4d983"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\WebController.php": {
-    "mtime": 1785015516.8888516,
-    "hash": "ac96eee6fc9a965a49005cf24093f2a9"
+    "mtime": 1785016744.9773421,
+    "hash": "c1d929d733760c3071cc5e723a94b2bf"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\Validation\\BitacoraRequestValidator.php": {
-    "mtime": 1784934110.2993536,
-    "hash": "5465e690fd38453a11349594415ff3bb"
+    "mtime": 1785016644.3689892,
+    "hash": "f72d672efd44fdce8adcfa790fb4145d"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\app\\Interfaces\\Http\\Validation\\BookingRequestValidator.php": {
     "mtime": 1783916764.877026,
@@ -459,6 +459,10 @@
     "mtime": 1784934055.9299414,
     "hash": "7706f0b9afa149125b19571d0aeea1f9"
   },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\database\\migrations\\0016_bitacora_booking_link.sql": {
+    "mtime": 1785016608.3352253,
+    "hash": "df34ad09e3f00841e27e9560cdcb3385"
+  },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\index.php": {
     "mtime": 1783903836.753904,
     "hash": "4904f25844df220ac6e12bc0068a141e"
@@ -472,8 +476,8 @@
     "hash": "92b10547d35b442d4ffbab004715d52d"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\app.js": {
-    "mtime": 1785015597.3897269,
-    "hash": "7880e13cff677c417f2afc6c2510ef00"
+    "mtime": 1785016744.9862409,
+    "hash": "a7db6e30be1c7f8f7a989317244bc3cb"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\dom.js": {
     "mtime": 1783988672.9897766,
@@ -484,12 +488,12 @@
     "hash": "f25de7bac7f6a61f53b8f85a84bb9b03"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\features\\bitacora.js": {
-    "mtime": 1785015543.4004543,
-    "hash": "5fc2dfa86bbc1684fef0adf7f4390b80"
+    "mtime": 1785016744.9808671,
+    "hash": "8bef345fcccdbf16605353d00ece010d"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\features\\bookings.js": {
-    "mtime": 1785015571.4283617,
-    "hash": "e7894c5ddbf3dc652f05cb53768d2145"
+    "mtime": 1785016744.9840438,
+    "hash": "f69fc83d323820b14a2af872be9f7f37"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\public\\assets\\js\\features\\dashboard.js": {
     "mtime": 1785015548.7636764,
@@ -552,8 +556,8 @@
     "hash": "d84a84e2440e4d1c2408c358519a8274"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\E2E\\bitacora.spec.ts": {
-    "mtime": 1785015639.9211564,
-    "hash": "77e2dc24a54479eea2d9156c97a4e81a"
+    "mtime": 1785016868.6125672,
+    "hash": "735717be0d0a435e8bf8b146cff1db11"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\E2E\\dashboard.spec.ts": {
     "mtime": 1784929322.2675505,
@@ -572,16 +576,16 @@
     "hash": "619d7c57e5e3107b6d389fb1626abd10"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\E2E\\ux_audit.spec.ts": {
-    "mtime": 1784929245.599949,
-    "hash": "53224b70757475ba9133b0c5e585a6f6"
+    "mtime": 1785016963.705132,
+    "hash": "9b49442636f0ab8c4f3a7ab06420065e"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Integration\\Finance\\RebuildFinanceProjectionTest.php": {
     "mtime": 1784932687.5832422,
     "hash": "1acffc26800b0cbaa3bed08e105f6b38"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Integration\\Http\\BitacoraRoutesTest.php": {
-    "mtime": 1784934194.3106334,
-    "hash": "c9e8d931d843c5f26555e1e674f03494"
+    "mtime": 1785016691.9549813,
+    "hash": "0f1df1aa14b52c1e6bc3cbff55699d36"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Integration\\Http\\BookingRoutesTest.php": {
     "mtime": 1784933300.1406536,
@@ -608,8 +612,8 @@
     "hash": "5437939605461eed71da4b5a0e20fcc7"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Integration\\Sheets\\PostgresSheetReplicaImporterTest.php": {
-    "mtime": 1784932716.347932,
-    "hash": "a1d339bf1c56c3070bba7b3ab5e13a90"
+    "mtime": 1785016691.9559894,
+    "hash": "0bc79eb4f94bc26b77bc75251b746639"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Integration\\Sheets\\SyncWorkerIntegrationTest.php": {
     "mtime": 1784081302.5107613,
@@ -628,12 +632,12 @@
     "hash": "1df371c20951f144b30e28ec6a8a50f7"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Unit\\Domain\\Bitacora\\BitacoraPolicyTest.php": {
-    "mtime": 1784927012.055282,
-    "hash": "f45c4eb09be49b9080361b77fa4bc2da"
+    "mtime": 1785016691.9529696,
+    "hash": "9d68ffc6c74179f303f6fff2616fb697"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Unit\\Domain\\Bitacora\\BitacoraTest.php": {
-    "mtime": 1784927027.7667785,
-    "hash": "6a89e52e42e19d96fdc6691a3893a93f"
+    "mtime": 1785016691.9483538,
+    "hash": "ee87e3cb62129cb95c50d985e26d1c8c"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\Unit\\Domain\\Bitacora\\PickupPointTest.php": {
     "mtime": 1784926964.7597902,
@@ -740,8 +744,8 @@
     "hash": "60bfc0c6ece9f6890b14594aa3af930b"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\audits\\MIGRATION_LOG.md": {
-    "mtime": 1784936405.5380037,
-    "hash": "3540885cce4d1363aaab2bc3284a4624"
+    "mtime": 1785016801.4228244,
+    "hash": "b790371141b426bef9d1fff5617a5d2d"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\audits\\v2-audit-report.md": {
     "mtime": 1783965435.0038521,
@@ -754,6 +758,10 @@
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\business\\qamiluna-registration-kit.md": {
     "mtime": 1784384687.3127005,
     "hash": "baea199deaed282030f63beb2cacb8bb"
+  },
+  "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\plans\\link-bitacora-reservas.md": {
+    "mtime": 1785016346.159355,
+    "hash": "3342cb07a2be06cd809f0748591834c8"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\docs\\plans\\v2-closure-checklist.md": {
     "mtime": 1783989944.1642735,
@@ -772,8 +780,8 @@
     "hash": "fbdb5d72bb5ab1d54834034143392fd8"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\tests\\E2E\\playwright-report\\index.html": {
-    "mtime": 1785015693.8141813,
-    "hash": "ec4be93179c21cf2b222b8c93416d1bb"
+    "mtime": 1785016997.376532,
+    "hash": "4b32395a24244d650f842b53f9fea814"
   },
   "C:\\Users\\USER\\Repo\\qs-manager\\qs-manager-v2\\671165142_17924457306276429_6794574309549150381_n.jpg": {
     "mtime": 1784222286.561214,

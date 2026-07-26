@@ -102,6 +102,8 @@ final class BitacoraPolicyTest extends TestCase
     ): Bitacora {
         return new Bitacora(
             id: null,
+            bookingId: null,
+            bookingExternalId: null,
             fechaServicio: $fechaServicio,
             tipoServicio: $tipoServicio,
             muaId: $muaId,

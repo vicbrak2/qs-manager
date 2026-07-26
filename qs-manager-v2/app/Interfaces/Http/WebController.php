@@ -471,10 +471,14 @@ final class WebController
       <aside class="panel side">
         <div class="panel-head">
           <h2 id="bitacora-form-title">Nueva bitácora</h2>
-          <button class="secondary" type="button" id="reset-bitacora">Limpiar</button>
+          <div class="actions">
+            <div id="bitacora-booking-link" class="bitacora-link-chip hidden"></div>
+            <button class="secondary" type="button" id="reset-bitacora">Limpiar</button>
+          </div>
         </div>
         <form id="bitacora-form">
           <input type="hidden" name="id">
+          <input type="hidden" name="booking_id">
           <label>Fecha servicio
             <input name="fecha_servicio" type="date" required>
           </label>

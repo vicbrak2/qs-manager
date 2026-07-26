@@ -209,6 +209,9 @@ export function renderBookings() {
     } else if (syncStatus === 'pending' || syncStatus === 'not-synced') {
       syncStatusClass = 'pending';
     }
+    const bitacoraAction = booking.bitacora_id
+      ? `<button class="secondary btn-sm" type="button" data-open-bitacora="${booking.bitacora_id}">Ver bitácora #${booking.bitacora_id}</button>`
+      : `<button class="secondary btn-sm" type="button" data-create-bitacora="${booking.id}">Crear bitácora</button>`;
     
     return `
       <tr class="booking-traffic-${trafficKind}" data-booking-traffic="${trafficKind}">
@@ -229,6 +232,7 @@ export function renderBookings() {
         <td class="booking-actions-cell">
           <div class="booking-actions">
             <button class="secondary btn-sm" type="button" data-edit-booking="${booking.id}">Editar</button>
+            ${bitacoraAction}
             <button class="sync-gas-btn btn-sm btn-sync-gas-row" type="button" data-sync-booking-id="${booking.id}" title="${escapeHtml(booking.gas_last_sync_message || 'Sincronizar GAS')}">
               <span class="sync-icon ${syncStatusClass}">↻</span>
             </button>

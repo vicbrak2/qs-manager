@@ -477,6 +477,7 @@
     .booking-actions {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 8px;
       min-width: 92px;
     }
@@ -485,6 +486,11 @@
       flex: 0 0 32px;
       width: 32px;
       padding-inline: 0;
+    }
+
+    .bitacora-link-chip {
+      display: inline-flex;
+      align-items: center;
     }
 
     .booking-traffic-legend {

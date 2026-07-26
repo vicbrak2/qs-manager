@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace QSManager\Interfaces\Http\Validation;
 
+use QSManager\Domain\Booking\BookingRepository;
 use QSManager\Domain\Team\StaffRepository;
 
 final class BitacoraRequestValidator
 {
-    public function __construct(private readonly StaffRepository $staff)
-    {
+    public function __construct(
+        private readonly StaffRepository $staff,
+        private readonly BookingRepository $bookings,
+    ) {
     }
 
     /**
@@ -34,6 +37,11 @@ final class BitacoraRequestValidator
         $estilistaId = $this->optionalPositiveInt($body, 'estilista_id', 'Estilista id', $errors);
         if ($estilistaId !== null && !$this->staff->exists($estilistaId)) {
             $errors['estilista_id'][] = 'Selected staff member does not exist.';
+        }
+
+        $bookingId = $this->optionalPositiveInt($body, 'booking_id', 'Booking id', $errors);
+        if ($bookingId !== null && $this->bookings->findById($bookingId) === null) {
+            $errors['booking_id'][] = 'Selected booking does not exist.';
         }
 
         $clientaNombre = $this->stringField($body, 'clienta_nombre', true, $errors);
@@ -66,6 +74,7 @@ final class BitacoraRequestValidator
             'tipo_servicio' => $tipoServicio,
             'mua_id' => $muaId,
             'estilista_id' => $estilistaId,
+            'booking_id' => $bookingId,
             'clienta_nombre' => $clientaNombre,
             'direccion_servicio' => $direccionServicio,
             'punto_salida' => $puntoSalida,

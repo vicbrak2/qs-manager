@@ -34,8 +34,10 @@ final class Booking
         private readonly ?string $cashGroup,
         private readonly ?string $calendarEventId,
         private readonly ?string $agendaReference,
+        private readonly ?string $sheetExternalId,
         private readonly ?string $sourceSheet,
         private readonly ?int $sourceRow,
+        private readonly ?int $bitacoraId,
         private readonly ?string $gasLastSyncStatus,
         private readonly ?string $gasLastSyncMessage,
     ) {
@@ -89,6 +91,8 @@ final class Booking
             null,
             null,
             null,
+            null,
+            null,
         );
     }
 
@@ -116,8 +120,10 @@ final class Booking
         ?string $cashGroup = null,
         ?string $calendarEventId = null,
         ?string $agendaReference = null,
+        ?string $sheetExternalId = null,
         ?string $sourceSheet = null,
         ?int $sourceRow = null,
+        ?int $bitacoraId = null,
         ?string $gasLastSyncStatus = null,
         ?string $gasLastSyncMessage = null,
     ): self {
@@ -145,8 +151,10 @@ final class Booking
             self::normalizeString($cashGroup),
             self::normalizeString($calendarEventId),
             self::normalizeString($agendaReference),
+            self::normalizeString($sheetExternalId),
             self::normalizeString($sourceSheet),
             $sourceRow,
+            $bitacoraId,
             self::normalizeString($gasLastSyncStatus),
             self::normalizeString($gasLastSyncMessage),
         );
@@ -283,8 +291,10 @@ final class Booking
             'cash_group' => $this->cashGroup,
             'calendar_event_id' => $this->calendarEventId,
             'agenda_reference' => $this->agendaReference,
+            'sheet_external_id' => $this->sheetExternalId,
             'source_sheet' => $this->sourceSheet,
             'source_row' => $this->sourceRow,
+            'bitacora_id' => $this->bitacoraId,
             'gas_last_sync_status' => $this->gasLastSyncStatus,
             'gas_last_sync_message' => $this->gasLastSyncMessage,
         ];

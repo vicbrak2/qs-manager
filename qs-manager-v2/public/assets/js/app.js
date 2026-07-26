@@ -8,7 +8,7 @@ import { clearFormErrors, showFormErrors } from './ui/validation.js';
 import { setTab, loadHealth, loadSyncStatus } from './features/dashboard.js';
 import { loadServices, resetServiceForm, editService, servicePayload, renderServices, toggleServiceSort } from './features/services.js';
 import { loadStaff, loadBookings, resetBookingForm, editBooking, bookingPayload, renderBookings, visibleBookings, toggleBookingSort, setBookingsView, refreshStaffAvailability } from './features/bookings.js';
-import { loadBitacoras, resetBitacoraForm, editBitacora, bitacoraPayload, fillBitacoraStaffSelects, addBitacoraNote } from './features/bitacora.js';
+import { loadBitacoras, resetBitacoraForm, editBitacora, startBitacoraFromBooking, bitacoraPayload, fillBitacoraStaffSelects, addBitacoraNote } from './features/bitacora.js';
 import { syncAll, renderSyncModal, syncBookingGas } from './features/sync.js';
 import { initFinanceDetails, loadFinanceDashboard } from './features/finance.js';
 
@@ -108,8 +108,37 @@ document.addEventListener('click', async (event) => {
   const bookingButton = event.target.closest('[data-edit-booking]');
   if (bookingButton) editBooking(Number(bookingButton.dataset.editBooking));
 
+  const createBitacoraButton = event.target.closest('[data-create-bitacora]');
+  if (createBitacoraButton) {
+    const booking = state.bookings.find((item) => item.id === Number(createBitacoraButton.dataset.createBitacora));
+    if (!$('#bitacoras-body').dataset.loaded) {
+      loadBitacoras().catch((error) => notify(error.message, true));
+      $('#bitacoras-body').dataset.loaded = 'true';
+    }
+    startBitacoraFromBooking(booking);
+  }
+
+  const openBitacoraButton = event.target.closest('[data-open-bitacora]');
+  if (openBitacoraButton) {
+    setTab('bitacora');
+    const targetId = Number(openBitacoraButton.dataset.openBitacora);
+    // Recargar si la bitacora no esta en el estado (lista nunca cargada o
+    // desactualizada respecto a otra sesion).
+    if (!state.bitacoras.some((item) => item.id === targetId)) {
+      await loadBitacoras();
+      $('#bitacoras-body').dataset.loaded = 'true';
+    }
+    editBitacora(targetId);
+  }
+
   const bitacoraButton = event.target.closest('[data-edit-bitacora]');
   if (bitacoraButton) editBitacora(Number(bitacoraButton.dataset.editBitacora));
+
+  const bitacoraBookingLink = event.target.closest('[data-bitacora-booking-link]');
+  if (bitacoraBookingLink) {
+    setTab('bookings');
+    editBooking(Number(bitacoraBookingLink.dataset.bitacoraBookingLink));
+  }
 
   const syncRowButton = event.target.closest('[data-sync-booking-id]');
   if (syncRowButton) {

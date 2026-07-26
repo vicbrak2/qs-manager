@@ -86,12 +86,14 @@ final class PostgresBookingRepository implements BookingRepository
             'select b.id, b.service_id, b.staff_id, b.customer_name, b.customer_phone, b.scheduled_for, b.status,
                     b.address, b.comuna, b.service_value, b.transfer_value, b.deposit_amount, b.total_service,
                     b.balance_due, b.payment_status, b.service_status, b.contract_id, b.milestone, b.cash_group,
-                    b.calendar_event_id, b.agenda_reference, b.source_sheet, b.source_row,
+                    b.calendar_event_id, b.agenda_reference, b.sheet_external_id, b.source_sheet, b.source_row,
+                    bi.id as bitacora_id,
                     b.gas_last_sync_status, b.gas_last_sync_message,
                     s.name as service_name, st.display_name as staff_name
              from qs_bookings b
              left join qs_services s on b.service_id = s.id
              left join qs_staff st on b.staff_id = st.id
+             left join qs_bitacoras bi on bi.booking_id = b.id
              order by b.scheduled_for desc, b.id desc'
         );
 
@@ -106,12 +108,14 @@ final class PostgresBookingRepository implements BookingRepository
             'select b.id, b.service_id, b.staff_id, b.customer_name, b.customer_phone, b.scheduled_for, b.status,
                     b.address, b.comuna, b.service_value, b.transfer_value, b.deposit_amount, b.total_service,
                     b.balance_due, b.payment_status, b.service_status, b.contract_id, b.milestone, b.cash_group,
-                    b.calendar_event_id, b.agenda_reference, b.source_sheet, b.source_row,
+                    b.calendar_event_id, b.agenda_reference, b.sheet_external_id, b.source_sheet, b.source_row,
+                    bi.id as bitacora_id,
                     b.gas_last_sync_status, b.gas_last_sync_message,
                     s.name as service_name, st.display_name as staff_name
              from qs_bookings b
              left join qs_services s on b.service_id = s.id
              left join qs_staff st on b.staff_id = st.id
+             left join qs_bitacoras bi on bi.booking_id = b.id
              where b.id = :id'
         );
 
@@ -291,8 +295,10 @@ final class PostgresBookingRepository implements BookingRepository
             $row['cash_group'] === null ? null : (string) $row['cash_group'],
             $row['calendar_event_id'] === null ? null : (string) $row['calendar_event_id'],
             $row['agenda_reference'] === null ? null : (string) $row['agenda_reference'],
+            $row['sheet_external_id'] === null ? null : (string) $row['sheet_external_id'],
             $row['source_sheet'] === null ? null : (string) $row['source_sheet'],
             $row['source_row'] === null ? null : (int) $row['source_row'],
+            $row['bitacora_id'] === null ? null : (int) $row['bitacora_id'],
             $row['gas_last_sync_status'] === null ? null : (string) $row['gas_last_sync_status'],
             $row['gas_last_sync_message'] === null ? null : (string) $row['gas_last_sync_message'],
         );

@@ -13,6 +13,8 @@ interface BitacoraRepository
 
     public function findById(int $id): ?Bitacora;
 
+    public function findByBookingId(int $bookingId): ?Bitacora;
+
     /**
      * Inserta cuando id() es null, actualiza cuando no. Las notas no se
      * tocan en el update -- se agregan solo via addNote().

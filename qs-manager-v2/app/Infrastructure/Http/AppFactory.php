@@ -96,8 +96,8 @@ final class AppFactory
         ))->register($app);
         $bitacoraRepository = new PostgresBitacoraRepository($connection);
         (new BitacoraController(
-            new SaveBitacora($bitacoraRepository, new BitacoraPolicy()),
-            new BitacoraRequestValidator($staffRepository),
+            new SaveBitacora($bitacoraRepository, $bookingRepository, new BitacoraPolicy()),
+            new BitacoraRequestValidator($staffRepository, $bookingRepository),
             $bitacoraRepository,
         ))->register($app);
         (new BookingController(

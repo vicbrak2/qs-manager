@@ -230,6 +230,13 @@ También en 2026-07-24, fuera del plan original:
   fuente de ocupación (no hay agenda declarada de ventanas — decisión
   registrada en `CheckStaffAvailability`). Test en `TeamRoutesTest`.
 
+- ✅ **Bitácoras vinculadas a Reservas** (2026-07-25): migración `0016`
+  agrega `qs_bitacoras.booking_id` (`ON DELETE SET NULL`) y
+  `booking_external_id` para re-vincular reservas importadas después del
+  delete/reinsert de Sheets. El listado de reservas expone `bitacora_id`,
+  el form de Bitácora nace prellenado desde Reservas y el importer ejecuta
+  el re-link por `sheet_external_id` tras la reconciliación.
+
 - ✅ **V1 eliminado por completo** (2026-07-24, confirmado por el usuario tras
   quedar Bitácora V2 operativo): plugin WordPress entero (`app/`, `assets/`,
   `config/`, `database/`, `tests/`, `var/`, `qs-core.php`, `uninstall.php`,

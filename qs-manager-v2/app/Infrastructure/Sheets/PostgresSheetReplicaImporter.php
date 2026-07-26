@@ -134,6 +134,7 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
                 $this->connection->beginTransaction();
                 try {
                     $this->reconcileOperationalProjections();
+                    $this->relinkBitacorasToImportedBookings();
                     $this->connection->commit();
                 } catch (Throwable $exception) {
                     if ($this->connection->inTransaction()) {
@@ -276,6 +277,30 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
                 or trim(customer_name) = ''
                 or service_id is null
              )"
+        );
+    }
+
+    public function relinkBitacorasToImportedBookings(): void
+    {
+        // min(b2.id) + not exists: si dos bitacoras terminaron compartiendo
+        // booking_external_id (posible tras ciclos de sync que anulan el FK),
+        // solo una se re-vincula -- sin esto el UPDATE violaria el indice
+        // unico parcial de booking_id y tumbaria toda la reconciliacion.
+        $this->connection->exec(
+            'update qs_bitacoras b
+             set booking_id = k.id
+             from qs_bookings k
+             where b.booking_external_id is not null
+               and b.booking_id is null
+               and k.sheet_external_id = b.booking_external_id
+               and b.id = (
+                   select min(b2.id) from qs_bitacoras b2
+                   where b2.booking_external_id = b.booking_external_id
+                     and b2.booking_id is null
+               )
+               and not exists (
+                   select 1 from qs_bitacoras b3 where b3.booking_id = k.id
+               )'
         );
     }
 

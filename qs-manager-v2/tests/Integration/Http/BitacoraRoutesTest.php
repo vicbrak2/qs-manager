@@ -12,6 +12,85 @@ use QSManager\Tests\Support\HttpTestCase;
  */
 final class BitacoraRoutesTest extends HttpTestCase
 {
+    public function testBitacoraCanBeLinkedToBooking(): void
+    {
+        $serviceId = $this->payload($this->json('POST', '/api/v1/services', [
+            'name' => 'Novia',
+            'duration_minutes' => 90,
+        ]))['service']['id'];
+
+        $staffId = $this->payload($this->json('POST', '/api/v1/team', [
+            'display_name' => 'Fernanda Rojas',
+            'role' => 'staff',
+        ]))['staff_member']['id'];
+
+        $booking = $this->payload($this->json('POST', '/api/v1/bookings', [
+            'service_id' => $serviceId,
+            'staff_id' => $staffId,
+            'customer_name' => 'Camila Soto',
+            'scheduled_for' => '2026-09-12T12:30:00Z',
+            'status' => 'confirmed',
+            'address' => 'Av. Siempre Viva 123',
+            'comuna' => 'Buin',
+            'total_service' => 100000,
+        ]))['booking'];
+
+        $created = $this->json('POST', '/api/v1/bitacoras', [
+            'booking_id' => $booking['id'],
+            'fecha_servicio' => '2026-09-12',
+            'tipo_servicio' => 'Novia',
+            'clienta_nombre' => 'Camila Soto',
+            'direccion_servicio' => 'Av. Siempre Viva 123, Buin',
+            'punto_salida' => 'Estudio Qamiluna',
+            'mua_id' => $staffId,
+            'precio_cliente_clp' => 100000,
+        ]);
+
+        self::assertSame(201, $created->getStatusCode());
+        $bitacora = $this->payload($created)['bitacora'];
+        self::assertSame($booking['id'], $bitacora['booking_id']);
+
+        $shown = $this->payload($this->json('GET', '/api/v1/bitacoras/' . $bitacora['id']))['bitacora'];
+        self::assertSame($booking['id'], $shown['booking_id']);
+
+        $bookings = $this->payload($this->json('GET', '/api/v1/bookings'))['bookings'];
+        $linked = array_values(array_filter($bookings, static fn (array $item): bool => $item['id'] === $booking['id']))[0];
+        self::assertSame($bitacora['id'], $linked['bitacora_id']);
+
+        $duplicate = $this->json('POST', '/api/v1/bitacoras', [
+            'booking_id' => $booking['id'],
+            'fecha_servicio' => '2026-09-12',
+            'tipo_servicio' => 'Novia',
+            'clienta_nombre' => 'Camila Soto',
+            'direccion_servicio' => 'Av. Siempre Viva 123, Buin',
+            'punto_salida' => 'Estudio Qamiluna',
+            'mua_id' => $staffId,
+        ]);
+        self::assertSame(422, $duplicate->getStatusCode());
+        self::assertStringContainsString('ya tiene bitácora', $this->payload($duplicate)['error']);
+    }
+
+    public function testBitacoraRejectsUnknownBookingId(): void
+    {
+        $staffId = $this->payload($this->json('POST', '/api/v1/team', [
+            'display_name' => 'Fernanda Rojas',
+            'role' => 'staff',
+        ]))['staff_member']['id'];
+
+        $response = $this->json('POST', '/api/v1/bitacoras', [
+            'booking_id' => 999999,
+            'fecha_servicio' => '2026-09-12',
+            'tipo_servicio' => 'Novia',
+            'clienta_nombre' => 'Camila Soto',
+            'direccion_servicio' => 'Av. Siempre Viva 123, Buin',
+            'punto_salida' => 'Estudio Qamiluna',
+            'mua_id' => $staffId,
+        ]);
+
+        self::assertSame(422, $response->getStatusCode());
+        self::assertArrayHasKey('booking_id', $this->payload($response)['errors']);
+    }
+
     public function testBitacoraCrudNotesAndSummary(): void
     {
         $staffId = $this->payload($this->json('POST', '/api/v1/team', [

@@ -51,9 +51,25 @@ final class PostgresBitacoraRepository implements BitacoraRepository
         return $this->fromRow($row, $this->notesFor([$id])[$id] ?? []);
     }
 
+    public function findByBookingId(int $bookingId): ?Bitacora
+    {
+        $statement = $this->connection->prepare('select * from qs_bitacoras where booking_id = :booking_id');
+        $statement->execute(['booking_id' => $bookingId]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        if ($row === false) {
+            return null;
+        }
+
+        $id = (int) $row['id'];
+        return $this->fromRow($row, $this->notesFor([$id])[$id] ?? []);
+    }
+
     public function save(Bitacora $bitacora): Bitacora
     {
         $params = [
+            'booking_id' => $bitacora->bookingId(),
+            'booking_external_id' => $bitacora->bookingExternalId(),
             'fecha_servicio' => $bitacora->fechaServicio(),
             'tipo_servicio' => $bitacora->tipoServicio(),
             'mua_id' => $bitacora->muaId(),
@@ -72,11 +88,11 @@ final class PostgresBitacoraRepository implements BitacoraRepository
         if ($bitacora->id() === null) {
             $statement = $this->connection->prepare(
                 'insert into qs_bitacoras (
-                    fecha_servicio, tipo_servicio, mua_id, estilista_id, clienta_nombre,
+                    booking_id, booking_external_id, fecha_servicio, tipo_servicio, mua_id, estilista_id, clienta_nombre,
                     direccion_servicio, punto_salida, orden_recogida, tiempo_traslado_min,
                     hora_llegada, notas_logisticas, costo_staff_clp, precio_cliente_clp
                 ) values (
-                    :fecha_servicio, :tipo_servicio, :mua_id, :estilista_id, :clienta_nombre,
+                    :booking_id, :booking_external_id, :fecha_servicio, :tipo_servicio, :mua_id, :estilista_id, :clienta_nombre,
                     :direccion_servicio, :punto_salida, :orden_recogida, :tiempo_traslado_min,
                     :hora_llegada, :notas_logisticas, :costo_staff_clp, :precio_cliente_clp
                 ) returning id'
@@ -87,6 +103,8 @@ final class PostgresBitacoraRepository implements BitacoraRepository
             $id = $bitacora->id();
             $this->connection->prepare(
                 'update qs_bitacoras set
+                    booking_id = :booking_id,
+                    booking_external_id = :booking_external_id,
                     fecha_servicio = :fecha_servicio,
                     tipo_servicio = :tipo_servicio,
                     mua_id = :mua_id,
@@ -170,6 +188,8 @@ final class PostgresBitacoraRepository implements BitacoraRepository
     {
         return new Bitacora(
             (int) $row['id'],
+            $row['booking_id'] === null ? null : (int) $row['booking_id'],
+            $row['booking_external_id'] === null ? null : (string) $row['booking_external_id'],
             (string) $row['fecha_servicio'],
             (string) $row['tipo_servicio'],
             $row['mua_id'] === null ? null : (int) $row['mua_id'],

@@ -52,6 +52,8 @@ final class BitacoraTest extends TestCase
     ): Bitacora {
         return new Bitacora(
             id: null,
+            bookingId: null,
+            bookingExternalId: null,
             fechaServicio: '2026-08-01',
             tipoServicio: 'Maquillaje novia',
             muaId: $muaId,

@@ -13,11 +13,13 @@ use QSManager\Domain\Bitacora\PickupPoint;
 use QSManager\Domain\Bitacora\RoutePlan;
 use QSManager\Domain\Bitacora\ServiceAddress;
 use QSManager\Domain\Bitacora\TravelDuration;
+use QSManager\Domain\Booking\BookingRepository;
 
 final class SaveBitacora
 {
     public function __construct(
         private readonly BitacoraRepository $bitacoras,
+        private readonly BookingRepository $bookings,
         private readonly BitacoraPolicy $policy,
     ) {
     }
@@ -33,9 +35,29 @@ final class SaveBitacora
     public function execute(array $data, ?int $id = null): Bitacora
     {
         $now = new DateTimeImmutable();
+        $bookingExternalId = null;
+
+        if ($data['booking_id'] !== null) {
+            if ($id === null) {
+                $existing = $this->bitacoras->findByBookingId($data['booking_id']);
+                if ($existing !== null) {
+                    throw new InvalidArgumentException(
+                        sprintf('La reserva #%d ya tiene bitácora (#%d).', $data['booking_id'], $existing->id())
+                    );
+                }
+            }
+
+            $booking = $this->bookings->findById($data['booking_id']);
+            $bookingData = $booking?->toArray() ?? [];
+            if (($bookingData['source_sheet'] ?? null) !== null) {
+                $bookingExternalId = $bookingData['sheet_external_id'] ?? null;
+            }
+        }
 
         $bitacora = new Bitacora(
             $id,
+            $data['booking_id'],
+            $bookingExternalId,
             $data['fecha_servicio'],
             $data['tipo_servicio'],
             $data['mua_id'],

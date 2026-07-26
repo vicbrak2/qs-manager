@@ -6,6 +6,7 @@ namespace QSManager\Interfaces\Http;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use PDOException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use QSManager\Application\Bitacora\SaveBitacora;
@@ -72,6 +73,11 @@ final class BitacoraController
             return $this->validationError($response, $exception->errors());
         } catch (InvalidArgumentException $exception) {
             return $this->json($response, ['error' => $exception->getMessage()], 422);
+        } catch (PDOException $exception) {
+            if ($exception->getCode() === '23505') {
+                return $this->json($response, ['error' => 'La reserva ya tiene una bitácora vinculada.'], 422);
+            }
+            throw $exception;
         }
 
         return $this->json($response, ['bitacora' => $bitacora->toArray()], 201);
@@ -95,6 +101,11 @@ final class BitacoraController
             return $this->validationError($response, $exception->errors());
         } catch (InvalidArgumentException $exception) {
             return $this->json($response, ['error' => $exception->getMessage()], 422);
+        } catch (PDOException $exception) {
+            if ($exception->getCode() === '23505') {
+                return $this->json($response, ['error' => 'La reserva ya tiene una bitácora vinculada.'], 422);
+            }
+            throw $exception;
         }
 
         return $this->json($response, ['bitacora' => $bitacora->toArray()]);

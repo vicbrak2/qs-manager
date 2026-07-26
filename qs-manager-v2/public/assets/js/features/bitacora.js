@@ -2,9 +2,10 @@
 import { state } from '../state.js';
 import { api } from '../api.js';
 import { $ } from '../dom.js';
-import { escapeHtml, money, badge, dash } from '../ui/formatting.js';
+import { escapeHtml, money, badge, dash, toDateTimeLocal } from '../ui/formatting.js';
 import { notify } from '../ui/notifications.js';
 import { clearFormErrors } from '../ui/validation.js';
+import { setTab } from './dashboard.js';
 
 export async function loadBitacoras() {
   const data = await api('/api/v1/bitacoras');
@@ -56,9 +57,23 @@ export function resetBitacoraForm() {
   form.reset();
   clearFormErrors(form);
   form.querySelector('[name=id]').value = '';
+  form.querySelector('[name=booking_id]').value = '';
   $('#bitacora-form-title').textContent = 'Nueva bitácora';
+  renderBookingLink(null);
   $('#bitacora-notes-panel').classList.add('hidden');
   $('#bitacora-notes-list').innerHTML = '';
+}
+
+function renderBookingLink(bookingId) {
+  const chip = $('#bitacora-booking-link');
+  if (!bookingId) {
+    chip.classList.add('hidden');
+    chip.innerHTML = '';
+    return;
+  }
+
+  chip.classList.remove('hidden');
+  chip.innerHTML = `<button type="button" class="secondary btn-sm" data-bitacora-booking-link="${bookingId}">Vinculada a reserva #${bookingId}</button>`;
 }
 
 function renderNotes(bitacora) {
@@ -75,6 +90,7 @@ export function editBitacora(id) {
   const fields = form.elements;
   const route = bitacora.route_plan || {};
   fields.id.value = bitacora.id;
+  fields.booking_id.value = bitacora.booking_id || '';
   fields.fecha_servicio.value = bitacora.fecha_servicio;
   fields.tipo_servicio.value = bitacora.tipo_servicio;
   fields.clienta_nombre.value = bitacora.clienta_nombre;
@@ -89,13 +105,35 @@ export function editBitacora(id) {
   fields.precio_cliente_clp.value = bitacora.precio_cliente_clp;
   fields.notas_logisticas.value = bitacora.notas_logisticas || '';
   $('#bitacora-form-title').textContent = `Bitácora #${bitacora.id}`;
+  renderBookingLink(bitacora.booking_id);
   $('#bitacora-notes-panel').classList.remove('hidden');
   renderNotes(bitacora);
+}
+
+export function startBitacoraFromBooking(booking) {
+  if (!booking) return;
+  setTab('bitacora');
+  resetBitacoraForm();
+
+  const form = $('#bitacora-form');
+  const fields = form.elements;
+  const addressParts = [booking.address, booking.comuna].filter(Boolean);
+  const staff = state.staff.find((person) => person.active && person.id === booking.staff_id);
+
+  fields.booking_id.value = booking.id;
+  fields.fecha_servicio.value = toDateTimeLocal(booking.scheduled_for).slice(0, 10);
+  fields.clienta_nombre.value = booking.customer_name || '';
+  fields.direccion_servicio.value = addressParts.join(', ');
+  fields.tipo_servicio.value = booking.service_name || '';
+  fields.precio_cliente_clp.value = booking.total_service ?? 0;
+  fields.mua_id.value = staff ? staff.id : '';
+  renderBookingLink(booking.id);
 }
 
 export function bitacoraPayload() {
   const fields = $('#bitacora-form').elements;
   return {
+    booking_id: fields.booking_id.value ? Number(fields.booking_id.value) : null,
     fecha_servicio: fields.fecha_servicio.value,
     tipo_servicio: fields.tipo_servicio.value.trim(),
     clienta_nombre: fields.clienta_nombre.value.trim(),

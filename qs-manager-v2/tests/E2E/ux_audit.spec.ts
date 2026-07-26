@@ -1,6 +1,52 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Auditoría Automatizada de Usabilidad y UX', () => {
+  const bookingsFixture = {
+    bookings: [
+      {
+        id: 501,
+        service_id: null,
+        staff_id: null,
+        customer_name: 'Verónica Silva',
+        customer_phone: '+56911111111',
+        scheduled_for: '2026-08-15T14:00:00+00:00',
+        status: 'confirmed',
+        service_name: 'Novia Fiesta Maquillaje',
+        staff_name: null,
+        address: 'Av. Providencia 123',
+        comuna: 'Providencia',
+        total_service: 120000,
+        balance_due: 40000,
+        payment_status: 'parcial',
+        source_sheet: null,
+        source_row: null,
+        bitacora_id: null,
+        gas_last_sync_status: null,
+        gas_last_sync_message: null,
+      },
+      {
+        id: 502,
+        service_id: null,
+        staff_id: null,
+        customer_name: 'Camila Soto',
+        customer_phone: '+56922222222',
+        scheduled_for: '2026-09-20T10:00:00+00:00',
+        status: 'draft',
+        service_name: 'Social Peinado',
+        staff_name: null,
+        address: 'Las Condes 456',
+        comuna: 'Las Condes',
+        total_service: 85000,
+        balance_due: 85000,
+        payment_status: 'pendiente',
+        source_sheet: null,
+        source_row: null,
+        bitacora_id: 7,
+        gas_last_sync_status: null,
+        gas_last_sync_message: null,
+      },
+    ],
+  };
 
   test('Escenario 1: Dashboard y Gráfico de Finanzas (Carga y Responsividad)', async ({ page }) => {
     // Interceptar la API de finanzas para devolver datos consistentes de prueba
@@ -72,6 +118,8 @@ test.describe('Auditoría Automatizada de Usabilidad y UX', () => {
   });
 
   test('Escenario 2: Listados y Filtros (Reservas)', async ({ page }) => {
+    await page.route('/api/v1/bookings*', (route) => route.fulfill({ json: bookingsFixture }));
+
     await page.goto('/');
     await page.waitForSelector('#tab-bookings');
     
@@ -108,7 +156,7 @@ test.describe('Auditoría Automatizada de Usabilidad y UX', () => {
           status: 422,
           contentType: 'application/json',
           body: JSON.stringify({
-            message: 'Validation failed',
+            error: 'Validation failed',
             errors: {
               customer_name: ['El nombre de la clienta es obligatorio.'],
               customer_phone: ['El formato del teléfono es inválido.']
@@ -116,7 +164,7 @@ test.describe('Auditoría Automatizada de Usabilidad y UX', () => {
           })
         });
       } else {
-        await route.continue();
+        await route.fulfill({ json: bookingsFixture });
       }
     });
 
