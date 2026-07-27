@@ -104,6 +104,12 @@ duplicados. `inviteAssignedStaff` debe permanecer habilitado en `Codigo.gs`.
   texto sobre titulos, detalles y cards no editables. El cursor de texto queda solo
   en inputs/textarea editables; botones, selects y checks mantienen cursor
   interactivo.
+- Version 26 (2026-07-27): refuerza el comportamiento anterior deshabilitando
+  seleccion/caret en contenido no editable (`user-select: none` y `caret-color:
+  transparent`) y reactivandolo solo en inputs/textarea editables.
+- Version 27 (2026-07-27): mantiene el texto no editable seleccionable para copiar,
+  pero oculta el caret con `caret-color: transparent`; los campos editables siguen
+  mostrando caret normal.
 
 Antes de desplegar, el contenido completo de `Codigo.gs` y `Cotizador.html` debe
 versionarse en este directorio. No se debe publicar una implementacion nueva si el
