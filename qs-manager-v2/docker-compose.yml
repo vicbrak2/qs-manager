@@ -20,7 +20,8 @@ services:
       LLM_ENABLED: "false"
       QDRANT_ENABLED: "false"
       WHATSAPP_ENABLED: "false"
-      GAS_WEBAPP_URL: ""
+      # GAS oficial de la cuenta del estudio. No usar despliegues personales.
+      GAS_WEBAPP_URL: "${GAS_WEBAPP_URL:-https://script.google.com/macros/s/AKfycbwiV_i0haP4lAQ2ZDrCoR28IWfUODpYlimNswDVBs2DNNnBSt2XPq38aOWhnWQsb4Zyiw/exec}"
       SHEETS_WRITE_SYNC_ENABLED: "${SHEETS_WRITE_SYNC_ENABLED:-false}"
       GAS_CATALOG_WEBAPP_URL: "${GAS_CATALOG_WEBAPP_URL:-}"
       GAS_CATALOG_SECRET: "${GAS_CATALOG_SECRET:-}"

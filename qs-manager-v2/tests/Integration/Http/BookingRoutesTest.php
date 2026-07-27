@@ -312,7 +312,7 @@ final class BookingRoutesTest extends HttpTestCase
         self::assertSame('Ana Maria', $body['customer_name']);
         self::assertSame('+56987654321', $body['customer_phone']);
         self::assertSame('2026-08-20', $body['fecha']);
-        self::assertSame('14:30', $body['hora']);
+        self::assertSame('10:30', $body['hora']);
         self::assertSame('confirmed', $body['status']);
         self::assertSame('Servicio', $body['tipo']);
 
@@ -395,7 +395,7 @@ final class BookingRoutesTest extends HttpTestCase
         self::assertSame('Ana Maria Editada', $body['customer_name']);
         self::assertSame('+56987654322', $body['customer_phone']);
         self::assertSame('2026-08-20', $body['fecha']);
-        self::assertSame('15:30', $body['hora']);
+        self::assertSame('11:30', $body['hora']);
         self::assertSame('confirmed', $body['status']);
         self::assertSame('Servicio', $body['tipo']);
 

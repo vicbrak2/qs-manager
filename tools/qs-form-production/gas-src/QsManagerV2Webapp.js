@@ -66,7 +66,7 @@ function doPost(e) {
   }
 }
 
-function doGet(e) {
+function qsManagerV2DoGet_(e) {
   try {
     const params = e && e.parameter ? e.parameter : {};
     const payload = Object.assign({}, params, {
@@ -677,3 +677,4 @@ function normalizeQsManagerV2Key_(value) {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, ' ');
 }
+
