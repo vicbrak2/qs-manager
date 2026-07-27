@@ -16,7 +16,6 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
     public function __construct(private readonly PDO $connection)
     {
     }
-
     public function dashboard(FinancePeriod $period, AccountingBasis $basis): FinancialMetrics
     {
         $statement = $this->connection->prepare(
@@ -32,7 +31,6 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
         ]);
 
         $totals = $statement->fetchAll(PDO::FETCH_KEY_PAIR);
-
         $realizedStatement = $this->connection->prepare("
             SELECT COALESCE(SUM(amount), 0)
             FROM qs_finance_entries
@@ -94,6 +92,8 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
         $committedStatement->execute([
             'to' => $period->to()->format('Y-m-d'),
         ]);
+        $receivableStatement = $this->connection->prepare("WITH service_totals AS (SELECT external_id, amount::bigint AS total_amount FROM qs_finance_entries WHERE entry_type = 'service_revenue' AND occurred_on BETWEEN :from AND :to AND lower(trim(COALESCE(status, ''))) !~ '^(anulado|anulada|cancelado|cancelada|no asiste)'), payment_totals AS (SELECT regexp_replace(external_id, '-pay$', '') AS base_external_id, SUM(amount)::bigint AS paid_amount FROM qs_finance_entries WHERE entry_type = 'customer_payment' GROUP BY regexp_replace(external_id, '-pay$', '')) SELECT COALESCE(SUM(GREATEST(s.total_amount - COALESCE(p.paid_amount, 0), 0)), 0)::bigint FROM service_totals s LEFT JOIN payment_totals p ON p.base_external_id = s.external_id");
+        $receivableStatement->execute(['from' => $period->from()->format('Y-m-d'), 'to' => $period->to()->format('Y-m-d')]);
 
         return new FinancialMetrics(
             Money::fromInt((int) ($totals['service_revenue'] ?? 0)),
@@ -104,6 +104,7 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
             Money::fromInt((int) ($totals['operational_expense'] ?? 0)),
             Money::fromInt((int) ($totals['fixed_expense'] ?? 0)),
             Money::fromInt((int) ($totals['refund'] ?? 0)),
+            Money::fromInt((int) $receivableStatement->fetchColumn()),
         );
     }
 

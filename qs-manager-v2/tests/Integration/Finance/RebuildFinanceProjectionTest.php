@@ -397,6 +397,33 @@ final class RebuildFinanceProjectionTest extends TestCase
         self::assertSame(0, $august['customer_payment']['sheet_total']);
     }
 
+    public function testDashboardReceivableUsesPaymentsMatchedByService(): void
+    {
+        $this->pdo->exec("INSERT INTO qs_sheet_import_runs (id, source_id, status) VALUES (2, 3, 'completed'), (3, 4, 'completed')");
+        $this->pdo->exec("
+            INSERT INTO qs_sheet_agenda_month_rows
+                (import_run_id, source_sheet, source_row, calendar_event_id, service_date, deposit_date, event_status, deposit_amount, total_service)
+            VALUES (3, 'Julio', 2, 'CAL-PAID', '2026-07-27', '2026-03-16', 'CONFIRMADO', 60000, 112530)
+        ");
+        $this->pdo->exec("
+            INSERT INTO qs_sheet_bitacora_rows
+                (import_run_id, source_row, qs_external_id, calendar_event_id, agenda_reference, service_date, service_status, payment_status, deposit_amount, total_service, balance_due)
+            VALUES (2, 101, '10669', 'CAL-PAID', 'Agenda: Julio!2', '2026-07-27', 'Realizado', 'Pagado', 60000, 112530, 52530)
+        ");
+        $this->pdo->exec("INSERT INTO qs_sync_runs (id, status, mode) VALUES (99, 'completed', 'write')");
+
+        $this->projection->rebuild(99);
+        $repository = new PostgresFinanceReadRepository($this->pdo);
+        $metrics = $repository->dashboard(
+            FinancePeriod::create('2026-07-01', '2026-07-31'),
+            AccountingBasis::CASH_ESTIMATED,
+        )->toArray();
+
+        self::assertSame(112530, $metrics['contracted_sales']);
+        self::assertSame(0, $metrics['collected_revenue']);
+        self::assertSame(0, $metrics['accounts_receivable']);
+    }
+
     public function testFixedExpensesProjectMonthlyConfirmedEntries(): void
     {
         $this->pdo->exec("

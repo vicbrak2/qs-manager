@@ -15,11 +15,16 @@ final class FinancialMetrics
         public readonly Money $operatingExpenses,
         public readonly Money $fixedExpenses,
         public readonly Money $refunds,
+        private readonly ?Money $accountsReceivable = null,
     ) {
     }
 
     public function accountsReceivable(): Money
     {
+        if ($this->accountsReceivable !== null) {
+            return $this->accountsReceivable;
+        }
+
         $amount = $this->contractedSales->amount() 
             - $this->collectedRevenue->amount() 
             - $this->refunds->amount();
