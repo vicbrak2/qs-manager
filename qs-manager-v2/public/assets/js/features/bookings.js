@@ -7,11 +7,20 @@ import { notify } from '../ui/notifications.js';
 import { clearFormErrors, showFormErrors } from '../ui/validation.js';
 import { refreshMetrics } from './dashboard.js';
 
+const RECEIPT_MAX_SIDE = 1600;
+const RECEIPT_QUALITY = 0.78;
+
 export async function loadBookings() {
   const data = await api('/api/v1/bookings');
   state.bookings = data.bookings;
   renderBookings();
   refreshMetrics();
+}
+
+export async function completeBookingService(id) {
+  const data = await api(`/api/v1/bookings/${id}/complete-service`, { method: 'POST' });
+  await loadBookings();
+  return data;
 }
 
 export async function loadStaff() {
@@ -73,7 +82,7 @@ function compareBookings(left, right) {
 }
 
 function isHistoricalBooking(booking, now = Date.now()) {
-  return bookingTrafficKind(booking, now) === 'completed' || bookingTrafficKind(booking, now) === 'cancelled';
+  return booking.status === 'completed' || booking.status === 'cancelled';
 }
 
 export function visibleBookings() {
@@ -128,8 +137,12 @@ export function bookingTrafficKind(booking, now = Date.now()) {
   if (booking.status === 'cancelled') return 'cancelled';
 
   const scheduledAt = Date.parse(booking.scheduled_for);
-  if (booking.status === 'completed' || (!Number.isNaN(scheduledAt) && scheduledAt <= now)) {
+  if (booking.status === 'completed') {
     return 'completed';
+  }
+
+  if (!Number.isNaN(scheduledAt) && scheduledAt <= now) {
+    return 'overdue';
   }
 
   const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
@@ -138,6 +151,70 @@ export function bookingTrafficKind(booking, now = Date.now()) {
   }
 
   return 'scheduled';
+}
+
+function receiptStatusText(booking = null) {
+  if (booking?.has_transfer_receipt) {
+    const sizeKb = booking.transfer_receipt_size ? Math.round(Number(booking.transfer_receipt_size) / 1024) : null;
+    return `Comprobante guardado${sizeKb ? ` (${sizeKb} KB)` : ''}. Selecciona otro archivo para reemplazarlo.`;
+  }
+
+  return 'Opcional. La imagen se comprime antes de guardar.';
+}
+
+function readImage(file) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const url = URL.createObjectURL(file);
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('No se pudo leer el comprobante seleccionado.'));
+    };
+    image.src = url;
+  });
+}
+
+function canvasToDataUrl(canvas, mime, quality) {
+  return canvas.toDataURL(mime, quality);
+}
+
+async function compressedTransferReceipt(file) {
+  if (!file) return null;
+  if (!file.type.startsWith('image/')) {
+    throw new Error('El comprobante debe ser una imagen.');
+  }
+
+  const image = await readImage(file);
+  const scale = Math.min(1, RECEIPT_MAX_SIDE / Math.max(image.naturalWidth, image.naturalHeight));
+  const width = Math.max(1, Math.round(image.naturalWidth * scale));
+  const height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d');
+  context.drawImage(image, 0, 0, width, height);
+
+  let mime = 'image/webp';
+  let dataUrl = canvasToDataUrl(canvas, mime, RECEIPT_QUALITY);
+  if (!dataUrl.startsWith('data:image/webp')) {
+    mime = 'image/jpeg';
+    dataUrl = canvasToDataUrl(canvas, mime, RECEIPT_QUALITY);
+  }
+
+  const base64 = dataUrl.split(',')[1] || '';
+  const approxBytes = Math.ceil(base64.length * 3 / 4);
+  if (approxBytes > 450000) {
+    dataUrl = canvasToDataUrl(canvas, mime, 0.62);
+  }
+
+  return {
+    data_url: dataUrl,
+    filename: file.name.replace(/\.[^.]+$/, '') + (mime === 'image/webp' ? '.webp' : '.jpg'),
+  };
 }
 
 export function renderBookings() {
@@ -211,10 +288,14 @@ export function renderBookings() {
     }
     // Sin bitácora y con el servicio encima: la fila se marca en rojo para
     // que no se pase la fecha sin haberla mandado al equipo.
-    const bitacoraPendiente = !booking.bitacora_id && trafficKind === 'urgent';
+    const bitacoraPendiente = !booking.bitacora_id && (trafficKind === 'urgent' || trafficKind === 'overdue');
     const bitacoraAction = booking.bitacora_id
       ? `<button class="secondary btn-sm" type="button" data-open-bitacora="${booking.bitacora_id}">Ver bitácora #${booking.bitacora_id}</button>`
       : `<button class="${bitacoraPendiente ? 'danger' : 'secondary'} btn-sm" type="button" data-create-bitacora="${booking.id}">${bitacoraPendiente ? '⚠ Falta bitácora' : 'Crear bitácora'}</button>`;
+    const canCompleteService = booking.status !== 'completed' && booking.status !== 'cancelled';
+    const completeServiceAction = canCompleteService
+      ? `<button class="success btn-sm" type="button" data-complete-booking-service="${booking.id}" title="Libera el abono retenido al marcar el servicio como realizado">Terminar servicio</button>`
+      : '';
     
     return `
       <tr class="booking-traffic-${trafficKind}${bitacoraPendiente ? ' booking-sin-bitacora' : ''}" data-booking-traffic="${trafficKind}"${bitacoraPendiente ? ' data-bitacora-pendiente="true"' : ''}>
@@ -236,6 +317,7 @@ export function renderBookings() {
           <div class="booking-actions">
             <button class="secondary btn-sm" type="button" data-edit-booking="${booking.id}">Editar</button>
             ${bitacoraAction}
+            ${completeServiceAction}
             <button class="sync-gas-btn btn-sm btn-sync-gas-row" type="button" data-sync-booking-id="${booking.id}" title="${escapeHtml(booking.gas_last_sync_message || 'Sincronizar GAS')}">
               <span class="sync-icon ${syncStatusClass}">↻</span>
             </button>
@@ -318,6 +400,8 @@ export function resetBookingForm() {
   $('#booking-form-title').textContent = 'Nueva reserva';
   $('#delete-booking').disabled = true;
   $('#sync-booking').disabled = true;
+  $('#complete-booking-service').disabled = true;
+  $('#transfer-receipt-status').textContent = receiptStatusText();
   const availabilityBox = $('#booking-availability');
   if (availabilityBox) {
     availabilityBox.classList.add('hidden');
@@ -346,6 +430,8 @@ export function editBooking(id) {
   fields.total_service.value = booking.total_service || '';
   fields.balance_due.value = booking.balance_due || '';
   fields.payment_status.value = booking.payment_status || '';
+  fields.transfer_receipt.value = '';
+  $('#transfer-receipt-status').textContent = receiptStatusText(booking);
   fields.service_status.value = booking.service_status || '';
   fields.contract_id.value = booking.contract_id || '';
   fields.milestone.value = booking.milestone || '';
@@ -353,12 +439,14 @@ export function editBooking(id) {
   $('#booking-form-title').textContent = `Reserva #${booking.id}`;
   $('#delete-booking').disabled = false;
   $('#sync-booking').disabled = false;
+  $('#complete-booking-service').disabled = booking.status === 'completed' || booking.status === 'cancelled';
   refreshStaffAvailability();
 }
 
-export function bookingPayload() {
+export async function bookingPayload() {
   const form = $('#booking-form');
   const fields = form.elements;
+  const transferReceipt = await compressedTransferReceipt(fields.transfer_receipt.files?.[0] || null);
   return {
     service_id: idOrNull(fields.service_id.value),
     staff_id: idOrNull(fields.staff_id.value),
@@ -374,6 +462,7 @@ export function bookingPayload() {
     total_service: numberOrNull(fields.total_service.value),
     balance_due: numberOrNull(fields.balance_due.value),
     payment_status: fields.payment_status.value.trim() || null,
+    transfer_receipt: transferReceipt,
     service_status: fields.service_status.value.trim() || null,
     contract_id: fields.contract_id.value.trim() || null,
     milestone: fields.milestone.value.trim() || null,

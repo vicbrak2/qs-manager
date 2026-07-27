@@ -87,6 +87,8 @@ final class PostgresBookingRepository implements BookingRepository
                     b.address, b.comuna, b.service_value, b.transfer_value, b.deposit_amount, b.total_service,
                     b.balance_due, b.payment_status, b.service_status, b.contract_id, b.milestone, b.cash_group,
                     b.calendar_event_id, b.agenda_reference, b.sheet_external_id, b.source_sheet, b.source_row,
+                    (b.transfer_receipt_image is not null) as has_transfer_receipt,
+                    b.transfer_receipt_mime, b.transfer_receipt_filename, b.transfer_receipt_size,
                     bi.id as bitacora_id, b.estilista_id, est.display_name as estilista_name,
                     b.gas_last_sync_status, b.gas_last_sync_message,
                     s.name as service_name, st.display_name as staff_name
@@ -110,6 +112,8 @@ final class PostgresBookingRepository implements BookingRepository
                     b.address, b.comuna, b.service_value, b.transfer_value, b.deposit_amount, b.total_service,
                     b.balance_due, b.payment_status, b.service_status, b.contract_id, b.milestone, b.cash_group,
                     b.calendar_event_id, b.agenda_reference, b.sheet_external_id, b.source_sheet, b.source_row,
+                    (b.transfer_receipt_image is not null) as has_transfer_receipt,
+                    b.transfer_receipt_mime, b.transfer_receipt_filename, b.transfer_receipt_size,
                     bi.id as bitacora_id, b.estilista_id, est.display_name as estilista_name,
                     b.gas_last_sync_status, b.gas_last_sync_message,
                     s.name as service_name, st.display_name as staff_name
@@ -209,6 +213,51 @@ final class PostgresBookingRepository implements BookingRepository
         }
     }
 
+    public function markServiceCompleted(int $id): ?Booking
+    {
+        $statement = $this->connection->prepare(
+            "update qs_bookings
+             set status = 'completed',
+                 service_status = 'Realizado'
+             where id = :id
+             returning id"
+        );
+        $statement->execute(['id' => $id]);
+
+        if ($statement->fetchColumn() === false) {
+            return null;
+        }
+
+        return $this->findById($id);
+    }
+
+    public function updateTransferReceipt(int $id, array $receipt): ?Booking
+    {
+        $statement = $this->connection->prepare(
+            "update qs_bookings
+             set transfer_receipt_image = decode(:image_base64, 'base64'),
+                 transfer_receipt_mime = :mime,
+                 transfer_receipt_filename = :filename,
+                 transfer_receipt_size = :size,
+                 transfer_receipt_uploaded_at = now()
+             where id = :id
+             returning id"
+        );
+        $statement->execute([
+            'id' => $id,
+            'image_base64' => $receipt['image_base64'],
+            'mime' => $receipt['mime'],
+            'filename' => $receipt['filename'],
+            'size' => $receipt['size'],
+        ]);
+
+        if ($statement->fetchColumn() === false) {
+            return null;
+        }
+
+        return $this->findById($id);
+    }
+
     public function delete(int $id): bool
     {
         $statement = $this->connection->prepare('delete from qs_bookings where id = :id');
@@ -305,6 +354,19 @@ final class PostgresBookingRepository implements BookingRepository
             $row['estilista_name'] === null ? null : (string) $row['estilista_name'],
             $row['gas_last_sync_status'] === null ? null : (string) $row['gas_last_sync_status'],
             $row['gas_last_sync_message'] === null ? null : (string) $row['gas_last_sync_message'],
+            $this->boolValue($row['has_transfer_receipt']),
+            $row['transfer_receipt_mime'] === null ? null : (string) $row['transfer_receipt_mime'],
+            $row['transfer_receipt_filename'] === null ? null : (string) $row['transfer_receipt_filename'],
+            $row['transfer_receipt_size'] === null ? null : (int) $row['transfer_receipt_size'],
         );
+    }
+
+    private function boolValue(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        return in_array(strtolower((string) $value), ['1', 't', 'true', 'yes'], true);
     }
 }

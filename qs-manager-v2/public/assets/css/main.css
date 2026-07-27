@@ -531,16 +531,19 @@
     }
 
     .traffic-dot.completed { background: hsl(142, 50%, 58%); }
+    .traffic-dot.overdue { background: hsl(0, 72%, 52%); }
     .traffic-dot.scheduled { background: hsl(46, 94%, 58%); }
     .traffic-dot.urgent { background: hsl(0, 72%, 65%); }
     .traffic-dot.cancelled { background: hsl(214, 14%, 68%); }
 
     #bookings-body .booking-traffic-completed td { background: var(--booking-completed); }
+    #bookings-body .booking-traffic-overdue td { background: var(--booking-overdue); }
     #bookings-body .booking-traffic-scheduled td { background: var(--booking-scheduled); }
     #bookings-body .booking-traffic-urgent td { background: var(--booking-urgent); }
     #bookings-body .booking-traffic-cancelled td { background: var(--booking-cancelled); }
 
     #bookings-body .booking-traffic-completed:hover td { background: var(--booking-completed-hover); }
+    #bookings-body .booking-traffic-overdue:hover td { background: var(--booking-overdue-hover); }
     #bookings-body .booking-traffic-scheduled:hover td { background: var(--booking-scheduled-hover); }
     #bookings-body .booking-traffic-urgent:hover td { background: var(--booking-urgent-hover); }
     #bookings-body .booking-traffic-cancelled:hover td { background: var(--booking-cancelled-hover); }
@@ -550,6 +553,7 @@
     }
 
     #bookings-body .booking-traffic-completed td:first-child { box-shadow: inset 3px 0 0 hsl(142, 48%, 46%); }
+    #bookings-body .booking-traffic-overdue td:first-child { box-shadow: inset 3px 0 0 hsl(0, 65%, 48%); }
     #bookings-body .booking-traffic-scheduled td:first-child { box-shadow: inset 3px 0 0 hsl(43, 88%, 50%); }
     #bookings-body .booking-traffic-urgent td:first-child { box-shadow: inset 3px 0 0 hsl(0, 65%, 56%); }
     #bookings-body .booking-traffic-cancelled td:first-child { box-shadow: inset 3px 0 0 hsl(214, 12%, 58%); }
@@ -689,6 +693,16 @@
 
     button.danger:hover:not(:disabled) {
       background: #fed7aa;
+    }
+
+    button.success {
+      background: var(--color-success-50);
+      color: var(--color-success-600);
+      border-color: rgba(34, 197, 94, 0.24);
+    }
+
+    button.success:hover:not(:disabled) {
+      background: hsl(145, 72%, 90%);
     }
 
     button:disabled {

@@ -34,6 +34,7 @@ final class BookingController
         $app->post('/api/v1/bookings', [$this, 'store']);
         $app->put('/api/v1/bookings/{id}', [$this, 'update']);
         $app->delete('/api/v1/bookings/{id}', [$this, 'delete']);
+        $app->post('/api/v1/bookings/{id}/complete-service', [$this, 'completeService']);
         $app->post('/api/v1/bookings/{id}/sync-gas', [$this, 'syncGas']);
     }
 
@@ -77,6 +78,9 @@ final class BookingController
                 $validated['milestone'],
                 $validated['cash_group'],
             ));
+            if ($validated['transfer_receipt'] !== null) {
+                $booking = $this->bookings->updateTransferReceipt($booking->id()->value(), $validated['transfer_receipt']) ?? $booking;
+            }
         } catch (ValidationException $exception) {
             return $this->validationError($response, $exception->errors());
         } catch (BookingConflictException $exception) {
@@ -123,6 +127,9 @@ final class BookingController
         try {
             $validated = $this->validator->validate($body);
             $booking = $this->bookings->update($id, $validated);
+            if ($booking !== null && $validated['transfer_receipt'] !== null) {
+                $booking = $this->bookings->updateTransferReceipt($id, $validated['transfer_receipt']) ?? $booking;
+            }
         } catch (ValidationException $exception) {
             return $this->validationError($response, $exception->errors());
         } catch (InvalidArgumentException $exception) {
@@ -177,6 +184,45 @@ final class BookingController
         }
 
         return $this->json($response, ['deleted' => true]);
+    }
+
+    public function completeService(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $id = $this->positiveId($args['id'] ?? null);
+        if ($id === null) {
+            return $this->json($response, ['error' => 'Booking id must be a positive integer.'], 422);
+        }
+
+        $booking = $this->bookings->markServiceCompleted($id);
+        if ($booking === null) {
+            return $this->json($response, ['error' => 'Booking not found.'], 404);
+        }
+
+        $syncPayload = null;
+        $warning = null;
+        try {
+            $syncResult = $this->syncBookingToGas->execute($booking->id()->value());
+            $syncPayload = $syncResult->toArray();
+            if (!$syncResult->success()) {
+                $warning = sprintf('GAS sync %s: %s', $syncResult->status(), $syncResult->message() ?? 'sin detalle');
+            }
+        } catch (\Exception $e) {
+            $warning = 'GAS sync error: ' . $e->getMessage();
+        }
+
+        $freshBooking = $this->bookings->findById($id) ?? $booking;
+        $payload = [
+            'booking' => $freshBooking->toArray(),
+            'message' => 'Servicio marcado como realizado. La reserva se libera en Finanzas cuando Sheets se sincroniza.',
+        ];
+        if ($syncPayload !== null) {
+            $payload['sync'] = $syncPayload;
+        }
+        if ($warning !== null) {
+            $payload['warning'] = $warning;
+        }
+
+        return $this->json($response, $payload);
     }
 
     public function syncGas(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface

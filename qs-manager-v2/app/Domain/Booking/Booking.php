@@ -42,6 +42,10 @@ final class Booking
         private readonly ?string $estilistaName,
         private readonly ?string $gasLastSyncStatus,
         private readonly ?string $gasLastSyncMessage,
+        private readonly bool $hasTransferReceipt,
+        private readonly ?string $transferReceiptMime,
+        private readonly ?string $transferReceiptFilename,
+        private readonly ?int $transferReceiptSize,
     ) {
     }
 
@@ -97,6 +101,10 @@ final class Booking
             null,
             null,
             null,
+            false,
+            null,
+            null,
+            null,
         );
     }
 
@@ -132,6 +140,10 @@ final class Booking
         ?string $estilistaName = null,
         ?string $gasLastSyncStatus = null,
         ?string $gasLastSyncMessage = null,
+        bool $hasTransferReceipt = false,
+        ?string $transferReceiptMime = null,
+        ?string $transferReceiptFilename = null,
+        ?int $transferReceiptSize = null,
     ): self {
         return new self(
             BookingId::fromInt($id),
@@ -165,6 +177,10 @@ final class Booking
             self::normalizeString($estilistaName),
             self::normalizeString($gasLastSyncStatus),
             self::normalizeString($gasLastSyncMessage),
+            $hasTransferReceipt,
+            self::normalizeString($transferReceiptMime),
+            self::normalizeString($transferReceiptFilename),
+            $transferReceiptSize,
         );
     }
 
@@ -307,6 +323,10 @@ final class Booking
             'estilista_name' => $this->estilistaName,
             'gas_last_sync_status' => $this->gasLastSyncStatus,
             'gas_last_sync_message' => $this->gasLastSyncMessage,
+            'has_transfer_receipt' => $this->hasTransferReceipt,
+            'transfer_receipt_mime' => $this->transferReceiptMime,
+            'transfer_receipt_filename' => $this->transferReceiptFilename,
+            'transfer_receipt_size' => $this->transferReceiptSize,
         ];
     }
 

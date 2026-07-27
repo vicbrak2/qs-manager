@@ -20,6 +20,13 @@ interface BookingRepository
      */
     public function update(int $id, array $data): ?Booking;
 
+    public function markServiceCompleted(int $id): ?Booking;
+
+    /**
+     * @param array{image_base64: string, mime: string, filename: string, size: int} $receipt
+     */
+    public function updateTransferReceipt(int $id, array $receipt): ?Booking;
+
     public function delete(int $id): bool;
 
     public function recordGasSyncResult(int $id, string $status, ?string $message): void;

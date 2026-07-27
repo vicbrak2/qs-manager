@@ -7,7 +7,7 @@ import { clearFormErrors, showFormErrors } from './ui/validation.js';
 
 import { setTab, loadHealth, loadSyncStatus } from './features/dashboard.js';
 import { loadServices, resetServiceForm, editService, servicePayload, renderServices, toggleServiceSort } from './features/services.js';
-import { loadStaff, loadBookings, resetBookingForm, editBooking, bookingPayload, renderBookings, visibleBookings, toggleBookingSort, setBookingsView, refreshStaffAvailability } from './features/bookings.js';
+import { loadStaff, loadBookings, resetBookingForm, editBooking, bookingPayload, renderBookings, visibleBookings, toggleBookingSort, setBookingsView, refreshStaffAvailability, completeBookingService } from './features/bookings.js';
 import { loadBitacoras, resetBitacoraForm, editBitacora, startBitacoraFromBooking, bitacoraPayload, fillBitacoraStaffSelects, addBitacoraNote, addTramoRow, updateBitacoraPlan, copyTeamBitacora, generateBitacoraImage } from './features/bitacora.js';
 import { loadTeam, resetStaffForm, editStaff, staffPayload, deleteStaff } from './features/team.js';
 import { syncAll, renderSyncModal, syncBookingGas } from './features/sync.js';
@@ -188,6 +188,30 @@ document.addEventListener('click', async (event) => {
     editBitacora(targetId);
   }
 
+  const completeServiceButton = event.target.closest('[data-complete-booking-service]');
+  if (completeServiceButton) {
+    const id = Number(completeServiceButton.dataset.completeBookingService);
+    const booking = state.bookings.find((item) => item.id === id);
+    if (!booking) return;
+    const label = booking.customer_name ? ` de ${booking.customer_name}` : '';
+    if (!confirm(`Marcar como terminado el servicio${label}? Esto libera la reserva para Finanzas al sincronizar Sheets.`)) return;
+    completeServiceButton.disabled = true;
+    try {
+      const result = await completeBookingService(id);
+      if (result.sync?.success) {
+        notify('Servicio terminado. Sincronizando Sheets para actualizar Finanzas.');
+        await syncAll();
+        await loadFinanceDashboard();
+      } else {
+        notify(result.warning || 'Servicio terminado localmente, pero no se pudo actualizar Sheets.', true);
+      }
+    } catch (error) {
+      notify(error.message, true);
+    } finally {
+      completeServiceButton.disabled = false;
+    }
+  }
+
   const staffButton = event.target.closest('[data-edit-staff]');
   if (staffButton) editStaff(Number(staffButton.dataset.editStaff));
 
@@ -268,7 +292,7 @@ $('#booking-form').addEventListener('submit', async (event) => {
   try {
     await api(id ? `/api/v1/bookings/${id}` : '/api/v1/bookings', {
       method: id ? 'PUT' : 'POST',
-      body: JSON.stringify(bookingPayload()),
+      body: JSON.stringify(await bookingPayload()),
     });
     notify(id ? 'Reserva actualizada.' : 'Reserva creada.');
     resetBookingForm();
@@ -334,6 +358,34 @@ $('#sync-booking').addEventListener('click', async () => {
   if (!id) return;
   const syncRowButton = document.querySelector(`[data-sync-booking-id="${id}"]`);
   await syncBookingGas(Number(id), syncRowButton);
+});
+
+$('#complete-booking-service').addEventListener('click', async () => {
+  const id = $('#booking-form [name=id]').value;
+  if (!id) return;
+  const fields = $('#booking-form').elements;
+  const label = fields.customer_name.value ? ` de ${fields.customer_name.value}` : '';
+  if (!confirm(`Marcar como terminado el servicio${label}? Esto libera la reserva para Finanzas al sincronizar Sheets.`)) return;
+  const button = $('#complete-booking-service');
+  button.disabled = true;
+  try {
+    const result = await completeBookingService(Number(id));
+    if (result.sync?.success) {
+      notify('Servicio terminado. Sincronizando Sheets para actualizar Finanzas.');
+      await syncAll();
+      await loadFinanceDashboard();
+    } else {
+      notify(result.warning || 'Servicio terminado localmente, pero no se pudo actualizar Sheets.', true);
+    }
+    resetBookingForm();
+  } catch (error) {
+    notify(error.message, true);
+  } finally {
+    const currentId = $('#booking-form [name=id]').value;
+    if (currentId) {
+      button.disabled = false;
+    }
+  }
 });
 
 $('#metric-sync').parentElement.style.cursor = 'pointer';

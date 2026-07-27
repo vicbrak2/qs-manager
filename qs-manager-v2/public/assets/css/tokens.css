@@ -39,6 +39,8 @@
   /* Booking urgency row backgrounds */
   --booking-completed:       hsl(142, 55%, 95%);
   --booking-completed-hover: hsl(142, 48%, 89%);
+  --booking-overdue:         hsl(0, 86%, 97%);
+  --booking-overdue-hover:   hsl(0, 78%, 92%);
   --booking-scheduled:       hsl(46, 100%, 95%);
   --booking-scheduled-hover: hsl(46, 92%, 89%);
   --booking-urgent:          hsl(0, 82%, 96%);

@@ -199,6 +199,56 @@ final class BookingRoutesTest extends HttpTestCase
         self::assertTrue($this->payload($deleted)['deleted']);
     }
 
+    public function testBookingServiceCanBeMarkedCompleted(): void
+    {
+        $serviceId = $this->payload($this->json('POST', '/api/v1/services', [
+            'name' => 'Servicio para liberar',
+            'category' => 'maquillaje',
+            'duration_minutes' => 60,
+        ]))['service']['id'];
+
+        $created = $this->payload($this->json('POST', '/api/v1/bookings', [
+            'service_id' => $serviceId,
+            'customer_name' => 'Clienta terminada',
+            'scheduled_for' => '2026-07-27T12:00:00Z',
+            'status' => 'confirmed',
+            'deposit_amount' => 60000,
+            'total_service' => 112530,
+            'balance_due' => 52530,
+            'payment_status' => 'abonado',
+            'service_status' => 'agendado',
+        ]))['booking'];
+
+        $completed = $this->json('POST', '/api/v1/bookings/' . $created['id'] . '/complete-service');
+        self::assertSame(200, $completed->getStatusCode());
+
+        $payload = $this->payload($completed);
+        self::assertSame('completed', $payload['booking']['status']);
+        self::assertSame('Realizado', $payload['booking']['service_status']);
+        self::assertSame('skipped', $payload['sync']['status']);
+        self::assertStringContainsString('libera', $payload['message']);
+    }
+
+    public function testBookingCanStoreCompressedTransferReceiptMetadata(): void
+    {
+        $created = $this->json('POST', '/api/v1/bookings', [
+            'customer_name' => 'Clienta con comprobante',
+            'status' => 'confirmed',
+            'transfer_receipt' => [
+                'data_url' => 'data:image/webp;base64,' . base64_encode('small-compressed-image'),
+                'filename' => 'abono.webp',
+            ],
+        ]);
+
+        self::assertSame(201, $created->getStatusCode());
+        $booking = $this->payload($created)['booking'];
+        self::assertTrue($booking['has_transfer_receipt']);
+        self::assertSame('image/webp', $booking['transfer_receipt_mime']);
+        self::assertSame('abono.webp', $booking['transfer_receipt_filename']);
+        self::assertSame(strlen('small-compressed-image'), $booking['transfer_receipt_size']);
+        self::assertArrayNotHasKey('transfer_receipt_image', $booking);
+    }
+
     public function testBookingCustomerPhoneExceedsMaxLengthValidation(): void
     {
         $response = $this->json('POST', '/api/v1/bookings', [

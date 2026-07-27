@@ -34,8 +34,8 @@ final class WebController
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap">
-  <link rel="stylesheet" href="/assets/css/tokens.css?v=6">
-  <link rel="stylesheet" href="/assets/css/main.css?v=6">
+  <link rel="stylesheet" href="/assets/css/tokens.css?v=7">
+  <link rel="stylesheet" href="/assets/css/main.css?v=7">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -418,7 +418,8 @@ final class WebController
           </label>
         </div>
         <div class="booking-traffic-legend" aria-label="Semáforo de reservas">
-          <span><i class="traffic-dot completed"></i>Completada o pasada</span>
+          <span><i class="traffic-dot completed"></i>Terminada</span>
+          <span><i class="traffic-dot overdue"></i>Vencida sin terminar</span>
           <span><i class="traffic-dot scheduled"></i>Faltan más de 7 días</span>
           <span><i class="traffic-dot urgent"></i>Faltan 7 días o menos</span>
           <span><i class="traffic-dot cancelled"></i>Cancelada</span>
@@ -532,6 +533,10 @@ final class WebController
           <label>Estado pago
             <input name="payment_status" maxlength="40">
           </label>
+          <label class="full">Comprobante transferencia
+            <input name="transfer_receipt" type="file" accept="image/png,image/jpeg,image/webp">
+            <small id="transfer-receipt-status">Opcional. La imagen se comprime antes de guardar.</small>
+          </label>
           <label>Estado servicio
             <input name="service_status" maxlength="40">
           </label>
@@ -546,6 +551,7 @@ final class WebController
           </label>
           <div class="actions full">
             <button type="submit" id="save-booking">Guardar</button>
+            <button class="success" type="button" id="complete-booking-service" disabled>Terminar servicio</button>
             <button class="danger" type="button" id="delete-booking" disabled>Borrar</button>
             <button class="secondary" type="button" id="sync-booking" disabled>Sync GAS</button>
           </div>
@@ -744,7 +750,7 @@ final class WebController
       </div>
     </dialog>
   </main>
-  <script type="module" src="/assets/js/app.js"></script>
+  <script type="module" src="/assets/js/app.js?v=7"></script>
   <div id="toast-container" class="toast-container"></div>
 </body>
 </html>

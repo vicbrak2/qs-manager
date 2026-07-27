@@ -11,6 +11,8 @@ use QSManager\Domain\Team\StaffRepository;
 final class BookingRequestValidator
 {
     private const STATUSES = ['draft', 'confirmed', 'cancelled', 'completed'];
+    private const RECEIPT_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+    private const MAX_RECEIPT_BYTES = 450000;
 
     public function __construct(
         private readonly ServiceRepository $services,
@@ -87,6 +89,8 @@ final class BookingRequestValidator
         $cashGroup = $this->stringField($body, 'cash_group', false, $errors);
         $this->maxLength($cashGroup, 'cash_group', 80, $errors);
 
+        $transferReceipt = $this->transferReceipt($body, $errors);
+
         if ($errors !== []) {
             throw new ValidationException($errors);
         }
@@ -110,6 +114,62 @@ final class BookingRequestValidator
             'contract_id' => $contractId,
             'milestone' => $milestone,
             'cash_group' => $cashGroup,
+            'transfer_receipt' => $transferReceipt,
+        ];
+    }
+
+    /**
+     * @return null|array{image_base64: string, mime: string, filename: string, size: int}
+     */
+    private function transferReceipt(array $body, array &$errors): ?array
+    {
+        if (!array_key_exists('transfer_receipt', $body) || $body['transfer_receipt'] === null || $body['transfer_receipt'] === '') {
+            return null;
+        }
+
+        if (!is_array($body['transfer_receipt'])) {
+            $errors['transfer_receipt'][] = 'Transfer receipt must be an object.';
+            return null;
+        }
+
+        $receipt = $body['transfer_receipt'];
+        $dataUrl = $receipt['data_url'] ?? null;
+        $filename = $receipt['filename'] ?? 'comprobante-transferencia.webp';
+
+        if (!is_string($dataUrl) || !preg_match('/^data:(image\\/(?:jpeg|png|webp));base64,([A-Za-z0-9+\\/=]+)$/', $dataUrl, $matches)) {
+            $errors['transfer_receipt'][] = 'Transfer receipt must be a valid JPEG, PNG or WebP data URL.';
+            return null;
+        }
+
+        $mime = $matches[1];
+        if (!in_array($mime, self::RECEIPT_MIME_TYPES, true)) {
+            $errors['transfer_receipt'][] = 'Transfer receipt image type is not allowed.';
+            return null;
+        }
+
+        $imageBase64 = $matches[2];
+        $decoded = base64_decode($imageBase64, true);
+        if ($decoded === false) {
+            $errors['transfer_receipt'][] = 'Transfer receipt image could not be decoded.';
+            return null;
+        }
+
+        $size = strlen($decoded);
+        if ($size > self::MAX_RECEIPT_BYTES) {
+            $errors['transfer_receipt'][] = 'Transfer receipt image cannot exceed 450 KB after compression.';
+            return null;
+        }
+
+        if (!is_string($filename) || trim($filename) === '') {
+            $filename = 'comprobante-transferencia.webp';
+        }
+        $filename = mb_substr(trim($filename), 0, 180);
+
+        return [
+            'image_base64' => $imageBase64,
+            'mime' => $mime,
+            'filename' => $filename,
+            'size' => $size,
         ];
     }
 
