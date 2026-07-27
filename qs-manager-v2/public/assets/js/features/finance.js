@@ -385,8 +385,12 @@ export function initFinanceDetails() {
         }
         if (!willOpen) return;
 
+        // Scroll immediately to show the "Cargando..." placeholder
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
         try {
           await loader();
+          // Scroll again to adjust for the dynamic content height
           panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } catch (error) {
           notify(`No se pudo cargar el detalle de ${panelName}: ` + error.message, 'error');
@@ -436,8 +440,12 @@ export function initFinanceDetails() {
       toggle.textContent = willOpen ? 'Ocultar detalle' : 'Ver detalle por servicio';
       if (!willOpen) return;
 
+      // Scroll immediately to show loading placeholder
+      details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
       try {
         await loadAvailableDetails();
+        // Scroll again to adjust for dynamic content height
         details.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (error) {
         notify('No se pudo cargar el detalle del disponible: ' + error.message, 'error');
