@@ -118,7 +118,7 @@ final class BitacoraRequestValidator
     /**
      * @param array<string, mixed> $body
      * @param array<string, list<string>> $errors
-     * @return list<array{nombre: string, minutos: int}>
+     * @return list<array{destino: string, minutos: int, recoge?: string}>
      */
     private function tramosField(array $body, array &$errors): array
     {
@@ -127,7 +127,7 @@ final class BitacoraRequestValidator
         }
 
         if (!is_array($body['tramos'])) {
-            $errors['tramos'][] = 'Tramos must be a list of {nombre, minutos}.';
+            $errors['tramos'][] = 'Tramos must be a list of {destino, minutos}.';
             return [];
         }
 
@@ -135,13 +135,13 @@ final class BitacoraRequestValidator
         foreach (array_values($body['tramos']) as $index => $row) {
             $position = $index + 1;
             if (!is_array($row)) {
-                $errors['tramos'][] = "Tramo $position must be an object with nombre and minutos.";
+                $errors['tramos'][] = "Tramo $position must be an object with destino and minutos.";
                 continue;
             }
 
-            $nombre = isset($row['nombre']) && is_string($row['nombre']) ? trim($row['nombre']) : '';
-            if ($nombre === '' || mb_strlen($nombre) > 160) {
-                $errors['tramos'][] = "Tramo $position: nombre is required (max 160 characters).";
+            $destino = isset($row['destino']) && is_string($row['destino']) ? trim($row['destino']) : '';
+            if ($destino === '' || mb_strlen($destino) > 160) {
+                $errors['tramos'][] = "Tramo $position: destino is required (max 160 characters).";
                 continue;
             }
 
@@ -151,14 +151,11 @@ final class BitacoraRequestValidator
                 continue;
             }
 
-            $tramo = ['nombre' => $nombre, 'minutos' => (int) $minutos];
+            $tramo = ['destino' => $destino, 'minutos' => (int) $minutos];
 
-            // Un tramo puede terminar en una recogida. La comuna es lo unico
-            // que se publica del punto: nunca la direccion exacta.
-            foreach (['recoge', 'comuna'] as $campo) {
-                if (isset($row[$campo]) && is_string($row[$campo]) && trim($row[$campo]) !== '') {
-                    $tramo[$campo] = trim($row[$campo]);
-                }
+            // Un tramo puede terminar en una recogida de profesional.
+            if (isset($row['recoge']) && is_string($row['recoge']) && trim($row['recoge']) !== '') {
+                $tramo['recoge'] = trim($row['recoge']);
             }
 
             $tramos[] = $tramo;

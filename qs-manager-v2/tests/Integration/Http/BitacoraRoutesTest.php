@@ -199,7 +199,7 @@ final class BitacoraRoutesTest extends HttpTestCase
             'mua_id' => $staffId,
             'hora_inicio_servicio' => '16:00',
             'hora_fin_servicio' => '18:00',
-            'tramos' => [['nombre' => 'Metro Macul -> Macul', 'minutos' => 10]],
+            'tramos' => [['destino' => 'Macul', 'minutos' => 10]],
             'objetivo' => 'Llegar con anticipacion para preparar materiales',
             'consideraciones' => 'Confirmar acceso al domicilio',
         ]);
@@ -208,7 +208,7 @@ final class BitacoraRoutesTest extends HttpTestCase
         $bitacora = $this->payload($created)['bitacora'];
         self::assertSame('15:45', $bitacora['hora_llegada_objetivo']);
         self::assertSame('15:20', $bitacora['hora_salida_sugerida']);
-        self::assertSame([['nombre' => 'Metro Macul -> Macul', 'minutos' => 10]], $bitacora['tramos']);
+        self::assertSame([['destino' => 'Macul', 'minutos' => 10]], $bitacora['tramos']);
         // El total de traslado se deriva de los tramos, no del campo legacy.
         self::assertSame(10, $bitacora['route_plan']['travel_duration_min']);
 
@@ -222,8 +222,8 @@ final class BitacoraRoutesTest extends HttpTestCase
             'mua_id' => $staffId,
             'hora_inicio_servicio' => '16:00',
             'tramos' => [
-                ['nombre' => 'Estudio -> Metro Macul', 'minutos' => 20],
-                ['nombre' => 'Metro Macul -> domicilio', 'minutos' => 25],
+                ['destino' => 'Metro Macul', 'minutos' => 20],
+                ['destino' => 'La Florida', 'minutos' => 25],
             ],
         ]);
         self::assertSame(200, $updated->getStatusCode());
@@ -264,8 +264,8 @@ final class BitacoraRoutesTest extends HttpTestCase
             'mua_id' => $staffId,
             'hora_inicio_servicio' => '08:00',
             'tramos' => [
-                ['nombre' => 'Metro Macul → Providencia', 'minutos' => 15, 'recoge' => 'Paz', 'comuna' => 'Providencia'],
-                ['nombre' => 'Providencia → La Florida', 'minutos' => 25],
+                ['destino' => 'Providencia', 'minutos' => 15, 'recoge' => 'Paz'],
+                ['destino' => 'La Florida', 'minutos' => 25],
             ],
         ]);
 
@@ -282,7 +282,7 @@ final class BitacoraRoutesTest extends HttpTestCase
         self::assertSame('06:50', $bitacora['hora_salida_sugerida']);
         self::assertSame('07:45', $bitacora['hora_llegada_objetivo']);
         self::assertSame(
-            [['recoge' => 'Paz', 'comuna' => 'Providencia', 'label' => 'Paz (Providencia)', 'hora' => '07:11']],
+            [['recoge' => 'Paz', 'comuna' => 'Providencia', 'hora' => '07:11']],
             $bitacora['recogidas']
         );
     }
@@ -303,8 +303,8 @@ final class BitacoraRoutesTest extends HttpTestCase
 
         $badLegs = $this->json('POST', '/api/v1/bitacoras', $base + [
             'tramos' => [
-                ['nombre' => '', 'minutos' => 10],
-                ['nombre' => 'Tramo sin minutos', 'minutos' => -5],
+                ['destino' => '', 'minutos' => 10],
+                ['destino' => 'Tramo sin minutos', 'minutos' => -5],
             ],
         ]);
         self::assertSame(422, $badLegs->getStatusCode());

@@ -229,7 +229,7 @@ test.describe('Bitácora y disponibilidad de staff', () => {
     await expect(plan).toContainText('al menos un tramo');
 
     await page.click('#add-tramo');
-    await page.fill('.tramo-row .tramo-nombre', 'Metro Macul → Macul');
+    await page.fill('.tramo-row .tramo-destino', 'Macul');
     await page.fill('.tramo-row .tramo-min', '10');
 
     // 16:00 − 15 (llegada) − 10 (tramo) − 15 (holgura) = 15:20.
@@ -298,7 +298,7 @@ test.describe('Bitácora y disponibilidad de staff', () => {
     await page.fill('#bitacora-form [name=hora_inicio_servicio]', '08:00');
     await page.selectOption('#bitacora-mua-select', '3');
     await page.click('#add-tramo');
-    await page.fill('.tramo-row .tramo-nombre', 'Estudio → La Florida');
+    await page.fill('.tramo-row .tramo-destino', 'La Florida');
     await page.fill('.tramo-row .tramo-min', '40');
 
     await page.click('#image-bitacora-team');

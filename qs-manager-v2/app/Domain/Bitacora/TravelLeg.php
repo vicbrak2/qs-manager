@@ -7,42 +7,36 @@ namespace QSManager\Domain\Bitacora;
 use InvalidArgumentException;
 
 /**
- * Un tramo del traslado con su tiempo real registrado por la operacion
- * (ej. "Metro Macul -> Providencia", 20 min). La holgura por trafico NO se
- * guarda por tramo: la aplica TravelPlanCalculator al calcular la salida.
+ * Un tramo es "viajar hasta un punto": el destino (comuna o lugar), cuanto
+ * demora llegar ahi, y opcionalmente a quien se recoge en ese punto.
  *
- * Un tramo puede terminar en una recogida de profesional. En ese caso se
- * guarda a quien se recoge y en que comuna -- **solo la comuna**, nunca la
- * direccion exacta, porque la bitacora se comparte con todo el equipo.
+ * El destino se modela como comuna/lugar y no como direccion: la bitacora la
+ * lee todo el equipo, y la regla del estudio es publicar solo la comuna en
+ * las recogidas. Encadenando los destinos desde el punto de salida sale el
+ * orden de traslado sin tener que interpretar texto libre.
  */
 final class TravelLeg
 {
-    private readonly string $nombre;
+    private readonly string $destino;
     private readonly ?string $recoge;
-    private readonly ?string $comuna;
 
-    public function __construct(
-        string $nombre,
-        private readonly int $minutos,
-        ?string $recoge = null,
-        ?string $comuna = null,
-    ) {
-        $nombre = trim($nombre);
-        if ($nombre === '') {
-            throw new InvalidArgumentException('Travel leg name is required.');
+    public function __construct(string $destino, private readonly int $minutos, ?string $recoge = null)
+    {
+        $destino = trim($destino);
+        if ($destino === '') {
+            throw new InvalidArgumentException('Travel leg destination is required.');
         }
         if ($minutos < 0) {
             throw new InvalidArgumentException('Travel leg minutes can not be negative.');
         }
 
-        $this->nombre = $nombre;
+        $this->destino = $destino;
         $this->recoge = $recoge !== null && trim($recoge) !== '' ? trim($recoge) : null;
-        $this->comuna = $comuna !== null && trim($comuna) !== '' ? trim($comuna) : null;
     }
 
-    public function nombre(): string
+    public function destino(): string
     {
-        return $this->nombre;
+        return $this->destino;
     }
 
     public function minutos(): int
@@ -55,40 +49,28 @@ final class TravelLeg
         return $this->recoge;
     }
 
-    public function comuna(): ?string
-    {
-        return $this->comuna;
-    }
-
     public function isPickup(): bool
     {
         return $this->recoge !== null;
     }
 
     /**
-     * Etiqueta de la recogida para la bitacora: nombre y comuna, sin
-     * direccion. Ej. "Paz (Providencia)".
+     * Como aparece el destino en el orden de traslado: "Las Condes (Cami)"
+     * cuando hay recogida, "La Florida" cuando es solo de paso o destino.
      */
-    public function pickupLabel(): ?string
+    public function stopLabel(): string
     {
-        if ($this->recoge === null) {
-            return null;
-        }
-
-        return $this->comuna === null ? $this->recoge : sprintf('%s (%s)', $this->recoge, $this->comuna);
+        return $this->recoge === null ? $this->destino : sprintf('%s (%s)', $this->destino, $this->recoge);
     }
 
     /**
-     * @return array{nombre: string, minutos: int, recoge?: string, comuna?: string}
+     * @return array{destino: string, minutos: int, recoge?: string}
      */
     public function toArray(): array
     {
-        $data = ['nombre' => $this->nombre, 'minutos' => $this->minutos];
+        $data = ['destino' => $this->destino, 'minutos' => $this->minutos];
         if ($this->recoge !== null) {
             $data['recoge'] = $this->recoge;
-        }
-        if ($this->comuna !== null) {
-            $data['comuna'] = $this->comuna;
         }
 
         return $data;

@@ -14,19 +14,39 @@ final class TravelItinerary
     }
 
     /**
-     * @param list<array{nombre: string, minutos: int, recoge?: ?string, comuna?: ?string}> $rows
+     * @param list<array{destino: string, minutos: int, recoge?: ?string}> $rows
      */
     public static function fromArray(array $rows): self
     {
         return new self(array_map(
             static fn (array $row): TravelLeg => new TravelLeg(
-                (string) $row['nombre'],
+                (string) $row['destino'],
                 (int) $row['minutos'],
                 isset($row['recoge']) ? (string) $row['recoge'] : null,
-                isset($row['comuna']) ? (string) $row['comuna'] : null,
             ),
             $rows
         ));
+    }
+
+    /**
+     * Orden de traslado completo: "Metro Macul → Las Condes (Cami) →
+     * La Reina (Paz) → La Florida".
+     */
+    public function routeFrom(string $puntoSalida): string
+    {
+        $stops = array_map(static fn (TravelLeg $leg): string => $leg->stopLabel(), $this->legs);
+
+        return implode(' → ', [$puntoSalida, ...$stops]);
+    }
+
+    /**
+     * Solo los lugares, sin las personas, para la ruta estimada.
+     *
+     * @return list<string>
+     */
+    public function stops(): array
+    {
+        return array_map(static fn (TravelLeg $leg): string => $leg->destino(), $this->legs);
     }
 
     /**

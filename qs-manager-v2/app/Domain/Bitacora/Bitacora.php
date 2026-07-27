@@ -184,6 +184,9 @@ final class Bitacora
             'hora_llegada_objetivo' => $calculadora->llegadaObjetivo($this->horaInicioServicio),
             'hora_salida_sugerida' => $calculadora->salidaSugerida($this->horaInicioServicio, $this->itinerario),
             'recogidas' => $calculadora->pickupSchedule($this->horaInicioServicio, $this->itinerario),
+            'orden_traslado' => $this->itinerario->isEmpty()
+                ? null
+                : $this->itinerario->routeFrom($this->routePlan->pickupPoint()->value()),
             'objetivo' => $this->objetivo,
             'consideraciones' => $this->consideraciones,
             'notas_logisticas' => $this->notasLogisticas,

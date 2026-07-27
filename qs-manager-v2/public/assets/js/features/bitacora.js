@@ -93,6 +93,9 @@ function renderNotes(bitacora) {
 export function editBitacora(id) {
   const bitacora = state.bitacoras.find((item) => item.id === id);
   if (!bitacora) return;
+  // Los selectores se pueblan al cargar el equipo; si el usuario llego antes
+  // que esa carga, asignar mua_id sobre un select vacio no seleccionaba nada.
+  fillBitacoraStaffSelects();
   const form = $('#bitacora-form');
   clearFormErrors(form);
   const fields = form.elements;
@@ -127,6 +130,7 @@ export function editBitacora(id) {
 export function startBitacoraFromBooking(booking) {
   if (!booking) return;
   setTab('bitacora');
+  fillBitacoraStaffSelects();
   resetBitacoraForm();
 
   const form = $('#bitacora-form');
@@ -180,10 +184,9 @@ function timeMinus(hhmm, minutes) {
 function tramoRowHtml(tramo = {}) {
   return `
     <div class="tramo-row" data-tramo>
-      <input class="tramo-nombre" placeholder="Ej: Metro Macul → Providencia" maxlength="160" value="${escapeHtml(String(tramo.nombre ?? ''))}">
+      <input class="tramo-destino" placeholder="destino (comuna)" maxlength="160" value="${escapeHtml(String(tramo.destino ?? ''))}">
       <input class="tramo-min" type="number" min="0" step="1" placeholder="min" value="${escapeHtml(String(tramo.minutos ?? ''))}">
       <input class="tramo-recoge" placeholder="recoge a…" maxlength="80" value="${escapeHtml(String(tramo.recoge ?? ''))}">
-      <input class="tramo-comuna" placeholder="comuna" maxlength="80" value="${escapeHtml(String(tramo.comuna ?? ''))}">
       <button type="button" class="secondary btn-sm tramo-remove" data-remove-tramo title="Quitar tramo">✕</button>
     </div>
   `;
@@ -201,16 +204,14 @@ function collectTramos() {
   return Array.from(document.querySelectorAll('#tramos-list [data-tramo]'))
     .map((row) => {
       const tramo = {
-        nombre: row.querySelector('.tramo-nombre').value.trim(),
+        destino: row.querySelector('.tramo-destino').value.trim(),
         minutos: Number(row.querySelector('.tramo-min').value || 0),
       };
       const recoge = row.querySelector('.tramo-recoge').value.trim();
-      const comuna = row.querySelector('.tramo-comuna').value.trim();
       if (recoge) tramo.recoge = recoge;
-      if (comuna) tramo.comuna = comuna;
       return tramo;
     })
-    .filter((t) => t.nombre !== '');
+    .filter((t) => t.destino !== '');
 }
 
 /**
@@ -229,7 +230,8 @@ function pickupSchedule(inicio, tramos) {
     elapsed += tramo.minutos;
     if (tramo.recoge) {
       acc.push({
-        label: tramo.comuna ? `${tramo.recoge} (${tramo.comuna})` : tramo.recoge,
+        recoge: tramo.recoge,
+        comuna: tramo.destino,
         hora: timeMinus(salida, -Math.round(elapsed * factor)),
       });
     }
@@ -269,7 +271,7 @@ export function updateBitacoraPlan() {
   box.innerHTML = `<strong>✅ Plan de traslado completo.</strong>`
     + `<span>🕐 Salida sugerida: <strong>${salida} hrs</strong> · 🕒 Llegada: <strong>${llegada} hrs</strong> (15 min antes del inicio, holgura de ${SLACK_MIN} min incluida en el viaje).</span>`
     + (recogidas.length
-      ? `<span>🧍 Recogidas: ${recogidas.map((r) => `<strong>${escapeHtml(r.hora)}</strong> ${escapeHtml(r.label)}`).join(' · ')}</span>`
+      ? `<span>🧍 Recogidas: ${recogidas.map((r) => `<strong>${escapeHtml(r.hora)}</strong> ${escapeHtml(r.recoge)} (${escapeHtml(r.comuna)})`).join(' · ')}</span>`
       : '');
 }
 
@@ -330,11 +332,19 @@ function fechaLarga(iso) {
  */
 export function bitacoraImageData() {
   const f = bitacoraFields();
-  // Un tramo por linea: el nombre del tramo ya suele traer su propia flecha
-  // ("Estudio -> Metro"), asi que unirlos con otra flecha se lee pesimo.
+  const salidaDesde = f.puntoSalida || PUNTO_SALIDA_HABITUAL;
+  const recogidas = pickupSchedule(f.inicio, f.tramos);
+
+  // Orden de traslado: la cadena de paradas desde el punto de salida, con
+  // quien se recoge en cada una. "Metro Macul → Las Condes (Cami) → ...".
+  const orden = f.tramos.length
+    ? [salidaDesde, ...f.tramos.map((t) => (t.recoge ? `${t.destino} (${t.recoge})` : t.destino))].join(' → ')
+    : (f.ordenManual || '—');
+
+  // Ruta estimada: los mismos lugares sin las personas, y el ultimo destino
+  // se reemplaza por la direccion del servicio.
   const ruta = f.tramos.length
-    ? f.tramos.map((t) => `${t.nombre} — ${t.minutos} min`).join('\n')
-      + `\nTotal ${f.totalTramos} min + ${SLACK_MIN} de holgura por tráfico`
+    ? [salidaDesde, ...f.tramos.slice(0, -1).map((t) => t.destino), f.direccion || f.tramos.at(-1).destino].join(' → ')
     : '—';
 
   const filas = [
@@ -344,26 +354,21 @@ export function bitacoraImageData() {
     { campo: '📍 Dirección del servicio', valor: f.direccion || '—' },
     { campo: '⏰ Horario del servicio', valor: f.inicio ? `${f.inicio}${f.fin ? ` - ${f.fin}` : ''} hrs` : '—' },
     { campo: '🧑‍🎨 Profesionales', valor: f.profesionales || '—' },
-    { campo: '🚪 Punto de salida', valor: f.puntoSalida || '—' },
-    { campo: '🗺️ Orden de traslado', valor: f.ordenManual || (f.tramos.length ? f.tramos.map((t) => t.nombre).join('  ·  ') : '—') },
-    { campo: '🕐 Hora de salida', valor: f.salida ? `${f.salida} hrs` : '—' },
-    { campo: '🚗 Ruta estimada', valor: ruta },
+    { campo: '🚪 Punto de salida', valor: salidaDesde },
+    { campo: '🗺️ Orden de traslado', valor: orden },
   ];
 
-  // Las recogidas van justo despues de la salida: es lo que cada profesional
-  // necesita saber. Solo comuna, nunca la direccion exacta.
-  const recogidas = pickupSchedule(f.inicio, f.tramos);
-  if (recogidas.length) {
-    filas.splice(9, 0, {
-      campo: '🧍 Horas de recogida',
-      valor: recogidas.map((r) => `${r.hora} hrs — ${r.label}`).join('\n'),
-    });
-  }
-
-  filas.splice(recogidas.length ? 10 : 9, 0, {
-    campo: '🕒 Hora de llegada estimada',
-    valor: f.llegada ? `${f.llegada} hrs (15 minutos antes del inicio)` : '—',
+  // Una fila por profesional: cada una busca su propia hora, sin tener que
+  // leer una lista. Solo la comuna, nunca la direccion exacta.
+  recogidas.forEach((r) => {
+    filas.push({ campo: `🧍 Hora de recogida ${r.recoge}`, valor: `${r.hora} hrs (${r.comuna})` });
   });
+
+  filas.push(
+    { campo: '🕐 Hora de salida', valor: f.salida ? `${f.salida} hrs` : '—' },
+    { campo: '🕒 Hora de llegada estimada', valor: f.llegada ? `${f.llegada} hrs (15 minutos antes del inicio)` : '—' },
+    { campo: '🚗 Ruta estimada', valor: ruta },
+  );
 
   if (f.objetivo) filas.push({ campo: '🎯 Objetivo principal', valor: f.objetivo });
   if (f.consideraciones) filas.push({ campo: '📝 Consideraciones', valor: f.consideraciones });
@@ -403,7 +408,8 @@ function teamBitacoraText() {
     `⏰ Horario del servicio: ${inicio || '—'}${fin ? ` - ${fin}` : ''} hrs`,
     `🧑‍🎨 Profesionales: ${profesionales || '—'}`,
     `🚪 Punto de salida: ${fields.punto_salida.value.trim() || '—'}`,
-    `🗺️ Orden de traslado: ${tramos.map((t) => t.nombre).join(' → ') || fields.orden_recogida.value.trim() || '—'}`,
+    `🗺️ Orden de traslado: ${tramos.length ? [fields.punto_salida.value.trim() || PUNTO_SALIDA_HABITUAL, ...tramos.map((t) => (t.recoge ? `${t.destino} (${t.recoge})` : t.destino))].join(' → ') : (fields.orden_recogida.value.trim() || '—')}`,
+    ...pickupSchedule(inicio, tramos).map((r) => `🧍 Hora de recogida ${r.recoge}: ${r.hora} hrs (${r.comuna})`),
     `🕐 Hora de salida: ${salida ? `${salida} hrs` : '—'}`,
     `🕒 Hora de llegada estimada: ${llegada ? `${llegada} hrs (15 minutos antes del inicio)` : '—'}`,
   ];

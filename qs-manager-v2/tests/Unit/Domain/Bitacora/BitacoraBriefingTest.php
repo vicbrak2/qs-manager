@@ -36,7 +36,7 @@ final class BitacoraBriefingTest extends TestCase
         self::assertStringContainsString('acceso al edificio', $edificio);
 
         $conRecogidas = $this->briefing->consideraciones('09:00', 20, 'Calle 1', [
-            ['recoge' => 'Paz', 'comuna' => 'Providencia', 'label' => 'Paz (Providencia)', 'hora' => '08:10'],
+            ['recoge' => 'Paz', 'comuna' => 'Providencia', 'hora' => '08:10'],
         ]);
         self::assertStringContainsString('lista en su punto', $conRecogidas);
     }
@@ -55,7 +55,7 @@ final class BitacoraBriefingTest extends TestCase
             $this->briefing->objetivo('Novia Fiesta'),
             $this->briefing->objetivo('Taller'),
             $this->briefing->consideraciones('06:00', 90, 'Torre 5, depto 101', [
-                ['recoge' => 'Paz', 'comuna' => 'Macul', 'label' => 'Paz (Macul)', 'hora' => '06:30'],
+                ['recoge' => 'Paz', 'comuna' => 'Macul', 'hora' => '06:30'],
             ]),
         ];
 

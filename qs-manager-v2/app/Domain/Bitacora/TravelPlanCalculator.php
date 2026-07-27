@@ -46,7 +46,7 @@ final class TravelPlanCalculator
      * de mas en el primer punto, y la llegada al servicio sigue cayendo
      * exactamente en la hora objetivo.
      *
-     * @return list<array{recoge: string, comuna: ?string, label: string, hora: string}>
+     * @return list<array{recoge: string, comuna: string, hora: string}>
      */
     public function pickupSchedule(?string $horaInicioServicio, TravelItinerary $itinerario): array
     {
@@ -76,8 +76,7 @@ final class TravelPlanCalculator
 
             $schedule[] = [
                 'recoge' => (string) $leg->recoge(),
-                'comuna' => $leg->comuna(),
-                'label' => (string) $leg->pickupLabel(),
+                'comuna' => $leg->destino(),
                 'hora' => $salidaAt->modify(sprintf('+%d minutes', (int) round($elapsed * $factor)))->format('H:i'),
             ];
         }
