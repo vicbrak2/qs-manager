@@ -252,14 +252,14 @@ final class WebController
 
       <section class="panel finance-details hidden" id="finance-accounts-receivable-details" aria-labelledby="finance-receivable-details-title">
         <div class="panel-head finance-details-head">
-          <div><p class="finance-step">Detalle de saldos pendientes</p><h2 id="finance-receivable-details-title">Cuentas pendientes de cobro</h2><p>Servicios agendados en el período que presentan un saldo por pagar.</p></div>
+          <div><p class="finance-step">Detalle de saldos pendientes</p><h2 id="finance-receivable-details-title">Cuentas pendientes de cobro</h2><p>Servicios realizados o agendados en el período que todavía tienen saldo por pagar.</p></div>
           <button type="button" class="secondary" id="finance-receivable-details-close">Cerrar</button>
         </div>
         <div class="table-wrap">
           <table class="data-table finance-details-table">
-            <thead><tr><th>Fecha</th><th>Cliente</th><th>Servicio</th><th class="numeric">Total venta</th><th class="numeric">Pagado</th><th class="numeric">Pendiente</th></tr></thead>
-            <tbody id="finance-receivable-details-body"><tr><td colspan="6">Abre el detalle para consultar los saldos pendientes.</td></tr></tbody>
-            <tfoot><tr><th colspan="5">Total pendiente de cobro</th><th class="numeric" id="finance-receivable-details-total">$ 0</th></tr></tfoot>
+            <thead><tr><th>Fecha</th><th>Cliente</th><th>Servicio</th><th>Estado</th><th class="numeric">Total venta</th><th class="numeric">Pagado</th><th class="numeric">Pendiente</th></tr></thead>
+            <tbody id="finance-receivable-details-body"><tr><td colspan="7">Abre el detalle para consultar los saldos pendientes.</td></tr></tbody>
+            <tfoot><tr><th colspan="6">Total pendiente de cobro</th><th class="numeric" id="finance-receivable-details-total">$ 0</th></tr></tfoot>
           </table>
         </div>
       </section>

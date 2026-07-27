@@ -13,6 +13,7 @@ let accountsReceivableDetailsLoadedFor = '';
 
 const formatCurrency = (val) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val);
 const monthLabels = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const statusClass = (value) => String(value || 'sin-estado').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 function todayInChile() {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -303,13 +304,13 @@ async function loadAccountsReceivableDetails(force = false) {
   if (!force && accountsReceivableDetailsLoadedFor === periodKey) return;
 
   const body = $('#finance-receivable-details-body');
-  body.innerHTML = '<tr><td colspan="6">Cargando saldos pendientes...</td></tr>';
+  body.innerHTML = '<tr><td colspan="7">Cargando saldos pendientes...</td></tr>';
 
   const data = await api(`/api/v1/finance/accounts-receivable-details?from=${from}&to=${to}&basis=${basis}`);
   body.innerHTML = '';
 
   if (!data.items.length) {
-    body.innerHTML = '<tr><td colspan="6" class="finance-details-empty">No hay saldos pendientes en este período.</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="finance-details-empty">No hay saldos pendientes en este período.</td></tr>';
   } else {
     data.items.forEach(row => {
       const tr = document.createElement('tr');
@@ -317,6 +318,7 @@ async function loadAccountsReceivableDetails(force = false) {
         <td>${formatDate(row.occurred_on)}</td>
         <td>${escapeHtml(row.customer)}</td>
         <td><strong>${escapeHtml(row.service)}</strong><small>${escapeHtml(row.source_sheet || '')}${row.source_row ? ` · fila ${row.source_row}` : ''}</small></td>
+        <td><span class="status-badge status-${statusClass(row.status)}">${escapeHtml(row.status || 'Sin estado')}</span></td>
         <td class="numeric">${formatCurrency(row.total_amount)}</td>
         <td class="numeric">${formatCurrency(row.paid_amount)}</td>
         <td class="numeric finance-contribution">${formatCurrency(row.pending_amount)}</td>
