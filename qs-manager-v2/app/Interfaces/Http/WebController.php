@@ -101,6 +101,50 @@ final class WebController
         </div>
       </div>
 
+      <div class="finance-dashboard-row">
+        <div class="finance-main">
+          <section class="finance-section" aria-labelledby="finance-flow-title">
+            <div class="finance-section-head">
+              <div><p class="finance-step">1. Flujo comercial</p><h3 id="finance-flow-title">De lo vendido a lo cobrado</h3></div>
+              <span class="finance-period-note">Las ventas pueden cobrarse en fechas diferentes.</span>
+            </div>
+            <div class="finance-flow-grid">
+              <div class="finance-card finance-card--sales finance-card--clickable" id="finance-sales-card" role="button" tabindex="0" aria-expanded="false" aria-controls="finance-contracted-sales-details">
+                <div class="finance-card-title">Vendido</div>
+                <div class="finance-val" id="finance-val-contracted">$ 0</div>
+                <p>Valor total de los servicios registrados.</p>
+                <button type="button" class="finance-detail-button" id="finance-sales-toggle" aria-expanded="false" aria-controls="finance-contracted-sales-details">Ver detalle</button>
+              </div>
+              <div class="finance-card finance-card--collected finance-card--clickable" id="finance-collected-card" role="button" tabindex="0" aria-expanded="false" aria-controls="finance-collected-revenue-details">
+                <div class="finance-card-title">Dinero recibido</div>
+                <div class="finance-val" id="finance-val-collected">$ 0</div>
+                <p>Todo lo que ingresó en el período: abonos de reserva y pagos completos.</p>
+                <button type="button" class="finance-detail-button" id="finance-collected-toggle" aria-expanded="false" aria-controls="finance-collected-revenue-details">Ver detalle</button>
+              </div>
+              <div class="finance-card finance-card--committed finance-card--clickable" id="finance-committed-card" role="button" tabindex="0" aria-expanded="false" aria-controls="finance-committed-deposits-details">
+                <div class="finance-card-title">🔒 Retenido como reserva</div>
+                <div class="finance-val" id="finance-val-committed">$ 0</div>
+                <p>Abonos de servicios que aún no se realizan. <strong>No es plata disponible:</strong> se libera al terminar el servicio.</p>
+                <button type="button" class="finance-detail-button" id="finance-committed-toggle" aria-expanded="false" aria-controls="finance-committed-deposits-details">Ver detalle</button>
+              </div>
+              <div class="finance-card finance-card--released finance-card--clickable" id="finance-released-card" role="button" tabindex="0" aria-expanded="false" aria-controls="finance-released-revenue-details">
+                <div class="finance-card-title">✅ Liberado</div>
+                <div class="finance-val" id="finance-val-released">$ 0</div>
+                <p>Parte de lo recibido cuyo servicio ya se realizó. Es lo que entra al resultado.</p>
+                <button type="button" class="finance-detail-button" id="finance-released-toggle" aria-expanded="false" aria-controls="finance-released-revenue-details">Ver detalle</button>
+              </div>
+              <div class="finance-card finance-card--pending finance-card--clickable" id="finance-pending-card" role="button" tabindex="0" aria-expanded="false" aria-controls="finance-accounts-receivable-details">
+                <div class="finance-card-title">Pendiente de cobro</div>
+                <div class="finance-val" id="finance-val-receivable">$ 0</div>
+                <p>Parte vendida que todavía no aparece pagada.</p>
+                <button type="button" class="finance-detail-button" id="finance-pending-toggle" aria-expanded="false" aria-controls="finance-accounts-receivable-details">Ver detalle</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="finance-section" aria-labelledby="finance-result-title">
+            <div class="finance-section-head"><div><p class="finance-step">2. Resultado de caja</p><h3 id="finance-result-title">Lo que quedó después de egresos</h3></div></div>
+            <div class="finance-result-grid">
               <div class="finance-card finance-card--realized"><div class="finance-card-title">Ingresos realizados</div><div class="finance-val" id="finance-val-realized">$ 0</div><p>Valor de servicios terminados en el período.</p></div>
               <div class="finance-card finance-card--expense"><div class="finance-card-title">Pago a profesionales</div><div class="finance-val" id="finance-val-costs">$ 0</div><p>Costos asociados directamente a los servicios.</p></div>
               <div class="finance-card finance-card--expense finance-card--clickable" id="finance-fixed-expenses-card" role="button" tabindex="0" aria-expanded="false" aria-controls="finance-fixed-expense-details"><div class="finance-card-title">Gastos fijos</div><div class="finance-val" id="finance-val-fixed-expenses">$ 0</div><p>Arriendo y suscripciones mensuales confirmadas.</p><small id="finance-fixed-expense-status">Sin partidas pendientes</small><button type="button" class="finance-detail-button" id="finance-fixed-details-toggle" aria-expanded="false" aria-controls="finance-fixed-expense-details">Ver detalle</button></div>

@@ -5,6 +5,11 @@ import { notify } from '../ui/notifications.js';
 let financeChartInstance = null;
 let availableDetailsLoadedFor = '';
 let fixedExpenseDetailsLoadedFor = '';
+let contractedSalesDetailsLoadedFor = '';
+let collectedRevenueDetailsLoadedFor = '';
+let committedDepositsDetailsLoadedFor = '';
+let releasedRevenueDetailsLoadedFor = '';
+let accountsReceivableDetailsLoadedFor = '';
 
 const formatCurrency = (val) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val);
 const monthLabels = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -154,6 +159,176 @@ async function loadFixedExpenseDetails(force = false) {
   fixedExpenseDetailsLoadedFor = periodKey;
 }
 
+async function loadContractedSalesDetails(force = false) {
+  const from = $('#finance-from').value;
+  const to = $('#finance-to').value;
+  const basis = $('#finance-basis').value || 'cash_estimated';
+  const periodKey = `${from}|${to}|${basis}`;
+  if (!force && contractedSalesDetailsLoadedFor === periodKey) return;
+
+  const body = $('#finance-sales-details-body');
+  body.innerHTML = '<tr><td colspan="6">Cargando ventas...</td></tr>';
+
+  const data = await api(`/api/v1/finance/contracted-sales-details?from=${from}&to=${to}&basis=${basis}`);
+  body.innerHTML = '';
+
+  if (!data.items.length) {
+    body.innerHTML = '<tr><td colspan="6" class="finance-details-empty">No hay servicios registrados en este período.</td></tr>';
+  } else {
+    data.items.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${formatDate(row.occurred_on)}</td>
+        <td>${escapeHtml(row.customer)}</td>
+        <td><strong>${escapeHtml(row.service)}</strong></td>
+        <td><span class="status-badge status-${row.status}">${escapeHtml(row.status)}</span></td>
+        <td><small>${escapeHtml(row.source_sheet || '')}${row.source_row ? ` · fila ${row.source_row}` : ''}</small></td>
+        <td class="numeric">${formatCurrency(row.amount)}</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  $('#finance-sales-details-total').textContent = formatCurrency(data.total || 0);
+  contractedSalesDetailsLoadedFor = periodKey;
+}
+
+async function loadCollectedRevenueDetails(force = false) {
+  const from = $('#finance-from').value;
+  const to = $('#finance-to').value;
+  const basis = $('#finance-basis').value || 'cash_estimated';
+  const periodKey = `${from}|${to}|${basis}`;
+  if (!force && collectedRevenueDetailsLoadedFor === periodKey) return;
+
+  const body = $('#finance-collected-details-body');
+  body.innerHTML = '<tr><td colspan="6">Cargando ingresos...</td></tr>';
+
+  const data = await api(`/api/v1/finance/collected-revenue-details?from=${from}&to=${to}&basis=${basis}`);
+  body.innerHTML = '';
+
+  if (!data.items.length) {
+    body.innerHTML = '<tr><td colspan="6" class="finance-details-empty">No hay ingresos registrados en este período.</td></tr>';
+  } else {
+    data.items.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${formatDate(row.occurred_on)}</td>
+        <td>${escapeHtml(row.customer)}</td>
+        <td><strong>${escapeHtml(row.service)}</strong></td>
+        <td><span class="status-badge payment-status-${row.payment_status}">${escapeHtml(row.payment_status)}</span></td>
+        <td><small>${escapeHtml(row.source_sheet || '')}${row.source_row ? ` · fila ${row.source_row}` : ''}</small></td>
+        <td class="numeric">${formatCurrency(row.amount)}</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  $('#finance-collected-details-total').textContent = formatCurrency(data.total || 0);
+  collectedRevenueDetailsLoadedFor = periodKey;
+}
+
+async function loadCommittedDepositsDetails(force = false) {
+  const from = $('#finance-from').value;
+  const to = $('#finance-to').value;
+  const basis = $('#finance-basis').value || 'cash_estimated';
+  const periodKey = `${from}|${to}|${basis}`;
+  if (!force && committedDepositsDetailsLoadedFor === periodKey) return;
+
+  const body = $('#finance-committed-details-body');
+  body.innerHTML = '<tr><td colspan="6">Cargando abonos retenidos...</td></tr>';
+
+  const data = await api(`/api/v1/finance/committed-deposits-details?from=${from}&to=${to}&basis=${basis}`);
+  body.innerHTML = '';
+
+  if (!data.items.length) {
+    body.innerHTML = '<tr><td colspan="6" class="finance-details-empty">No hay reservas retenidas para este período.</td></tr>';
+  } else {
+    data.items.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${formatDate(row.occurred_on)}</td>
+        <td>${escapeHtml(row.customer)}</td>
+        <td><strong>${escapeHtml(row.service)}</strong></td>
+        <td><span class="status-badge status-${row.status}">${escapeHtml(row.status)}</span></td>
+        <td>${escapeHtml(row.source_type)}<small>${row.source_sheet ? ` · ${escapeHtml(row.source_sheet)}` : ''}${row.source_row ? ` · fila ${row.source_row}` : ''}</small></td>
+        <td class="numeric">${formatCurrency(row.amount)}</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  $('#finance-committed-details-total').textContent = formatCurrency(data.total || 0);
+  committedDepositsDetailsLoadedFor = periodKey;
+}
+
+async function loadReleasedRevenueDetails(force = false) {
+  const from = $('#finance-from').value;
+  const to = $('#finance-to').value;
+  const basis = $('#finance-basis').value || 'cash_estimated';
+  const periodKey = `${from}|${to}|${basis}`;
+  if (!force && releasedRevenueDetailsLoadedFor === periodKey) return;
+
+  const body = $('#finance-released-details-body');
+  body.innerHTML = '<tr><td colspan="6">Cargando ingresos liberados...</td></tr>';
+
+  const data = await api(`/api/v1/finance/released-revenue-details?from=${from}&to=${to}&basis=${basis}`);
+  body.innerHTML = '';
+
+  if (!data.items.length) {
+    body.innerHTML = '<tr><td colspan="6" class="finance-details-empty">No hay ingresos liberados en este período.</td></tr>';
+  } else {
+    data.items.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${formatDate(row.occurred_on)}</td>
+        <td>${escapeHtml(row.customer)}</td>
+        <td><strong>${escapeHtml(row.service)}</strong></td>
+        <td><span class="status-badge status-${row.service_status}">${escapeHtml(row.service_status)}</span></td>
+        <td><small>${escapeHtml(row.source_sheet || '')}${row.source_row ? ` · fila ${row.source_row}` : ''}</small></td>
+        <td class="numeric">${formatCurrency(row.amount)}</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  $('#finance-released-details-total').textContent = formatCurrency(data.total || 0);
+  releasedRevenueDetailsLoadedFor = periodKey;
+}
+
+async function loadAccountsReceivableDetails(force = false) {
+  const from = $('#finance-from').value;
+  const to = $('#finance-to').value;
+  const basis = $('#finance-basis').value || 'cash_estimated';
+  const periodKey = `${from}|${to}|${basis}`;
+  if (!force && accountsReceivableDetailsLoadedFor === periodKey) return;
+
+  const body = $('#finance-receivable-details-body');
+  body.innerHTML = '<tr><td colspan="6">Cargando saldos pendientes...</td></tr>';
+
+  const data = await api(`/api/v1/finance/accounts-receivable-details?from=${from}&to=${to}&basis=${basis}`);
+  body.innerHTML = '';
+
+  if (!data.items.length) {
+    body.innerHTML = '<tr><td colspan="6" class="finance-details-empty">No hay saldos pendientes en este período.</td></tr>';
+  } else {
+    data.items.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${formatDate(row.occurred_on)}</td>
+        <td>${escapeHtml(row.customer)}</td>
+        <td><strong>${escapeHtml(row.service)}</strong><small>${escapeHtml(row.source_sheet || '')}${row.source_row ? ` · fila ${row.source_row}` : ''}</small></td>
+        <td class="numeric">${formatCurrency(row.total_amount)}</td>
+        <td class="numeric">${formatCurrency(row.paid_amount)}</td>
+        <td class="numeric finance-contribution">${formatCurrency(row.pending_amount)}</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  $('#finance-receivable-details-total').textContent = formatCurrency(data.total || 0);
+  accountsReceivableDetailsLoadedFor = periodKey;
+}
+
 function escapeHtml(value) {
   const span = document.createElement('span');
   span.textContent = value ?? '';
@@ -168,16 +343,94 @@ export function initFinanceDetails() {
   const close = $('#finance-details-close');
   const monthSelect = $('#finance-month');
   const rangeToggle = $('#finance-use-range');
-  const fixedCard = $('#finance-fixed-expenses-card');
-  const fixedToggle = $('#finance-fixed-details-toggle');
-  const fixedDetails = $('#finance-fixed-expense-details');
-  const fixedClose = $('#finance-fixed-details-close');
+
+  const allDetailPanels = [
+    { card: $('#finance-sales-card'), toggle: $('#finance-sales-toggle'), panel: $('#finance-contracted-sales-details') },
+    { card: $('#finance-collected-card'), toggle: $('#finance-collected-toggle'), panel: $('#finance-collected-revenue-details') },
+    { card: $('#finance-committed-card'), toggle: $('#finance-committed-toggle'), panel: $('#finance-committed-deposits-details') },
+    { card: $('#finance-released-card'), toggle: $('#finance-released-toggle'), panel: $('#finance-released-revenue-details') },
+    { card: $('#finance-pending-card'), toggle: $('#finance-pending-toggle'), panel: $('#finance-accounts-receivable-details') },
+    { card: $('#finance-fixed-expenses-card'), toggle: $('#finance-fixed-details-toggle'), panel: $('#finance-fixed-expense-details') },
+    { card: null, toggle: $('#finance-details-toggle'), panel: $('#finance-available-details') }
+  ];
+
+  function closeAllPanelsExcept(exceptPanelId) {
+    allDetailPanels.forEach(item => {
+      if (item.panel && item.panel.id !== exceptPanelId) {
+        item.panel.classList.add('hidden');
+        if (item.card) item.card.setAttribute('aria-expanded', 'false');
+        if (item.toggle) {
+          item.toggle.setAttribute('aria-expanded', 'false');
+          if (item.toggle.id === 'finance-details-toggle') {
+            item.toggle.textContent = 'Ver detalle por servicio';
+          } else if (item.toggle.id === 'finance-fixed-details-toggle' || item.toggle.classList.contains('finance-detail-button')) {
+            item.toggle.textContent = 'Ver detalle';
+          }
+        }
+      }
+    });
+  }
+
+  const setupCardToggle = (card, toggle, panel, closeBtn, loader, panelName) => {
+    if (card && card.dataset.bound !== 'true') {
+      card.dataset.bound = 'true';
+      const togglePanel = async () => {
+        const willOpen = panel.classList.contains('hidden');
+        closeAllPanelsExcept(willOpen ? panel.id : null);
+        panel.classList.toggle('hidden', !willOpen);
+        card.setAttribute('aria-expanded', String(willOpen));
+        if (toggle) {
+          toggle.setAttribute('aria-expanded', String(willOpen));
+          toggle.textContent = willOpen ? 'Ocultar detalle' : 'Ver detalle';
+        }
+        if (!willOpen) return;
+
+        try {
+          await loader();
+          panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (error) {
+          notify(`No se pudo cargar el detalle de ${panelName}: ` + error.message, 'error');
+        }
+      };
+
+      card.addEventListener('click', (event) => {
+        event.preventDefault();
+        togglePanel();
+      });
+      card.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          togglePanel();
+        }
+      });
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          panel.classList.add('hidden');
+          card.setAttribute('aria-expanded', 'false');
+          if (toggle) {
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.textContent = 'Ver detalle';
+          }
+          card.focus();
+        });
+      }
+    }
+  };
+
+  // Setup commercial flow cards toggles
+  setupCardToggle($('#finance-sales-card'), $('#finance-sales-toggle'), $('#finance-contracted-sales-details'), $('#finance-sales-details-close'), loadContractedSalesDetails, 'ventas');
+  setupCardToggle($('#finance-collected-card'), $('#finance-collected-toggle'), $('#finance-collected-revenue-details'), $('#finance-collected-details-close'), loadCollectedRevenueDetails, 'ingresos');
+  setupCardToggle($('#finance-committed-card'), $('#finance-committed-toggle'), $('#finance-committed-deposits-details'), $('#finance-committed-details-close'), loadCommittedDepositsDetails, 'reservas');
+  setupCardToggle($('#finance-released-card'), $('#finance-released-toggle'), $('#finance-released-revenue-details'), $('#finance-released-details-close'), loadReleasedRevenueDetails, 'ingresos liberados');
+  setupCardToggle($('#finance-pending-card'), $('#finance-pending-toggle'), $('#finance-accounts-receivable-details'), $('#finance-receivable-details-close'), loadAccountsReceivableDetails, 'saldos pendientes');
+  setupCardToggle($('#finance-fixed-expenses-card'), $('#finance-fixed-details-toggle'), $('#finance-fixed-expense-details'), $('#finance-fixed-details-close'), loadFixedExpenseDetails, 'gastos fijos');
 
   if (toggle && toggle.dataset.bound !== 'true') {
     toggle.dataset.bound = 'true';
 
     toggle.addEventListener('click', async () => {
       const willOpen = details.classList.contains('hidden');
+      closeAllPanelsExcept(willOpen ? details.id : null);
       details.classList.toggle('hidden', !willOpen);
       toggle.setAttribute('aria-expanded', String(willOpen));
       toggle.textContent = willOpen ? 'Ocultar detalle' : 'Ver detalle por servicio';
@@ -196,43 +449,6 @@ export function initFinanceDetails() {
       toggle.setAttribute('aria-expanded', 'false');
       toggle.textContent = 'Ver detalle por servicio';
       toggle.focus();
-    });
-  }
-
-  if (fixedCard && fixedCard.dataset.bound !== 'true') {
-    fixedCard.dataset.bound = 'true';
-    const openFixedDetails = async () => {
-      const willOpen = fixedDetails.classList.contains('hidden');
-      fixedDetails.classList.toggle('hidden', !willOpen);
-      fixedCard.setAttribute('aria-expanded', String(willOpen));
-      fixedToggle.setAttribute('aria-expanded', String(willOpen));
-      fixedToggle.textContent = willOpen ? 'Ocultar detalle' : 'Ver detalle';
-      if (!willOpen) return;
-
-      try {
-        await loadFixedExpenseDetails();
-        fixedDetails.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } catch (error) {
-        notify('No se pudo cargar el detalle de gastos fijos: ' + error.message, 'error');
-      }
-    };
-
-    fixedCard.addEventListener('click', (event) => {
-      event.preventDefault();
-      openFixedDetails();
-    });
-    fixedCard.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        openFixedDetails();
-      }
-    });
-    fixedClose.addEventListener('click', () => {
-      fixedDetails.classList.add('hidden');
-      fixedCard.setAttribute('aria-expanded', 'false');
-      fixedToggle.setAttribute('aria-expanded', 'false');
-      fixedToggle.textContent = 'Ver detalle';
-      fixedCard.focus();
     });
   }
 
@@ -362,13 +578,35 @@ export async function loadFinanceDashboard() {
     $('#finance-val-refunds').textContent = formatCurrency(data.metrics.refunds);
     $('#finance-val-net').textContent = formatCurrency(data.metrics.net_result);
     $('#finance-val-margin').textContent = formatPercent(data.metrics.operating_margin);
+
     availableDetailsLoadedFor = '';
     fixedExpenseDetailsLoadedFor = '';
+    contractedSalesDetailsLoadedFor = '';
+    collectedRevenueDetailsLoadedFor = '';
+    committedDepositsDetailsLoadedFor = '';
+    releasedRevenueDetailsLoadedFor = '';
+    accountsReceivableDetailsLoadedFor = '';
+
     if (!$('#finance-available-details').classList.contains('hidden')) {
       await loadAvailableDetails(true);
     }
     if (!$('#finance-fixed-expense-details').classList.contains('hidden')) {
       await loadFixedExpenseDetails(true);
+    }
+    if (!$('#finance-contracted-sales-details').classList.contains('hidden')) {
+      await loadContractedSalesDetails(true);
+    }
+    if (!$('#finance-collected-revenue-details').classList.contains('hidden')) {
+      await loadCollectedRevenueDetails(true);
+    }
+    if (!$('#finance-committed-deposits-details').classList.contains('hidden')) {
+      await loadCommittedDepositsDetails(true);
+    }
+    if (!$('#finance-released-revenue-details').classList.contains('hidden')) {
+      await loadReleasedRevenueDetails(true);
+    }
+    if (!$('#finance-accounts-receivable-details').classList.contains('hidden')) {
+      await loadAccountsReceivableDetails(true);
     }
 
     const received = Number(data.metrics.collected_revenue || 0);
