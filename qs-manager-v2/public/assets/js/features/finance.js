@@ -4,8 +4,74 @@ import { notify } from '../ui/notifications.js';
 
 let financeChartInstance = null;
 let availableDetailsLoadedFor = '';
+let fixedExpenseDetailsLoadedFor = '';
 
 const formatCurrency = (val) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val);
+const monthLabels = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+function todayInChile() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Santiago',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date()).reduce((carry, part) => {
+    carry[part.type] = part.value;
+    return carry;
+  }, {});
+
+  return { year: Number(parts.year), month: Number(parts.month), day: Number(parts.day) };
+}
+
+function monthRange(value) {
+  const [year, month] = value.split('-').map(Number);
+  const lastDay = new Date(year, month, 0).getDate();
+
+  return {
+    from: `${year}-${String(month).padStart(2, '0')}-01`,
+    to: `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
+  };
+}
+
+function ensureFinancePeriodControls() {
+  const monthSelect = $('#finance-month');
+  if (!monthSelect.dataset.loaded) {
+    const { year, month } = todayInChile();
+    monthSelect.innerHTML = monthLabels.map((label, index) => {
+      const monthValue = `${year}-${String(index + 1).padStart(2, '0')}`;
+      return `<option value="${monthValue}">${label} ${year}</option>`;
+    }).join('');
+    monthSelect.value = `${year}-${String(month).padStart(2, '0')}`;
+    monthSelect.dataset.loaded = 'true';
+  }
+
+  applyFinancePeriodMode();
+}
+
+function isRangeMode() {
+  return Boolean($('#finance-use-range')?.checked);
+}
+
+function applyFinancePeriodMode() {
+  const rangeMode = isRangeMode();
+  const monthSelect = $('#finance-month');
+  const fromEl = $('#finance-from');
+  const toEl = $('#finance-to');
+
+  monthSelect.disabled = rangeMode;
+  fromEl.disabled = !rangeMode;
+  toEl.disabled = !rangeMode;
+
+  if (!rangeMode) {
+    const range = monthRange(monthSelect.value);
+    fromEl.value = range.from;
+    toEl.value = range.to;
+  } else if (!fromEl.value || !toEl.value) {
+    const range = monthRange(monthSelect.value);
+    fromEl.value = range.from;
+    toEl.value = range.to;
+  }
+}
 
 function formatDate(value) {
   if (!value) return '--';
@@ -54,6 +120,40 @@ async function loadAvailableDetails(force = false) {
   availableDetailsLoadedFor = periodKey;
 }
 
+async function loadFixedExpenseDetails(force = false) {
+  const from = $('#finance-from').value;
+  const to = $('#finance-to').value;
+  const basis = $('#finance-basis').value || 'cash_estimated';
+  const periodKey = `${from}|${to}|${basis}`;
+  if (!force && fixedExpenseDetailsLoadedFor === periodKey) return;
+
+  const body = $('#finance-fixed-details-body');
+  body.innerHTML = '<tr><td colspan="6">Cargando gastos fijos...</td></tr>';
+
+  const data = await api(`/api/v1/finance/fixed-expense-details?from=${from}&to=${to}&basis=${basis}`);
+  body.innerHTML = '';
+
+  if (!data.items.length) {
+    body.innerHTML = '<tr><td colspan="6" class="finance-details-empty">No hay gastos fijos confirmados en este período.</td></tr>';
+  } else {
+    data.items.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${formatDate(row.occurred_on)}</td>
+        <td><strong>${escapeHtml(row.concept)}</strong><small>${escapeHtml(row.source_sheet || '')}${row.source_row ? ` · fila ${row.source_row}` : ''}</small></td>
+        <td>${escapeHtml(row.category)}</td>
+        <td>${escapeHtml(row.periodicity)}</td>
+        <td>${escapeHtml(row.notes || '')}</td>
+        <td class="numeric">${formatCurrency(row.amount)}</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  $('#finance-fixed-details-total').textContent = formatCurrency(data.total || 0);
+  fixedExpenseDetailsLoadedFor = periodKey;
+}
+
 function escapeHtml(value) {
   const span = document.createElement('span');
   span.textContent = value ?? '';
@@ -61,33 +161,96 @@ function escapeHtml(value) {
 }
 
 export function initFinanceDetails() {
+  ensureFinancePeriodControls();
+
   const toggle = $('#finance-details-toggle');
   const details = $('#finance-available-details');
   const close = $('#finance-details-close');
-  if (!toggle || toggle.dataset.bound === 'true') return;
-  toggle.dataset.bound = 'true';
+  const monthSelect = $('#finance-month');
+  const rangeToggle = $('#finance-use-range');
+  const fixedCard = $('#finance-fixed-expenses-card');
+  const fixedToggle = $('#finance-fixed-details-toggle');
+  const fixedDetails = $('#finance-fixed-expense-details');
+  const fixedClose = $('#finance-fixed-details-close');
 
-  toggle.addEventListener('click', async () => {
-    const willOpen = details.classList.contains('hidden');
-    details.classList.toggle('hidden', !willOpen);
-    toggle.setAttribute('aria-expanded', String(willOpen));
-    toggle.textContent = willOpen ? 'Ocultar detalle' : 'Ver detalle por servicio';
-    if (!willOpen) return;
+  if (toggle && toggle.dataset.bound !== 'true') {
+    toggle.dataset.bound = 'true';
 
-    try {
-      await loadAvailableDetails();
-      details.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } catch (error) {
-      notify('No se pudo cargar el detalle del disponible: ' + error.message, 'error');
-    }
-  });
+    toggle.addEventListener('click', async () => {
+      const willOpen = details.classList.contains('hidden');
+      details.classList.toggle('hidden', !willOpen);
+      toggle.setAttribute('aria-expanded', String(willOpen));
+      toggle.textContent = willOpen ? 'Ocultar detalle' : 'Ver detalle por servicio';
+      if (!willOpen) return;
 
-  close.addEventListener('click', () => {
-    details.classList.add('hidden');
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.textContent = 'Ver detalle por servicio';
-    toggle.focus();
-  });
+      try {
+        await loadAvailableDetails();
+        details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (error) {
+        notify('No se pudo cargar el detalle del disponible: ' + error.message, 'error');
+      }
+    });
+
+    close.addEventListener('click', () => {
+      details.classList.add('hidden');
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.textContent = 'Ver detalle por servicio';
+      toggle.focus();
+    });
+  }
+
+  if (fixedCard && fixedCard.dataset.bound !== 'true') {
+    fixedCard.dataset.bound = 'true';
+    const openFixedDetails = async () => {
+      const willOpen = fixedDetails.classList.contains('hidden');
+      fixedDetails.classList.toggle('hidden', !willOpen);
+      fixedCard.setAttribute('aria-expanded', String(willOpen));
+      fixedToggle.setAttribute('aria-expanded', String(willOpen));
+      fixedToggle.textContent = willOpen ? 'Ocultar detalle' : 'Ver detalle';
+      if (!willOpen) return;
+
+      try {
+        await loadFixedExpenseDetails();
+        fixedDetails.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (error) {
+        notify('No se pudo cargar el detalle de gastos fijos: ' + error.message, 'error');
+      }
+    };
+
+    fixedCard.addEventListener('click', (event) => {
+      event.preventDefault();
+      openFixedDetails();
+    });
+    fixedCard.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openFixedDetails();
+      }
+    });
+    fixedClose.addEventListener('click', () => {
+      fixedDetails.classList.add('hidden');
+      fixedCard.setAttribute('aria-expanded', 'false');
+      fixedToggle.setAttribute('aria-expanded', 'false');
+      fixedToggle.textContent = 'Ver detalle';
+      fixedCard.focus();
+    });
+  }
+
+  if (monthSelect.dataset.bound !== 'true') {
+    monthSelect.dataset.bound = 'true';
+    monthSelect.addEventListener('change', () => {
+      applyFinancePeriodMode();
+      loadFinanceDashboard();
+    });
+  }
+
+  if (rangeToggle.dataset.bound !== 'true') {
+    rangeToggle.dataset.bound = 'true';
+    rangeToggle.addEventListener('change', () => {
+      applyFinancePeriodMode();
+      loadFinanceDashboard();
+    });
+  }
 }
 
 function updateFinanceChart(metrics) {
@@ -161,23 +324,15 @@ function updateFinanceChart(metrics) {
 }
 
 export async function loadFinanceDashboard() {
+  ensureFinancePeriodControls();
   const fromEl = $('#finance-from');
   const toEl = $('#finance-to');
-  
-  if (!fromEl.value || !toEl.value) {
-    const now = new Date();
-    // Default to "Este mes" in America/Santiago logical terms (approx local time)
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
-    
-    fromEl.value = `${y}-${m}-01`;
-    toEl.value = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
-  }
+  applyFinancePeriodMode();
 
   const basis = $('#finance-basis').value || 'cash_estimated';
   const from = fromEl.value;
   const to = toEl.value;
+  const rangeMode = isRangeMode();
 
   try {
     $('#finance-quality-indicator').innerHTML = 'Cargando métricas...';
@@ -190,11 +345,11 @@ export async function loadFinanceDashboard() {
     $('#finance-val-contracted').textContent = formatCurrency(data.metrics.contracted_sales);
     $('#finance-val-collected').textContent = formatCurrency(data.metrics.collected_revenue);
     $('#finance-val-committed').textContent = formatCurrency(data.metrics.committed_deposits);
-    // Liberado = lo recibido cuyo servicio ya se realizo. Se deriva aca en
-    // vez de pedir otra metrica: recibido - retenido, por definicion.
-    $('#finance-val-released').textContent = formatCurrency(
-      Number(data.metrics.collected_revenue || 0) - Number(data.metrics.committed_deposits || 0)
+    const releasedRevenue = Math.min(
+      Number(data.metrics.collected_revenue || 0),
+      Number(data.metrics.realized_revenue || 0)
     );
+    $('#finance-val-released').textContent = formatCurrency(releasedRevenue);
     $('#finance-val-receivable').textContent = formatCurrency(data.metrics.accounts_receivable);
     $('#finance-val-realized').textContent = formatCurrency(data.metrics.realized_revenue);
     $('#finance-val-costs').textContent = formatCurrency(data.metrics.direct_costs);
@@ -208,20 +363,38 @@ export async function loadFinanceDashboard() {
     $('#finance-val-net').textContent = formatCurrency(data.metrics.net_result);
     $('#finance-val-margin').textContent = formatPercent(data.metrics.operating_margin);
     availableDetailsLoadedFor = '';
+    fixedExpenseDetailsLoadedFor = '';
     if (!$('#finance-available-details').classList.contains('hidden')) {
       await loadAvailableDetails(true);
+    }
+    if (!$('#finance-fixed-expense-details').classList.contains('hidden')) {
+      await loadFixedExpenseDetails(true);
     }
 
     const received = Number(data.metrics.collected_revenue || 0);
     const pending = Number(data.metrics.accounts_receivable || 0);
     const available = Number(data.metrics.net_result || 0);
     const committed = Number(data.metrics.committed_deposits || 0);
-    const released = received - committed;
-    $('#finance-story-title').textContent = committed > 0
-      ? `Ingresaron ${formatCurrency(received)}, pero ${formatCurrency(committed)} son abonos retenidos: disponible ${formatCurrency(released)}.`
-      : `Ingresaron ${formatCurrency(received)}, sin abonos retenidos.`;
+    const realized = Number(data.metrics.realized_revenue || 0);
+    const fixedExpenses = Number(data.metrics.fixed_expenses || 0);
+    const nonFixedDeductions = Number(data.metrics.direct_costs || 0)
+      + Number(data.metrics.operating_expenses || 0)
+      + Number(data.metrics.refunds || 0);
+    const amountTowardFixed = Math.max(0, realized - nonFixedDeductions);
+    const missingFixed = Math.max(0, fixedExpenses - amountTowardFixed);
+
+    if (!rangeMode && fixedExpenses > 0) {
+      $('#finance-story-title').textContent = missingFixed > 0
+        ? `Nos falta ${formatCurrency(missingFixed)} para cubrir el gasto fijo de este mes.`
+        : `Gasto fijo cubierto; ${formatCurrency(available)} queda disponible para caja.`;
+    } else {
+      $('#finance-story-title').textContent = committed > 0
+        ? `Ingresaron ${formatCurrency(received)} en el período; ${formatCurrency(releasedRevenue)} ya están liberados y ${formatCurrency(committed)} siguen retenidos como reservas abiertas.`
+        : `Ingresaron ${formatCurrency(received)}, sin abonos retenidos.`;
+    }
 
     const partes = [];
+    if (!rangeMode && fixedExpenses > 0) partes.push(`${formatCurrency(amountTowardFixed)} cubiertos de ${formatCurrency(fixedExpenses)} en gastos fijos`);
     if (committed > 0) partes.push(`${formatCurrency(committed)} corresponden a reservas de servicios que aún no se realizan y se liberan al terminarlos`);
     if (pending > 0) partes.push(`${formatCurrency(pending)} siguen pendientes de cobro`);
     partes.push(`el resultado del período es ${formatCurrency(available)}`);

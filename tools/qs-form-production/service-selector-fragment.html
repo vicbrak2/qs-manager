@@ -1,0 +1,183 @@
+<!--
+  Cotizador.html patch for the production Apps Script project.
+
+  Apply inside the main Cotizador.html script that defines:
+  state, money, $, renderCatalog, renderServices, calculate and the #type change
+  listener.
+-->
+
+<!-- 1) Replace the current <select id="type"> options with this list. -->
+<select id="type" required>
+  <option value="" selected disabled>Seleccionar tipo de servicio</option>
+  <option>Todos</option>
+  <option>Servicio regular</option>
+  <option>Novia</option>
+  <option>Taller</option>
+  <option>Glitter Bar</option>
+</select>
+
+<!-- 2) Keep #service disabled until a real type is selected. -->
+<select id="service" required disabled></select>
+
+<style>
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+
+  input,
+  select,
+  textarea {
+    max-width: 100%;
+  }
+
+  select:disabled,
+  input:disabled,
+  textarea:disabled {
+    color: var(--muted);
+    background: #f8f5f8;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 640px) {
+    main {
+      padding: 14px;
+    }
+
+    fieldset {
+      padding: 18px 14px;
+    }
+
+    .grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .stepper {
+      gap: 8px;
+      overflow-x: auto;
+      padding-inline: 12px;
+    }
+  }
+</style>
+
+<script>
+function catalogServiceType(service) {
+  return String(service.type || service.tipo_servicio || service.category || '').trim();
+}
+
+function catalogServiceName(service) {
+  return String(service.name || service.label || service.nombre_canonico || '').trim();
+}
+
+function catalogServicePrice(service) {
+  return Number(service.price || service.sale_price || 0) || 0;
+}
+
+function normalizeCatalogServices() {
+  state.catalog.services = (state.catalog.services || [])
+    .filter(service => catalogServiceName(service))
+    .map(service => ({
+      ...service,
+      name: catalogServiceName(service),
+      type: catalogServiceType(service),
+      price: catalogServicePrice(service),
+    }));
+}
+
+function renderCatalog() {
+  normalizeCatalogServices();
+  $('staff').innerHTML = '<option value="">Seleccionar</option>' + state.catalog.staff.map(v => '<option>' + escapeHtml(v) + '</option>').join('');
+  $('commune').innerHTML = '<option value="">Seleccionar comuna</option>' + state.catalog.communes.map(v => '<option value="' + escapeHtml(v.name) + '">' + escapeHtml(v.name) + '</option>').join('');
+  renderServiceTypes();
+  renderServices();
+  updateConditional();
+  calculate();
+  updateProgress();
+}
+
+function renderServiceTypes() {
+  const configuredTypes = (state.catalog.service_types || []).filter(Boolean);
+  const serviceTypes = configuredTypes.length
+    ? configuredTypes
+    : Array.from(new Set(state.catalog.services.map(service => service.type).filter(Boolean))).sort();
+  const orderedTypes = ['Todos'].concat(serviceTypes.filter(type => type !== 'Todos'));
+  $('type').innerHTML = '<option value="" selected disabled>Seleccionar tipo de servicio</option>' +
+    orderedTypes.map(type => '<option>' + escapeHtml(type) + '</option>').join('');
+  $('service').disabled = true;
+}
+
+function renderServices() {
+  const type = $('type').value;
+  const hasType = Boolean(type);
+  const list = !hasType
+    ? []
+    : state.catalog.services.filter(service => type === 'Todos' || service.type === type);
+  $('service').innerHTML = '<option value="">Seleccionar servicio</option>' +
+    list.map(service => '<option value="' + escapeHtml(service.name) + '">' + escapeHtml(service.name) + '</option>').join('');
+  $('service').disabled = !hasType;
+}
+
+function calculate() {
+  const service = state.catalog.services.find(s => s.name === $('service').value);
+  const commune = $('includeTravel').checked ? state.catalog.communes.find(c => c.name === $('commune').value) : null;
+  const qty = Math.max(1, Number($('quantity').value) || 1);
+  const originalServicePrice = (service ? service.price : 0) * qty;
+  const promoEnabled = $('promoEnabled').checked;
+  const discountMode = $('discountMode').value;
+  let chargedServicePrice = originalServicePrice;
+  if (promoEnabled && discountMode === 'custom') {
+    chargedServicePrice = Math.max(0, Number($('customPromoPrice').value) || 0);
+  } else if (promoEnabled && discountMode) {
+    chargedServicePrice = Math.round(originalServicePrice * (100 - Number(discountMode)) / 100);
+    $('customPromoPrice').value = chargedServicePrice;
+  }
+  state.quote.originalServicePrice = originalServicePrice;
+  state.quote.servicePrice = chargedServicePrice;
+  state.quote.discount = Math.max(0, originalServicePrice - chargedServicePrice);
+  state.quote.travelPrice = commune ? commune.price : 0;
+  state.quote.total = state.quote.servicePrice + state.quote.travelPrice;
+  state.quote.reserve = Math.ceil(state.quote.total / 2);
+  $('travelPrice').value = money.format(state.quote.travelPrice);
+  if (!$('withoutDeposit').checked && !state.depositTouched) $('deposit').value = state.quote.reserve;
+  const deposit = Number($('deposit').value) || 0;
+  $('originalServicePrice').value = money.format(state.quote.originalServicePrice);
+  $('serviceAmount').textContent = money.format(state.quote.servicePrice);
+  $('promoSavingsLine').classList.toggle('hidden', state.quote.discount <= 0);
+  $('promoSavingsAmount').textContent = '-' + money.format(state.quote.discount);
+  $('travelLabel').textContent = $('includeTravel').checked && $('commune').value ? 'Traslado a ' + $('commune').value : 'Sin traslado';
+  $('travelAmount').textContent = money.format(state.quote.travelPrice);
+  $('totalAmount').textContent = money.format(state.quote.total);
+  $('reserveAmount').textContent = money.format(state.quote.reserve);
+  $('depositAmount').textContent = money.format(deposit);
+  $('balanceAmount').textContent = money.format(Math.max(0, state.quote.total - deposit));
+  $('mobileTotal').textContent = money.format(state.quote.total);
+  $('mobileReserve').textContent = money.format(state.quote.reserve);
+}
+
+// Replace the existing #type change listener with this version.
+$('type').addEventListener('change', () => {
+  $('promoEnabled').checked = false;
+  $('promoFields').classList.add('hidden');
+  $('discountMode').value = '';
+  $('discountMode').required = false;
+  $('customPromoPrice').value = '';
+  $('customPromoPrice').required = false;
+  $('customPromoWrap').classList.add('hidden');
+  $('quantity').value = 1;
+  $('quantity').disabled = true;
+  $('includeTravel').checked = false;
+  $('commune').value = '';
+  $('commune').disabled = true;
+  $('service').value = '';
+  $('service').disabled = !$('type').value;
+  setLoading('serviceLoading', false);
+  setLoading('travelLoading', false);
+  state.depositTouched = false;
+  renderServices();
+  updateConditional();
+  calculate();
+  updateProgress();
+});
+</script>

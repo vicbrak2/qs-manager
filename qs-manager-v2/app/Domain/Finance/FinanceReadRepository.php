@@ -39,4 +39,35 @@ interface FinanceReadRepository
         FinancePeriod $period,
         AccountingBasis $basis
     ): array;
+
+    public function fixedExpenseDetails(
+        FinancePeriod $period,
+        AccountingBasis $basis
+    ): array;
+
+    public function contractedSalesDetails(
+        FinancePeriod $period,
+        AccountingBasis $basis
+    ): array;
+
+    public function collectedRevenueDetails(
+        FinancePeriod $period,
+        AccountingBasis $basis
+    ): array;
+
+    public function committedDepositsDetails(
+        FinancePeriod $period,
+        AccountingBasis $basis
+    ): array;
+
+    public function releasedRevenueDetails(
+        FinancePeriod $period,
+        AccountingBasis $basis
+    ): array;
+
+    public function accountsReceivableDetails(
+        FinancePeriod $period,
+        AccountingBasis $basis
+    ): array;
 }
+

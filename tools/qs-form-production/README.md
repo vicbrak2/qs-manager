@@ -3,10 +3,29 @@
 Este directorio contiene cambios que deben incorporarse al proyecto Apps Script
 `QS - Formulario de Reservas - Qamiluna`.
 
+## Propiedad canonica
+
+El proyecto Apps Script productivo debe abrirse, editarse y desplegarse desde la
+cuenta del estudio `qamilunaservices@qamilunastudio.com`.
+
+Deployment productivo canonico:
+
+`https://script.google.com/macros/s/AKfycbwiV_i0haP4lAQ2ZDrCoR28IWfUODpYlimNswDVBs2DNNnBSt2XPq38aOWhnWQsb4Zyiw/exec`
+
+No usar deployments creados desde cuentas personales como fuente productiva. Si
+existe una implementacion equivalente fuera de la cuenta del estudio, debe
+deshabilitarse o eliminarse despues de confirmar que el despliegue canonico
+contiene las mismas funcionalidades.
+
 ## Archivos
 
 - `PendingBookings.gs`: consulta y cancelacion auditada de reservas pendientes.
 - `pending-bookings-fragment.html`: seccion visual para insertar antes de `</body>` en `Cotizador.html`.
+- `service-selector-fragment.html`: parche de UI para restaurar filtro por tipo,
+  selector `Todos`, servicios activos sin precio visible y formato CLP en traslado.
+- `gas-src/`: fuente clonada con `clasp` desde el proyecto Apps Script productivo
+  de la cuenta del estudio. Incluye `Código.js`, `Cotizador.html`,
+  `PendingBookings.js` y `appsscript.json`.
 
 El listado operativo muestra solamente reservas con fecha futura que no hayan sido
 canceladas. El historial permanece disponible en las hojas, pero no se mezcla con
@@ -20,8 +39,8 @@ cambio al ejecutar `Sincronizar todo`.
 
 ## Invitados de Calendar
 
-La Web App productiva conserva `vic.martinez777@gmail.com` como invitado de
-coordinacion y agrega a las profesionales seleccionadas en el formulario:
+La Web App productiva usa el calendario de la cuenta del estudio y agrega como
+invitadas solo a las profesionales seleccionadas en el formulario:
 
 - `Mou`: `mymarchantc@gmail.com`
 - `Paz`: `vi.espectral@gmail.com`
@@ -36,7 +55,7 @@ duplicados. `inviteAssignedStaff` debe permanecer habilitado en `Codigo.gs`.
   cancelacion en cadena: si Agenda no tiene "ID Evento", se usa el "ID Calendar" de
   Bitacora como respaldo y se prueba el ID con y sin sufijo `@google.com`.
 - Solo la cuenta del estudio (propietaria: Camila Villalobos) puede administrar las
-  implementaciones; la cuenta personal recibe "No tienes permiso".
+  implementaciones; las cuentas no propietarias reciben "No tienes permiso".
 - Validado con QA E2E 02: la cancelacion elimino el evento de Calendar en ambas
   cuentas. QA E2E 01 quedo cancelado y sin evento remanente.
 
@@ -47,8 +66,17 @@ duplicados. `inviteAssignedStaff` debe permanecer habilitado en `Codigo.gs`.
   en moviles reales. Fix: `.addMetaTag('viewport', 'width=device-width, initial-scale=1')`
   en `doGet` de `Codigo.gs`, mas un bloque `@media(max-width:480px)` en `Cotizador.html`
   (overflow-x guard, stepper con wrap, inputs a 16px para evitar zoom de iOS).
-- Pendiente: `Codigo.gs` y `Cotizador.html` productivos aun no estan versionados en
-  este directorio.
+- Version 16 (2026-07-26): selector de servicios restaurado con `Todos`,
+  servicios activos sin monto visible, traslado en formato CLP y sin cuenta
+  personal como invitado por defecto.
+- Version 17 (2026-07-26): cache de catalogo/servicio/traslado, cache breve de
+  agendamientos pendientes, carga inicial de Agenda 2026 y seccion condicional
+  `¿Requiere prueba?`.
+- Version 18 (2026-07-27): traslado consultable siempre, detalle dinamico de
+  multiples servicios por reserva y descuento automatico del 50% sobre traslado
+  cuando la reserva incluye mas de un servicio. El guardado valida cada servicio
+  contra `Seguimiento Contable > Servicios`, suma los valores en una sola fila de
+  Agenda y deja el desglose en observaciones.
 
 Antes de desplegar, el contenido completo de `Codigo.gs` y `Cotizador.html` debe
 versionarse en este directorio. No se debe publicar una implementacion nueva si el

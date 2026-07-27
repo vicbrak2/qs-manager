@@ -29,11 +29,13 @@ final class FinancialMetrics
 
     public function netResult(): Money
     {
-        return $this->realizedRevenue
+        $rawResult = $this->realizedRevenue
             ->subtract($this->directCosts)
             ->subtract($this->operatingExpenses)
             ->subtract($this->fixedExpenses)
             ->subtract($this->refunds);
+
+        return Money::fromInt(max(0, $rawResult->amount()));
     }
 
     public function operatingMargin(): ?float

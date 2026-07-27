@@ -20,13 +20,17 @@ test.describe('Finance Dashboard', () => {
 
     // Verify filters
     const from = page.locator('#finance-from');
-    await expect(from).toHaveValue(/^\d{4}-\d{2}-\d{2}$/); // Default Este mes initialized
+    await expect(page.locator('#finance-month')).toBeEnabled();
+    await expect(page.locator('#finance-use-range')).not.toBeChecked();
+    await expect(from).toBeDisabled();
+    await expect(from).toHaveValue(/^\d{4}-\d{2}-01$/);
   });
 
   test('should update metrics when refresh is clicked', async ({ page }) => {
     await page.goto('http://localhost:8080/');
     await page.locator('#tab-finance').click();
 
+    await page.locator('#finance-use-range').check();
     await page.locator('#finance-from').fill('2026-07-01');
     await page.locator('#finance-to').fill('2026-07-31');
     
@@ -42,6 +46,7 @@ test.describe('Finance Dashboard', () => {
           accounts_receivable: 10000,
           direct_costs: 5000,
           operating_expenses: 5000,
+          fixed_expenses: 0,
           refunds: 0,
           net_result: 30000,
           operating_margin: 0.75
@@ -70,11 +75,11 @@ test.describe('Finance Dashboard', () => {
     await expect(page.locator('#finance-val-net')).toContainText('$30.000');
     await expect(page.locator('#finance-val-margin')).toContainText('75,0%');
 
-    // Cadena recibido -> retenido -> liberado: los $10.000 de abono no son
-    // plata disponible hasta que el servicio se realice.
+    // Retenido es saldo abierto; liberado se deriva de lo recibido que ya
+    // tiene servicio realizado, no de restar contra el saldo acumulado.
     await expect(page.locator('#finance-val-committed')).toContainText('$10.000');
-    await expect(page.locator('#finance-val-released')).toContainText('$30.000');
-    await expect(page.locator('#finance-story-title')).toContainText('abonos retenidos');
+    await expect(page.locator('#finance-val-released')).toContainText('$40.000');
+    await expect(page.locator('#finance-story-title')).toContainText('reservas abiertas');
 
     // Check reconciliation table
     const tableRows = page.locator('#finance-reconciliation-body tr');
@@ -112,5 +117,66 @@ test.describe('Finance Dashboard', () => {
     await expect(page.locator('#finance-details-service-total')).toContainText('$60.000');
     await expect(page.locator('#finance-details-expenses')).toContainText('$10.000');
     await expect(page.locator('#finance-details-net')).toContainText('$50.000');
+  });
+
+  test('should show monthly fixed expense gap and fixed expense detail', async ({ page }) => {
+    await page.route('/api/v1/finance/dashboard*', async (route) => {
+      await route.fulfill({ json: {
+        period: { from: '2026-07-01', to: '2026-07-31', basis: 'cash_estimated' },
+        metrics: {
+          contracted_sales: 217530,
+          collected_revenue: 165000,
+          committed_deposits: 370000,
+          realized_revenue: 105000,
+          accounts_receivable: 52530,
+          direct_costs: 0,
+          operating_expenses: 0,
+          fixed_expenses: 309110,
+          refunds: 0,
+          net_result: 0,
+          operating_margin: 0
+        },
+        reconciliation: {
+          service_revenue: { sheet_total: 217530, projected_total: 217530, difference: 0, excluded_rows: 0 },
+          customer_payment: { sheet_total: 165000, projected_total: 165000, difference: 0, excluded_rows: 0 },
+          direct_cost: { sheet_total: 0, projected_total: 0, difference: 0, excluded_rows: 0 },
+          operational_expense: { sheet_total: 0, projected_total: 0, difference: 0, excluded_rows: 0 },
+          fixed_expense: { sheet_total: 309110, projected_total: 309110, difference: 0, excluded_rows: 2 },
+          refund: { sheet_total: 0, projected_total: 0, difference: 0, excluded_rows: 0 }
+        },
+        quality: {
+          is_reconciled: true,
+          missing_external_ids: 0,
+          estimated_cost_rows: 0,
+          fixed_expenses_pending_count: 2
+        }
+      }});
+    });
+    await page.route('/api/v1/finance/fixed-expense-details*', async (route) => {
+      await route.fulfill({ json: {
+        period: { from: '2026-07-01', to: '2026-07-31', basis: 'cash_estimated' },
+        items: [
+          { occurred_on: '2026-07-01', concept: 'Arriendo estudio', category: 'Infraestructura', periodicity: 'Mensual', notes: '', amount: 250000, source_sheet: 'Gastos_Fijos', source_row: 11 },
+          { occurred_on: '2026-07-01', concept: 'Licencia Canva', category: 'Software', periodicity: 'Mensual', notes: '', amount: 8000, source_sheet: 'Gastos_Fijos', source_row: 8 }
+        ],
+        total: 258000,
+        count: 2
+      }});
+    });
+
+    await page.goto('http://localhost:8080/');
+    await page.locator('#finance-month').selectOption('2026-07');
+    await expect(page.locator('#finance-story-title')).toContainText('Nos falta $204.110');
+    await expect(page.locator('#finance-val-net')).toContainText('$0');
+
+    await page.locator('#finance-fixed-expenses-card').click();
+    await expect(page.locator('#finance-fixed-expense-details')).toBeVisible();
+    await expect(page.locator('#finance-fixed-details-body')).toContainText('Arriendo estudio');
+    await expect(page.locator('#finance-fixed-details-total')).toContainText('$258.000');
+
+    await page.locator('#finance-use-range').check();
+    await expect(page.locator('#finance-month')).toBeDisabled();
+    await expect(page.locator('#finance-from')).toBeEnabled();
+    await expect(page.locator('#finance-story-title')).not.toContainText('Nos falta');
   });
 });

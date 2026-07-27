@@ -46,18 +46,53 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
         ]);
 
         $committedStatement = $this->connection->prepare("
-            SELECT COALESCE(SUM(p.amount), 0)
-            FROM qs_finance_entries p
-            JOIN qs_finance_entries r
-              ON r.entry_type = 'service_revenue'
-             AND r.external_id = regexp_replace(p.external_id, '-pay$', '')
-            WHERE p.entry_type = 'customer_payment'
-              AND p.amount > 0
-              AND p.occurred_on BETWEEN :from AND :to
-              AND lower(trim(r.status)) NOT IN ('realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada', 'completed')
+            WITH agenda_open AS (
+                SELECT COALESCE(SUM(a.deposit_amount), 0) AS amount
+                FROM v_agenda_latest a
+                WHERE a.deposit_amount > 0
+                  AND COALESCE(a.deposit_date, a.service_date) <= :to
+                  AND lower(trim(COALESCE(a.event_status, ''))) NOT IN (
+                      'realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada',
+                      'completed', 'anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste'
+                  )
+            ), bitacora_open AS (
+                SELECT COALESCE(SUM(b.deposit_amount), 0) AS amount
+                FROM v_bitacora_latest b
+                WHERE b.deposit_amount > 0
+                  AND b.service_date <= :to
+                  AND lower(trim(COALESCE(b.service_status, ''))) NOT IN (
+                      'realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada',
+                      'completed', 'anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste'
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM v_agenda_latest a
+                      WHERE a.stable_external_id = b.stable_external_id
+                         OR (a.calendar_event_id IS NOT NULL AND b.calendar_event_id IS NOT NULL AND a.calendar_event_id = b.calendar_event_id)
+                         OR b.agenda_reference = 'Agenda: ' || a.source_sheet || '!' || a.source_row
+                  )
+            ), cash_open AS (
+                SELECT COALESCE(SUM(c.deposit_amount), 0) AS amount
+                FROM v_cash_tracking_latest c
+                WHERE c.deposit_amount > 0
+                  AND c.service_date <= :to
+                  AND lower(trim(COALESCE(c.service_status, ''))) NOT IN (
+                      'realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada',
+                      'completed', 'anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste'
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM v_bitacora_latest b
+                      WHERE b.stable_external_id = c.stable_external_id
+                         OR (b.calendar_event_id IS NOT NULL AND c.stable_external_id = b.calendar_event_id)
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM v_agenda_latest a
+                      WHERE a.stable_external_id = c.stable_external_id
+                  )
+            )
+            SELECT (agenda_open.amount + bitacora_open.amount + cash_open.amount)
+            FROM agenda_open, bitacora_open, cash_open
         ");
         $committedStatement->execute([
-            'from' => $period->from()->format('Y-m-d'),
             'to' => $period->to()->format('Y-m-d'),
         ]);
 
@@ -194,9 +229,14 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
                 CASE WHEN lower(trim(b.payment_status)) = 'pagado' THEN b.total_service ELSE b.deposit_amount END
             ), 0)
             FROM v_bitacora_latest b
+            LEFT JOIN v_agenda_latest a
+              ON a.stable_external_id = b.stable_external_id
+              OR (a.calendar_event_id IS NOT NULL AND b.calendar_event_id IS NOT NULL AND a.calendar_event_id = b.calendar_event_id)
+              OR b.agenda_reference = 'Agenda: ' || a.source_sheet || '!' || a.source_row
             WHERE lower(trim(b.service_status)) NOT IN ('anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste')
               AND (b.deposit_amount > 0 OR lower(trim(b.payment_status)) = 'pagado')
-              AND b.service_date >= :from AND b.service_date <= :to
+              AND COALESCE(a.deposit_date, b.service_date) >= :from
+              AND COALESCE(a.deposit_date, b.service_date) <= :to
               AND NOT EXISTS (
                   SELECT 1 FROM v_cash_tracking_latest c
                   WHERE c.stable_external_id = b.stable_external_id
@@ -493,7 +533,10 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
         $unmatchedCosts = (int) $unmatchedCostStatement->fetchColumn();
 
         $serviceAvailable = array_sum(array_map(static fn (array $row): int => (int) $row['available_amount'], $services));
-        $netAvailable = $serviceAvailable - $unmatchedCosts - $deductions['operational_expense'] - $deductions['fixed_expense'] - $deductions['refund'];
+        $netAvailable = max(
+            0,
+            $serviceAvailable - $unmatchedCosts - $deductions['operational_expense'] - $deductions['fixed_expense'] - $deductions['refund']
+        );
 
         return [
             'services' => array_map(static fn (array $row): array => [
@@ -515,6 +558,319 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
                 'service_available' => $serviceAvailable,
                 'net_available' => $netAvailable,
             ],
+        ];
+    }
+
+    public function fixedExpenseDetails(FinancePeriod $period, AccountingBasis $basis): array
+    {
+        $params = [
+            'from' => $period->from()->format('Y-m-d'),
+            'to' => $period->to()->format('Y-m-d'),
+        ];
+
+        $statement = $this->connection->prepare("
+            SELECT
+                occurred_on,
+                COALESCE(NULLIF(metadata->>'concept', ''), 'Gasto fijo sin concepto') AS concept,
+                COALESCE(NULLIF(metadata->>'category', ''), 'Sin categoría') AS category,
+                COALESCE(NULLIF(metadata->>'periodicity', ''), 'Sin periodicidad') AS periodicity,
+                NULLIF(metadata->>'notes', '') AS notes,
+                amount::bigint AS amount,
+                status,
+                source_sheet,
+                source_row
+            FROM qs_finance_entries
+            WHERE entry_type = 'fixed_expense'
+              AND occurred_on BETWEEN :from AND :to
+              AND amount > 0
+            ORDER BY amount DESC, concept
+        ");
+        $statement->execute($params);
+
+        $items = array_map(static fn (array $row): array => [
+            ...$row,
+            'amount' => (int) $row['amount'],
+            'source_row' => $row['source_row'] !== null ? (int) $row['source_row'] : null,
+        ], $statement->fetchAll(PDO::FETCH_ASSOC));
+
+        return [
+            'items' => $items,
+            'total' => array_sum(array_map(static fn (array $row): int => (int) $row['amount'], $items)),
+            'count' => count($items),
+        ];
+    }
+
+    public function contractedSalesDetails(FinancePeriod $period, AccountingBasis $basis): array
+    {
+        $params = [
+            'from' => $period->from()->format('Y-m-d'),
+            'to' => $period->to()->format('Y-m-d'),
+        ];
+
+        $statement = $this->connection->prepare("
+            SELECT
+                occurred_on,
+                COALESCE(NULLIF(metadata->>'customer', ''), 'Cliente no informado') AS customer,
+                COALESCE(NULLIF(metadata->>'service', ''), NULLIF(metadata->>'income_type', ''), 'Servicio no informado') AS service,
+                status,
+                amount::bigint AS amount,
+                source_sheet,
+                source_row
+            FROM qs_finance_entries
+            WHERE entry_type = 'service_revenue'
+              AND occurred_on BETWEEN :from AND :to
+              AND amount > 0
+            ORDER BY occurred_on DESC, customer, service
+        ");
+        $statement->execute($params);
+
+        $items = array_map(static fn (array $row): array => [
+            ...$row,
+            'amount' => (int) $row['amount'],
+            'source_row' => $row['source_row'] !== null ? (int) $row['source_row'] : null,
+        ], $statement->fetchAll(PDO::FETCH_ASSOC));
+
+        return [
+            'items' => $items,
+            'total' => array_sum(array_map(static fn (array $row): int => (int) $row['amount'], $items)),
+            'count' => count($items),
+        ];
+    }
+
+    public function collectedRevenueDetails(FinancePeriod $period, AccountingBasis $basis): array
+    {
+        $params = [
+            'from' => $period->from()->format('Y-m-d'),
+            'to' => $period->to()->format('Y-m-d'),
+        ];
+
+        $statement = $this->connection->prepare("
+            SELECT
+                occurred_on,
+                COALESCE(NULLIF(metadata->>'customer', ''), 'Cliente no informado') AS customer,
+                COALESCE(NULLIF(metadata->>'service', ''), NULLIF(metadata->>'income_type', ''), 'Pago de cliente') AS service,
+                COALESCE(NULLIF(metadata->>'payment_status', ''), 'Confirmado') AS payment_status,
+                amount::bigint AS amount,
+                source_sheet,
+                source_row
+            FROM qs_finance_entries
+            WHERE entry_type = 'customer_payment'
+              AND occurred_on BETWEEN :from AND :to
+              AND amount > 0
+            ORDER BY occurred_on DESC, customer, service
+        ");
+        $statement->execute($params);
+
+        $items = array_map(static fn (array $row): array => [
+            ...$row,
+            'amount' => (int) $row['amount'],
+            'source_row' => $row['source_row'] !== null ? (int) $row['source_row'] : null,
+        ], $statement->fetchAll(PDO::FETCH_ASSOC));
+
+        return [
+            'items' => $items,
+            'total' => array_sum(array_map(static fn (array $row): int => (int) $row['amount'], $items)),
+            'count' => count($items),
+        ];
+    }
+
+    public function committedDepositsDetails(FinancePeriod $period, AccountingBasis $basis): array
+    {
+        $params = [
+            'to' => $period->to()->format('Y-m-d'),
+        ];
+
+        $statement = $this->connection->prepare("
+            WITH agenda_open AS (
+                SELECT
+                    COALESCE(a.deposit_date, a.service_date) AS occurred_on,
+                    a.customer_name AS customer,
+                    a.service_name AS service,
+                    'Agenda' AS source_type,
+                    a.event_status AS status,
+                    a.deposit_amount::bigint AS amount,
+                    a.source_sheet,
+                    a.source_row
+                FROM v_agenda_latest a
+                WHERE a.deposit_amount > 0
+                  AND COALESCE(a.deposit_date, a.service_date) <= :to
+                  AND lower(trim(COALESCE(a.event_status, ''))) NOT IN (
+                      'realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada',
+                      'completed', 'anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste'
+                  )
+            ), bitacora_open AS (
+                SELECT
+                    b.service_date AS occurred_on,
+                    b.customer_name AS customer,
+                    b.service_name AS service,
+                    'Bitácora' AS source_type,
+                    b.service_status AS status,
+                    b.deposit_amount::bigint AS amount,
+                    b.source_sheet,
+                    b.source_row
+                FROM v_bitacora_latest b
+                WHERE b.deposit_amount > 0
+                  AND b.service_date <= :to
+                  AND lower(trim(COALESCE(b.service_status, ''))) NOT IN (
+                      'realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada',
+                      'completed', 'anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste'
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM v_agenda_latest a
+                      WHERE a.stable_external_id = b.stable_external_id
+                         OR (a.calendar_event_id IS NOT NULL AND b.calendar_event_id IS NOT NULL AND a.calendar_event_id = b.calendar_event_id)
+                         OR b.agenda_reference = 'Agenda: ' || a.source_sheet || '!' || a.source_row
+                  )
+            ), cash_open AS (
+                SELECT
+                    c.service_date AS occurred_on,
+                    c.customer_name AS customer,
+                    c.service_names AS service,
+                    'Caja' AS source_type,
+                    c.service_status AS status,
+                    c.deposit_amount::bigint AS amount,
+                    c.source_sheet,
+                    c.source_row
+                FROM v_cash_tracking_latest c
+                WHERE c.deposit_amount > 0
+                  AND c.service_date <= :to
+                  AND lower(trim(COALESCE(c.service_status, ''))) NOT IN (
+                      'realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada',
+                      'completed', 'anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste'
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM v_bitacora_latest b
+                      WHERE b.stable_external_id = c.stable_external_id
+                         OR (b.calendar_event_id IS NOT NULL AND c.stable_external_id = b.calendar_event_id)
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM v_agenda_latest a
+                      WHERE a.stable_external_id = c.stable_external_id
+                  )
+            )
+            SELECT occurred_on, customer, service, source_type, status, amount, source_sheet, source_row
+            FROM (
+                SELECT * FROM agenda_open
+                UNION ALL
+                SELECT * FROM bitacora_open
+                UNION ALL
+                SELECT * FROM cash_open
+            ) combined
+            ORDER BY occurred_on DESC, customer, service
+        ");
+        $statement->execute($params);
+
+        $items = array_map(static fn (array $row): array => [
+            ...$row,
+            'amount' => (int) $row['amount'],
+            'source_row' => $row['source_row'] !== null ? (int) $row['source_row'] : null,
+        ], $statement->fetchAll(PDO::FETCH_ASSOC));
+
+        return [
+            'items' => $items,
+            'total' => array_sum(array_map(static fn (array $row): int => (int) $row['amount'], $items)),
+            'count' => count($items),
+        ];
+    }
+
+    public function releasedRevenueDetails(FinancePeriod $period, AccountingBasis $basis): array
+    {
+        $params = [
+            'from' => $period->from()->format('Y-m-d'),
+            'to' => $period->to()->format('Y-m-d'),
+        ];
+
+        $statement = $this->connection->prepare("
+            SELECT
+                p.occurred_on,
+                COALESCE(NULLIF(r.metadata->>'customer', ''), 'Cliente no informado') AS customer,
+                COALESCE(NULLIF(r.metadata->>'service', ''), NULLIF(r.metadata->>'income_type', ''), 'Servicio no informado') AS service,
+                r.status AS service_status,
+                p.amount::bigint AS amount,
+                p.source_sheet,
+                p.source_row
+            FROM qs_finance_entries p
+            JOIN qs_finance_entries r ON r.entry_type = 'service_revenue'
+              AND r.external_id = regexp_replace(p.external_id, '-pay$', '')
+            WHERE p.entry_type = 'customer_payment'
+              AND p.occurred_on BETWEEN :from AND :to
+              AND p.amount > 0
+              AND lower(trim(r.status)) IN ('realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada', 'completed')
+            ORDER BY p.occurred_on DESC, customer, service
+        ");
+        $statement->execute($params);
+
+        $items = array_map(static fn (array $row): array => [
+            ...$row,
+            'amount' => (int) $row['amount'],
+            'source_row' => $row['source_row'] !== null ? (int) $row['source_row'] : null,
+        ], $statement->fetchAll(PDO::FETCH_ASSOC));
+
+        return [
+            'items' => $items,
+            'total' => array_sum(array_map(static fn (array $row): int => (int) $row['amount'], $items)),
+            'count' => count($items),
+        ];
+    }
+
+    public function accountsReceivableDetails(FinancePeriod $period, AccountingBasis $basis): array
+    {
+        $params = [
+            'from' => $period->from()->format('Y-m-d'),
+            'to' => $period->to()->format('Y-m-d'),
+        ];
+
+        $statement = $this->connection->prepare("
+            WITH service_totals AS (
+                SELECT
+                    external_id,
+                    occurred_on,
+                    COALESCE(NULLIF(metadata->>'customer', ''), 'Cliente no informado') AS customer,
+                    COALESCE(NULLIF(metadata->>'service', ''), NULLIF(metadata->>'income_type', ''), 'Servicio no informado') AS service,
+                    amount::bigint AS total_amount,
+                    status,
+                    source_sheet,
+                    source_row
+                FROM qs_finance_entries
+                WHERE entry_type = 'service_revenue'
+                  AND occurred_on BETWEEN :from AND :to
+            ), payment_totals AS (
+                SELECT
+                    regexp_replace(external_id, '-pay$', '') AS base_external_id,
+                    SUM(amount)::bigint AS paid_amount
+                FROM qs_finance_entries
+                WHERE entry_type = 'customer_payment'
+                GROUP BY regexp_replace(external_id, '-pay$', '')
+            )
+            SELECT
+                s.occurred_on,
+                s.customer,
+                s.service,
+                s.status,
+                s.total_amount,
+                COALESCE(p.paid_amount, 0) AS paid_amount,
+                (s.total_amount - COALESCE(p.paid_amount, 0))::bigint AS pending_amount,
+                s.source_sheet,
+                s.source_row
+            FROM service_totals s
+            LEFT JOIN payment_totals p ON p.base_external_id = s.external_id
+            WHERE (s.total_amount - COALESCE(p.paid_amount, 0)) > 0
+            ORDER BY s.occurred_on DESC, customer, service
+        ");
+        $statement->execute($params);
+
+        $items = array_map(static fn (array $row): array => [
+            ...$row,
+            'total_amount' => (int) $row['total_amount'],
+            'paid_amount' => (int) $row['paid_amount'],
+            'pending_amount' => (int) $row['pending_amount'],
+            'source_row' => $row['source_row'] !== null ? (int) $row['source_row'] : null,
+        ], $statement->fetchAll(PDO::FETCH_ASSOC));
+
+        return [
+            'items' => $items,
+            'total' => array_sum(array_map(static fn (array $row): int => (int) $row['pending_amount'], $items)),
+            'count' => count($items),
         ];
     }
 

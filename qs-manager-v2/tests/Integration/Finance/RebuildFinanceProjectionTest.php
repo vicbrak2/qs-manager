@@ -303,6 +303,88 @@ final class RebuildFinanceProjectionTest extends TestCase
         self::assertSame(0, $reconciliation['service_revenue']['difference']);
     }
 
+    public function testCommittedDepositsUseOpenAgendaDepositsAsOfPeriodEnd(): void
+    {
+        $this->pdo->exec("INSERT INTO qs_sheet_import_runs (id, source_id, status) VALUES (1, 1, 'completed'), (2, 3, 'completed'), (3, 4, 'completed')");
+        $this->pdo->exec("
+            INSERT INTO qs_sheet_agenda_month_rows
+                (import_run_id, source_sheet, source_row, calendar_event_id, service_date, deposit_date, event_status, deposit_amount, total_service)
+            VALUES
+                (3, 'Julio', 2, 'CAL-JUL', '2026-07-27', '2026-03-16', 'CONFIRMADO', 60000, 112530),
+                (3, 'Agosto', 2, 'CAL-AUG', '2026-08-21', '2026-07-26', 'CREADO', 60000, 142000),
+                (3, 'Septiembre', 2, 'CAL-SEP', '2026-09-25', '2026-04-14', 'CONFIRMADO', 100000, 218000),
+                (3, 'Septiembre', 3, 'CAL-REAL', '2026-09-26', '2026-07-10', 'TERMINADO', 50000, 120000),
+                (3, 'Noviembre', 2, 'CAL-LATE', '2026-11-06', '2026-08-01', 'CONFIRMADO', 90000, 241000)
+        ");
+        $this->pdo->exec("
+            INSERT INTO qs_sheet_bitacora_rows
+                (import_run_id, source_row, qs_external_id, calendar_event_id, agenda_reference, service_date, service_status, deposit_amount, total_service)
+            VALUES
+                (2, 2, 'QS-JUL', 'CAL-JUL', 'Agenda: Julio!2', '2026-07-27', 'CONFIRMADO', 60000, 112530),
+                (2, 3, 'QS-NO-AGENDA', 'CAL-OWN', null, '2026-07-20', 'CONFIRMADO', 25000, 80000)
+        ");
+        $this->pdo->exec("
+            INSERT INTO qs_sheet_cash_tracking_rows
+                (import_run_id, source_row, service_external_id, service_date, service_status, deposit_amount, total_services)
+            VALUES
+                (1, 2, 'CASH-OPEN', '2026-07-22', 'Confirmado', 15000, 70000),
+                (1, 3, 'CAL-OWN', '2026-07-20', 'Confirmado', 25000, 80000)
+        ");
+
+        $repository = new PostgresFinanceReadRepository($this->pdo);
+        $metrics = $repository->dashboard(
+            FinancePeriod::create('2026-07-01', '2026-07-31'),
+            AccountingBasis::CASH_ESTIMATED,
+        )->toArray();
+
+        self::assertSame(260000, $metrics['committed_deposits']);
+    }
+
+    public function testBitacoraFallbackPaymentUsesAgendaDepositDateWhenAvailable(): void
+    {
+        $this->pdo->exec("INSERT INTO qs_sheet_import_runs (id, source_id, status) VALUES (2, 3, 'completed'), (3, 4, 'completed')");
+        $this->pdo->exec("
+            INSERT INTO qs_sheet_agenda_month_rows
+                (import_run_id, source_sheet, source_row, calendar_event_id, service_date, deposit_date, event_status, deposit_amount, total_service)
+            VALUES
+                (3, 'Agosto', 2, 'CAL-AUG', '2026-08-21', '2026-07-26', 'CREADO', 60000, 142000)
+        ");
+        $this->pdo->exec("
+            INSERT INTO qs_sheet_bitacora_rows
+                (import_run_id, source_row, qs_external_id, calendar_event_id, agenda_reference, service_date, service_status, payment_status, deposit_amount, total_service)
+            VALUES
+                (2, 985, 'QS-109', 'CAL-AUG', 'Agenda: Agosto!2', '2026-08-21', 'Pendiente', 'Parcial', 60000, 142000)
+        ");
+        $this->pdo->exec("INSERT INTO qs_sync_runs (id, status, mode) VALUES (99, 'completed', 'write')");
+
+        $this->projection->rebuild(99);
+
+        $entry = $this->pdo->query("
+            SELECT occurred_on::text, amount::integer
+            FROM qs_finance_entries
+            WHERE entry_type = 'customer_payment'
+              AND source_type = 'bitacora'
+              AND source_row = 985
+        ")->fetch(PDO::FETCH_ASSOC);
+        self::assertSame('2026-07-26', $entry['occurred_on']);
+        self::assertSame(60000, $entry['amount']);
+
+        $repository = new PostgresFinanceReadRepository($this->pdo);
+        $july = $repository->reconciliation(
+            FinancePeriod::create('2026-07-01', '2026-07-31'),
+            AccountingBasis::CASH_ESTIMATED,
+        );
+        $august = $repository->reconciliation(
+            FinancePeriod::create('2026-08-01', '2026-08-31'),
+            AccountingBasis::CASH_ESTIMATED,
+        );
+
+        self::assertSame(60000, $july['customer_payment']['projected_total']);
+        self::assertSame(60000, $july['customer_payment']['sheet_total']);
+        self::assertSame(0, $august['customer_payment']['projected_total']);
+        self::assertSame(0, $august['customer_payment']['sheet_total']);
+    }
+
     public function testFixedExpensesProjectMonthlyConfirmedEntries(): void
     {
         $this->pdo->exec("

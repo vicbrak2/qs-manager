@@ -1,0 +1,16 @@
+{
+  "scriptId": "1EgdgpeE5b0bsCLf4dLLZEi4SL_LG51IhwczhMqxnYA_kcQFKjcsS-V5K",
+  "rootDir": "tools\\qs-form-production\\gas-src",
+  "scriptExtensions": [
+    ".js",
+    ".gs"
+  ],
+  "htmlExtensions": [
+    ".html"
+  ],
+  "jsonExtensions": [
+    ".json"
+  ],
+  "filePushOrder": [],
+  "skipSubdirectories": false
+}

@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+:root{--black:#171218;--ink:#241c27;--muted:#746778;--line:#e8dfe9;--bg:#fbf7fb;--panel:#fff;--pink:#f4b8cf;--pink-strong:#df6e9c;--pink-soft:#fff0f6;--lilac:#d9c2f0;--lilac-soft:#f4edfb;--white:#fff;--ok:#26735a;--danger:#b4234d;--shadow:0 12px 34px rgba(35,20,40,.09)}
+*{box-sizing:border-box}body{margin:0;background-color:var(--bg);color:var(--ink);font:15px/1.5 Inter,Arial,sans-serif;letter-spacing:0}
+body:before{content:"✦";position:fixed;right:22px;bottom:14px;color:rgba(223,110,156,.18);font-size:64px;pointer-events:none}
+header{position:sticky;top:0;z-index:5;background:var(--black);color:var(--white);border-bottom:4px solid var(--pink);padding:18px 24px;box-shadow:0 8px 24px rgba(23,18,24,.16)}
+header strong{font-size:20px}header span{display:block;color:#eadfed;font-size:13px;margin-top:4px}
+main{max-width:1160px;margin:0 auto;padding:24px;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:22px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);overflow:hidden}
+fieldset{border:0;border-bottom:1px solid var(--line);margin:0;padding:24px}fieldset:last-child{border-bottom:0}
+fieldset:nth-child(even){background:var(--pink-soft)}fieldset:nth-child(3){background:var(--lilac-soft)}
+legend{font-weight:800;font-size:16px;padding:0 10px 0 0;margin-bottom:16px;color:var(--black)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}.wide{grid-column:1/-1}
+.field label{display:block;font-weight:750;font-size:13px;margin-bottom:7px;color:#3c3040}.field small{display:block;color:var(--muted);font-weight:400;margin-top:4px}
+input,select,textarea{width:100%;min-height:46px;border:1px solid #d8ccda;border-radius:6px;background:var(--white);color:var(--ink);padding:11px 13px;font:inherit;transition:border-color .18s,box-shadow .18s,transform .18s}
+textarea{min-height:88px;resize:vertical}input:hover,select:hover,textarea:hover{border-color:#be9fc5}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--pink-strong);box-shadow:0 0 0 4px rgba(223,110,156,.17)}
+input[readonly]{background:#f7f2f8;font-weight:800}.hidden{display:none!important}
+input:disabled,select:disabled,textarea:disabled{color:var(--muted);background:#f8f5f8;cursor:not-allowed}
+.quote{position:sticky;top:100px;padding:0;background:var(--black);color:var(--white);box-shadow:0 18px 44px rgba(23,18,24,.19)}
+.quote h2{margin:0;padding:20px;border-bottom:1px solid #3a303d;font-size:18px;background:#221b24}
+.quote .line{display:flex;justify-content:space-between;gap:12px;padding:11px 20px;border-bottom:1px solid #3a303d}.quote .line strong{text-align:right}
+.quote .total{font-size:20px;color:#ffd6e5;background:#2b222e}.reserve{margin:16px 20px;padding:14px;background:var(--lilac);color:var(--black);border-radius:6px;box-shadow:inset 4px 0 0 var(--pink-strong)}
+.reserve strong{display:block;font-size:22px;margin-top:3px}.actions{display:grid;gap:10px;padding:18px 20px 8px}
+.btn{min-height:48px;border-radius:6px;font-weight:800;cursor:pointer;transition:transform .18s,box-shadow .18s,background .18s}
+.btn:hover{transform:translateY(-2px)}.primary{background:var(--pink);color:var(--black);border:1px solid #f7cade;box-shadow:0 7px 18px rgba(223,110,156,.24)}
+.primary:hover{background:#f7c9da}.secondary{background:#2d2430;color:var(--white);border:1px solid #8d7a91;box-shadow:0 4px 12px rgba(0,0,0,.18)}.secondary:hover{background:#3a2e3d;border-color:#b99fbe}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none}.status{min-height:28px;margin:0 20px 18px;font-size:13px}.error{color:#ff9fbd}.success{color:#9ee3c6}
+.check{display:flex;align-items:flex-start;gap:10px;margin-top:8px}.check input{width:19px;min-height:19px;margin-top:2px;accent-color:var(--pink-strong)}
+.promo-check{padding:12px 14px;border:1px solid #e6c8d7;border-radius:6px;background:#fff8fb}.promo-check small{margin-top:2px}.promo-box{padding:16px;border:1px solid #dfb5ca;border-radius:7px;background:#fff}.promo-summary{padding:12px 14px;border-radius:6px;background:var(--lilac-soft);color:#4b3b52;font-size:13px;font-weight:750}.promo-summary.active{background:#e8f7f1;color:var(--ok);box-shadow:inset 4px 0 0 var(--ok)}.promo-saving{color:#ffd6e5;background:#35293a}
+.loading{max-width:520px;margin:60px auto;padding:28px;text-align:center;color:var(--black);background:var(--lilac-soft);border:1px solid var(--lilac);border-radius:8px;box-shadow:var(--shadow);font-weight:700}
+.stepper{max-width:1160px;margin:16px auto 0;padding:0 24px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.step{min-width:0;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:800}.step:after{content:"";height:3px;background:var(--line);flex:1;border-radius:3px}.step:last-child:after{display:none}.step b{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#eee7ef;color:var(--muted)}.step.active{color:var(--black)}.step.active b{background:var(--black);color:var(--white);box-shadow:0 0 0 4px var(--pink-soft)}.step.done{color:var(--ok)}.step.done b{background:#dff4eb;color:var(--ok)}.step.done:after{background:#a8dccb}
+fieldset.current-step{box-shadow:inset 4px 0 0 var(--pink-strong)}.mobile-quote{display:none}
+@media(max-width:820px){body{padding-bottom:124px}header{padding:14px 16px}.stepper{margin:12px auto 0;padding:0 14px;gap:8px;overflow-x:auto}.step{display:grid;justify-items:center;gap:3px;font-size:10px}.step:after{display:none}.step b{width:26px;height:26px}main{grid-template-columns:1fr;padding:14px;gap:12px}.quote{position:static}.grid{grid-template-columns:1fr;gap:14px}.wide{grid-column:auto}fieldset{padding:20px 16px}.mobile-quote{position:fixed;left:10px;right:10px;bottom:10px;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border:1px solid #5c4b60;border-radius:8px;background:rgba(23,18,24,.96);color:var(--white);box-shadow:0 12px 30px rgba(0,0,0,.28);font:inherit}.mobile-quote span{display:grid;text-align:left}.mobile-quote small{color:#d9cadc;font-size:10px}.mobile-quote strong{font-size:15px}.mobile-quote>b{color:var(--pink);font-size:12px}}
+
+.field-loader{display:inline-flex;align-items:center;margin-left:6px;color:var(--pink-strong);font-weight:800;font-size:12px;animation:pulseLoader .8s ease-in-out infinite alternate}.field-loader.loaded{color:#287a62;animation:none}
+@keyframes pulseLoader{from{opacity:.45;transform:translateX(0)}to{opacity:1;transform:translateX(3px)}}
+fieldset.locked{opacity:.65;filter:saturate(.72);position:relative}
+fieldset.locked:after{display:none}fieldset.locked.next-step:after{display:block;content:"🔒 Completa el paso anterior";position:absolute;right:18px;top:18px;color:var(--muted);font-size:12px;font-weight:700}
+fieldset:not(.locked){transition:opacity .25s,background .25s}
+
+.brand-header{display:flex;align-items:center;gap:14px}.brand-logo{width:64px;height:64px;flex:0 0 64px;border-radius:50%;object-fit:cover;background:#f8dfe8;border:2px solid rgba(255,255,255,.78);box-shadow:0 5px 16px rgba(0,0,0,.2)}.brand-copy{min-width:0}.brand-copy strong{display:block}@media(max-width:480px){.brand-header{gap:10px}.brand-logo{width:48px;height:48px;flex-basis:48px}.brand-copy strong{font-size:17px}.brand-copy span{font-size:11px}}
+
+/* Diseño consolidado V15 */
+header{background:#f8dfe8;color:#241c27;border-bottom-color:#df9fba;box-shadow:0 8px 24px rgba(87,54,82,.12)}
+header span{color:#66566b}
+.brand-logo{background:#f8dfe8;border-color:#fff;box-shadow:0 4px 14px rgba(87,54,82,.18)}
+.quote{background:#3a2b40;color:#fff;box-shadow:0 18px 44px rgba(58,43,64,.18)}
+.quote h2{background:#45334c;border-bottom-color:#66506f}
+.quote .line{border-bottom-color:#66506f}
+.quote .total{background:#503b58;color:#ffdce9}
+.secondary{background:#4a3850;border-color:#8f7698}.secondary:hover{background:#58415f;border-color:#c6aacd}
+.promo-saving{background:#503b58;color:#ffdce9}
+.field label.check{display:flex;align-items:flex-start;gap:11px;width:100%;margin:8px 0 0;padding:13px 14px;border:1px solid #e6c8d7;border-radius:7px;background:#fff8fb;color:#3c3040;cursor:pointer;box-sizing:border-box}
+.field label.check input{width:19px;height:19px;min-height:19px;flex:0 0 19px;margin:2px 0 0;padding:0;accent-color:var(--pink-strong)}
+.field label.check>span{display:block;min-width:0;line-height:1.35}
+.field label.check small{display:block;margin-top:3px;color:var(--muted);font-weight:400}
+.field label.check:hover{border-color:#d89ab7;background:#fff4f9}
+.field label.check:focus-within{border-color:var(--pink-strong);box-shadow:0 0 0 4px rgba(223,110,156,.13)}
+.service-actions{display:flex;justify-content:flex-end;gap:10px}.service-list{display:grid;gap:10px;margin-top:4px}.service-item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:12px 14px;border:1px solid #eadce8;border-radius:7px;background:#fff}.service-item strong{display:block;color:var(--black)}.service-item small{display:block;color:var(--muted)}.service-item__amount{font-weight:800;white-space:nowrap}.service-item button{min-height:36px;border:1px solid #e2a9bf;background:#fff3f7;color:#932b54;font-weight:800;cursor:pointer}.quote .service-detail{display:grid;gap:8px;padding:12px 20px;border-bottom:1px solid #3a303d;background:#342838}.quote .service-detail__row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;font-size:13px}.quote .service-detail__row span{min-width:0}.travel-discount{color:#ffd6e5;background:#503b58}
+@media(max-width:720px){.service-actions{display:grid}.service-item{grid-template-columns:1fr}.service-item__amount{white-space:normal}.service-item button{width:100%}}
+</style>
+</head>
+<body>
+<header><div class="brand-header"><img class="brand-logo" src="data:image/jpeg;base64,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" alt="Qamiluna Studio"><div class="brand-copy"><strong>Cotizador y Agenda QS</strong><span>Calcula primero. La reserva se registra en Agenda 2026 solo al presionar “Agendar reserva”.</span></div></div></header>
+<nav class="stepper" aria-label="Progreso de la reserva">
+  <div class="step active" data-step="1"><b>1</b><span>Servicio</span></div>
+  <div class="step" data-step="2"><b>2</b><span>Traslado</span></div>
+  <div class="step" data-step="3"><b>3</b><span>Cliente</span></div>
+  <div class="step" data-step="4"><b>4</b><span>Fecha</span></div>
+  <div class="step" data-step="5"><b>5</b><span>Pago</span></div>
+</nav>
+<div id="loading" class="loading">Cargando servicios y tarifas vigentes…</div>
+<main id="app" class="hidden">
+  <form id="quoteForm" class="panel">
+    <fieldset id="sectionService"><legend>✨ 1. Tipo y servicio</legend><div class="grid">
+      <div class="field"><label>Tipo de servicio <small>Elige si es atención regular, novia, taller o Glitter Bar.</small></label><select id="type"><option value="" selected disabled>Seleccionar tipo de servicio</option><option>Todos</option><option>Servicio regular</option><option>Novia</option><option>Taller</option><option>Glitter Bar</option></select></div>
+      <div class="field"><label>Servicio <small>El precio se consulta automáticamente en Seguimiento Contable.</small> <span id="serviceLoading" class="field-loader hidden">💫 consultando…</span></label><select id="service" disabled></select></div>
+      <div class="field"><label>Cantidad <small>Número de servicios, packs o participantes.</small></label><input id="quantity" type="number" min="1" value="1" required disabled></div>
+      <div class="field wide"><label class="check"><input id="promoEnabled" type="checkbox"><span>Aplicar promoción<small>Habilita un precio diferente sin modificar el precio maestro.</small></span></label></div>
+      <div id="promoFields" class="promo-box wide hidden"><div class="grid">
+        <div class="field"><label>Precio original <small>Valor vigente en Seguimiento Contable.</small></label><input id="originalServicePrice" readonly tabindex="-1" value="0"></div>
+        <div class="field"><label>Descuento <small>Selecciona el porcentaje autorizado.</small></label><select id="discountMode"><option value="">Seleccionar descuento</option><option value="5">5%</option><option value="10">10%</option><option value="15">15%</option><option value="20">20%</option><option value="25">25%</option><option value="30">30%</option><option value="40">40%</option><option value="50">50%</option><option value="custom">Valor personalizado</option></select></div>
+        <div id="customPromoWrap" class="field hidden"><label>Valor promocional personalizado <small>Monto final que se cobrará por el servicio.</small></label><input id="customPromoPrice" type="number" min="1" inputmode="numeric"></div>
+        <div class="promo-summary wide" id="promoSummary">Selecciona un descuento para calcular la promoción.</div>
+      </div></div>
+      <div class="service-actions wide"><button type="button" id="addService" class="btn secondary">Agregar servicio al detalle</button></div>
+      <div class="wide"><div id="serviceItems" class="service-list" aria-live="polite"></div></div>
+    </div></fieldset>
+    <fieldset id="sectionTravel"><legend>🚗 2. Traslado</legend><div class="grid">
+      <div class="field wide"><label class="check"><input id="includeTravel" type="checkbox"><span>Agregar traslado a la reserva<small>La comuna puede consultarse libremente aunque todavía no agregues el traslado.</small></span></label></div>
+      <div class="field"><label>Comuna o destino <span id="travelLoading" class="field-loader hidden">🚕 consultando…</span></label><select id="commune"><option value="">Seleccionar destino</option></select></div>
+      <div class="field"><label>Traslado calculado (tarifa final vigente)</label><input id="travelPrice" readonly tabindex="-1" aria-live="polite" value="0"></div>
+    </div></fieldset>
+    <fieldset id="sectionClient" class="locked" disabled><legend>📍 3. Cliente y ubicación</legend><div class="grid">
+      <div class="field"><label>Nombre de la clienta (nombre y apellido)</label><input id="clientName" required></div>
+      <div class="field"><label>Teléfono (WhatsApp con código de país)</label><input id="phone" inputmode="tel" placeholder="+56912345678" required></div>
+      <div class="field"><label>¿Quién realizará el servicio? <small>Selecciona a la integrante o dupla responsable.</small></label><select id="staff" required></select></div>
+      <div class="field wide"><label>Lugar del servicio <small>Escribe la dirección o “Estudio QS”.</small></label><input id="address" required></div>
+    </div></fieldset>
+    <fieldset id="sectionDate" class="locked" disabled><legend>🗓️ 4. Fecha y condiciones</legend><div class="grid">
+      <div class="field"><label>Fecha del servicio <small>Día que quedará registrado en Agenda 2026.</small></label><input id="serviceDate" type="date" required></div>
+      <div class="field"><label>Hora de inicio <small>Hora acordada con la clienta.</small></label><input id="serviceTime" type="time" required></div>
+      <div id="workshopFields" class="field wide hidden"><label>ID sesión taller (mismo código para todas las participantes)</label><input id="workshopSessionId" placeholder="TALLER-2026-001"></div>
+      <div id="glitterFields" class="wide hidden"><div class="grid">
+        <div class="field"><label>Hora de término (fin estimado del evento)</label><input id="endTime" type="time"></div>
+        <div class="field"><label>Asistentes estimados (cantidad esperada)</label><input id="attendees" type="number" min="1"></div>
+        <div class="field"><label>Cantidad de encargadas (equipo requerido)</label><input id="staffCount" type="number" min="1"></div>
+        <div class="field"><label>Horas adicionales (tiempo fuera del pack)</label><input id="extraHours" type="number" min="0" step="0.5"></div>
+      </div></div>
+      <div class="field wide"><label class="check"><input id="requiresProof" type="checkbox"><span>¿Requiere prueba?<small>Activa fecha, hora y lugar para registrar la prueba.</small></span></label></div>
+      <div id="proofFields" class="promo-box wide hidden"><div class="grid">
+        <div class="field"><label>Fecha de la prueba</label><input id="proofDate" type="date"></div>
+        <div class="field"><label>Hora de la prueba</label><input id="proofTime" type="time"></div>
+        <div class="field wide"><label>Lugar de la prueba</label><select id="proofPlace"><option value="">Seleccionar lugar</option><option>En estudio</option><option>A domicilio</option><option>Pendiente de definir</option></select></div>
+        <div id="proofAddressModeWrap" class="field wide hidden"><label>Dirección de la prueba a domicilio</label><select id="proofAddressMode"><option value="">Seleccionar dirección</option><option>Usar la misma dirección del servicio</option><option>Ingresar una dirección nueva</option><option>Dejar pendiente de definir</option></select></div>
+        <div id="proofNewAddressWrap" class="field wide hidden"><label>Nueva dirección de la prueba</label><input id="proofNewAddress"></div>
+      </div></div>
+      <div class="field wide"><label>Observaciones (información operativa adicional)</label><textarea id="notes"></textarea></div>
+    </div></fieldset>
+    <fieldset id="sectionPayment" class="locked" disabled><legend>💗 5. Reserva y pago</legend><div class="grid">
+      <div class="field"><label>Abono recibido (monto efectivamente pagado)</label><input id="deposit" type="number" min="0" value="0"></div>
+      <div class="field"><label>Fecha del abono (fecha del pago recibido)</label><input id="depositDate" type="date"></div>
+      <div class="field wide"><label class="check"><input id="withoutDeposit" type="checkbox"><span>Reservar sin abono<small>Permite agendar ahora y registrar una fecha de cobro pendiente.</small></span></label></div>
+      <div id="dueWrap" class="field hidden"><label>Fecha de cobro del abono (día comprometido para solicitar el pago)</label><input id="depositDueDate" type="date"></div>
+    </div></fieldset>
+  </form>
+  <aside class="panel quote">
+    <h2>✦ Cotización preliminar</h2>
+    <div class="line"><span>Servicios agregados</span><strong id="serviceAmount">$0</strong></div>
+    <div id="quoteServiceDetail" class="service-detail hidden"></div>
+    <div class="line"><span id="travelLabel">Sin traslado</span><strong id="travelAmount">$0</strong></div>
+    <div id="travelDiscountLine" class="line travel-discount hidden"><span>Descuento traslado multi-servicio</span><strong id="travelDiscountAmount">$0</strong></div>
+    <div id="promoSavingsLine" class="line promo-saving hidden"><span>Ahorro promoción</span><strong id="promoSavingsAmount">$0</strong></div><div class="line total"><span>Total</span><strong id="totalAmount">$0</strong></div>
+    <div class="reserve"><div>Reserva sugerida (50%)</div><strong id="reserveAmount">$0</strong></div>
+    <div class="line"><span>Abono ingresado</span><strong id="depositAmount">$0</strong></div>
+    <div class="line"><span>Saldo</span><strong id="balanceAmount">$0</strong></div>
+    <div class="actions">
+      <button type="button" id="recalculate" class="btn secondary">✨ Actualizar cotización</button>
+      <button type="button" id="schedule" class="btn primary">💗 Agendar reserva</button>
+    </div>
+    <div id="status" class="status" aria-live="polite"></div>
+  </aside>
+  <button type="button" id="mobileQuote" class="mobile-quote" aria-label="Ver detalle de la cotización">
+    <span><small>Total</small><strong id="mobileTotal">$0</strong></span>
+    <span><small>Reserva 50%</small><strong id="mobileReserve">$0</strong></span>
+    <b>Ver detalle ↑</b>
+  </button>
+</main>
+<script>
+const state={catalog:null,depositTouched:false,services:[],quote:{draftOriginal:0,draftServicePrice:0,draftDiscount:0,servicePrice:0,serviceDiscount:0,travelBase:0,travelDiscount:0,travelPrice:0,total:0,reserve:0}};
+const money=new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0});
+const $=id=>document.getElementById(id);
+function load(){
+  google.script.run.withSuccessHandler(c=>{state.catalog=c;renderCatalog();$('loading').classList.add('hidden');$('app').classList.remove('hidden');})
+    .withFailureHandler(e=>{$('loading').innerHTML='⚠️ No pudimos cargar los valores vigentes.<br><small>'+escapeHtml(e&&e.message?e.message:String(e))+'</small>';}).qsGetQuoteCatalog();
+}
+function renderCatalog(){
+  $('staff').innerHTML='<option value="">Seleccionar</option>'+state.catalog.staff.map(v=>'<option>'+escapeHtml(v)+'</option>').join('');
+  $('commune').innerHTML='<option value="">Seleccionar comuna</option>'+state.catalog.communes.map(v=>'<option value="'+escapeHtml(v.name)+'">'+escapeHtml(v.name)+'</option>').join('');
+  renderServiceTypes();
+  renderServices();calculate();updateConditional();updateProgress();
+}
+function renderServiceTypes(){
+  const types=(state.catalog.service_types&&state.catalog.service_types.length?state.catalog.service_types:['Todos','Servicio regular','Novia','Taller','Glitter Bar']);
+  $('type').innerHTML='<option value="" selected disabled>Seleccionar tipo de servicio</option>'+types.map(type=>'<option>'+escapeHtml(type)+'</option>').join('');
+}
+function renderServices(){
+  const type=$('type').value;
+  const list=type?state.catalog.services.filter(s=>type==='Todos'||s.type===type):[];
+  $('service').innerHTML='<option value="">Seleccionar servicio</option>'+list.map(s=>'<option value="'+escapeHtml(s.name)+'">'+escapeHtml(s.name)+'</option>').join('');
+  $('service').disabled=!type;
+}
+function updateConditional(){
+  const types=selectedServiceTypes();
+  const draftType=$('type').value;
+  const hasWorkshop=types.includes('Taller')||draftType==='Taller';
+  const hasGlitter=types.includes('Glitter Bar')||draftType==='Glitter Bar';
+  $('workshopFields').classList.toggle('hidden',!hasWorkshop);
+  $('glitterFields').classList.toggle('hidden',!hasGlitter);
+  $('workshopSessionId').required=hasWorkshop&&!$('sectionDate').disabled;
+  ['endTime','attendees','staffCount'].forEach(id=>$(id).required=hasGlitter&&!$('sectionDate').disabled);
+  updateProofFields();
+}
+function selectedServiceTypes(){return Array.from(new Set(state.services.map(item=>item.type).filter(Boolean)));}
+function updateProofFields(){
+  const enabled=$('requiresProof').checked&&!$('sectionDate').disabled;
+  const atHome=$('proofPlace').value==='A domicilio';
+  const newAddress=$('proofAddressMode').value==='Ingresar una dirección nueva';
+  $('proofFields').classList.toggle('hidden',!$('requiresProof').checked);
+  $('proofAddressModeWrap').classList.toggle('hidden',!$('requiresProof').checked||!atHome);
+  $('proofNewAddressWrap').classList.toggle('hidden',!$('requiresProof').checked||!atHome||!newAddress);
+  ['proofDate','proofTime','proofPlace'].forEach(id=>{$(id).disabled=!enabled;$(id).required=enabled;});
+  $('proofAddressMode').disabled=!enabled||!atHome;$('proofAddressMode').required=enabled&&atHome;
+  $('proofNewAddress').disabled=!enabled||!atHome||!newAddress;$('proofNewAddress').required=enabled&&atHome&&newAddress;
+  if(!atHome){$('proofAddressMode').value='';$('proofNewAddress').value='';}
+  if(atHome&&!newAddress)$('proofNewAddress').value='';
+}
+function draftServiceQuote(){
+  const service=state.catalog.services.find(s=>s.name===$('service').value);
+  const qty=Math.max(1,Number($('quantity').value)||1);
+  const original=(service?service.price:0)*qty;
+  const promoEnabled=$('promoEnabled').checked;
+  const discountMode=$('discountMode').value;
+  let charged=original;
+  if(promoEnabled&&discountMode==='custom'){
+    charged=Math.max(0,Number($('customPromoPrice').value)||0);
+  }else if(promoEnabled&&discountMode){
+    charged=Math.round(original*(100-Number(discountMode))/100);
+    $('customPromoPrice').value=charged;
+  }
+  return {service,qty,original,charged,discount:Math.max(0,original-charged),promoEnabled,discountMode};
+}
+function calculate(){
+  const draft=draftServiceQuote();
+  state.quote.draftOriginal=draft.original;
+  state.quote.draftServicePrice=draft.charged;
+  state.quote.draftDiscount=draft.discount;
+  state.quote.servicePrice=state.services.reduce((sum,item)=>sum+item.servicePrice,0);
+  state.quote.serviceDiscount=state.services.reduce((sum,item)=>sum+item.discount,0);
+  const commune=state.catalog&&$('commune').value?state.catalog.communes.find(c=>c.name===$('commune').value):null;
+  state.quote.travelBase=commune?commune.price:0;
+  const hasTravel=$('includeTravel').checked&&state.quote.travelBase>0;
+  state.quote.travelDiscount=hasTravel&&state.services.length>1?Math.round(state.quote.travelBase*0.5):0;
+  state.quote.travelPrice=hasTravel?Math.max(0,state.quote.travelBase-state.quote.travelDiscount):0;
+  state.quote.total=state.quote.servicePrice+state.quote.travelPrice;
+  state.quote.reserve=Math.ceil(state.quote.total/2);
+  $('travelPrice').value=state.quote.travelBase?money.format(state.quote.travelBase):'$0';
+  if(!$('withoutDeposit').checked && !state.depositTouched) $('deposit').value=state.quote.reserve;
+  const deposit=Number($('deposit').value)||0;
+  $('originalServicePrice').value=money.format(state.quote.draftOriginal);
+  $('serviceAmount').textContent=money.format(state.quote.servicePrice);
+  $('promoSavingsLine').classList.toggle('hidden',state.quote.serviceDiscount<=0);
+  $('promoSavingsAmount').textContent='− '+money.format(state.quote.serviceDiscount);
+  const effective=state.quote.draftOriginal>0?Math.round(state.quote.draftDiscount/state.quote.draftOriginal*1000)/10:0;
+  $('promoSummary').classList.toggle('active',draft.promoEnabled&&state.quote.draftDiscount>0);
+  $('promoSummary').textContent=!draft.promoEnabled?'':(!draft.discountMode?'Selecciona un descuento para calcular la promoción.':(state.quote.draftDiscount>0?'Precio original '+money.format(state.quote.draftOriginal)+' · Cobro '+money.format(state.quote.draftServicePrice)+' · Ahorro '+money.format(state.quote.draftDiscount)+' ('+effective+'%)':'El valor promocional debe ser menor al precio original.'));
+  $('travelLabel').textContent=$('includeTravel').checked?'Traslado incluido':'Traslado solo consultado';
+  $('travelAmount').textContent=money.format(state.quote.travelPrice);
+  $('travelDiscountLine').classList.toggle('hidden',state.quote.travelDiscount<=0);
+  $('travelDiscountAmount').textContent='− '+money.format(state.quote.travelDiscount);
+  $('totalAmount').textContent=money.format(state.quote.total);
+  $('reserveAmount').textContent=money.format(state.quote.reserve);
+  $('mobileTotal').textContent=money.format(state.quote.total);
+  $('mobileReserve').textContent=money.format(state.quote.reserve);
+  $('depositAmount').textContent=money.format(deposit);
+  $('balanceAmount').textContent=money.format(Math.max(0,state.quote.total-deposit));
+  renderServiceItems();
+}
+function renderServiceItems(){
+  $('serviceItems').innerHTML=state.services.length?state.services.map((item,index)=>`<article class="service-item"><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.type||'Servicio')} · Cantidad ${item.quantity}${item.discount>0?' · Promo − '+money.format(item.discount):''}</small></div><div class="service-item__amount">${money.format(item.servicePrice)}</div><button type="button" data-remove-service="${index}">Eliminar</button></article>`).join(''):'<div class="promo-summary">Agrega uno o más servicios para armar la reserva.</div>';
+  $('quoteServiceDetail').classList.toggle('hidden',!state.services.length);
+  $('quoteServiceDetail').innerHTML=state.services.map(item=>`<div class="service-detail__row"><span>${escapeHtml(item.name)}<br><small>${escapeHtml(item.type||'Servicio')} · Cantidad ${item.quantity}</small></span><strong>${money.format(item.servicePrice)}</strong></div>`).join('');
+  document.querySelectorAll('[data-remove-service]').forEach(button=>button.addEventListener('click',()=>{state.services.splice(Number(button.dataset.removeService),1);state.depositTouched=false;calculate();updateConditional();updateProgress();}));
+}
+function setLoading(id,on){const el=$(id);el.classList.toggle('hidden',!on);if(on){el.classList.remove('loaded');el.textContent=id==='serviceLoading'?'💫 consultando…':'🚕 consultando…';}}
+function setSynced(id){const el=$(id);el.classList.remove('hidden');el.classList.add('loaded');el.textContent='✓ actualizado desde Sheets';}
+function setSection(id,enabled){
+  const section=$(id);
+  section.classList.toggle('locked',!enabled);
+  section.disabled=!enabled;
+  Array.from(section.querySelectorAll('input,select,textarea')).forEach(el=>el.disabled=!enabled);
+}
+function updateProgress(){
+  const hasServices=state.services.length>0;
+  const promoValid=!$('promoEnabled').checked||(Boolean($('discountMode').value)&&state.quote.draftServicePrice>0&&state.quote.draftDiscount>0);
+  $('addService').disabled=!$('service').value||!state.quote.draftServicePrice||!promoValid;
+  $('commune').disabled=false;
+  const quoteReady=hasServices&&(!$('includeTravel').checked||Boolean($('commune').value));
+  setSection('sectionClient',quoteReady);
+  const clientReady=quoteReady&&$('clientName').value.trim()&&$('phone').value.trim()&&$('staff').value&&$('address').value.trim();
+  setSection('sectionDate',Boolean(clientReady));
+  updateConditional();
+  const types=selectedServiceTypes();
+  const workshopOk=!types.includes('Taller')||$('workshopSessionId').value.trim();
+  const glitterOk=!types.includes('Glitter Bar')||($('endTime').value&&$('attendees').value&&$('staffCount').value);
+  const specialOk=workshopOk&&glitterOk;
+  const proofOk=!$('requiresProof').checked||($('proofDate').value&&$('proofTime').value&&$('proofPlace').value&&($('proofPlace').value!=='A domicilio'||($('proofAddressMode').value&&($('proofAddressMode').value!=='Ingresar una dirección nueva'||$('proofNewAddress').value.trim()))));
+  const dateReady=clientReady&&$('serviceDate').value&&$('serviceTime').value&&specialOk&&proofOk;
+  setSection('sectionPayment',Boolean(dateReady));
+  $('schedule').disabled=!dateReady;
+  ['sectionClient','sectionDate','sectionPayment'].forEach(id=>$(id).classList.remove('next-step'));
+  const nextId=!quoteReady?'sectionClient':!clientReady?'sectionDate':!dateReady?'sectionPayment':null;
+  if(nextId)$(nextId).classList.add('next-step');
+  const currentId=!hasServices?'sectionService':!quoteReady?'sectionTravel':!clientReady?'sectionClient':!dateReady?'sectionDate':'sectionPayment';
+  ['sectionService','sectionTravel','sectionClient','sectionDate','sectionPayment'].forEach(id=>$(id).classList.toggle('current-step',id===currentId));
+  const completed=[hasServices,quoteReady,Boolean(clientReady),Boolean(dateReady),false];
+  const activeIndex=['sectionService','sectionTravel','sectionClient','sectionDate','sectionPayment'].indexOf(currentId);
+  document.querySelectorAll('.step').forEach((step,index)=>{step.classList.toggle('done',completed[index]);step.classList.toggle('active',index===activeIndex);});
+}
+function refreshService(next){
+  const name=$('service').value;
+  if(!name){setLoading('serviceLoading',false);calculate();updateProgress();return;}
+  setLoading('serviceLoading',true);
+  google.script.run.withSuccessHandler(s=>{
+    const item=state.catalog.services.find(x=>x.name===name);
+    if(item){item.price=Number(s.price)||0;item.defaultQuantity=Number(s.defaultQuantity)||1;item.type=s.type||item.type;}
+    $('quantity').disabled=false;$('quantity').value=s.defaultQuantity||1;
+    state.depositTouched=false;calculate();setSynced('serviceLoading');updateProgress();
+    if(next)next();
+  }).withFailureHandler(e=>{setLoading('serviceLoading',false);showError(e);}).qsGetServiceQuote(name);
+}
+function refreshTravel(){
+  const commune=$('commune').value;
+  if(!commune){setLoading('travelLoading',false);calculate();updateProgress();return;}
+  setLoading('travelLoading',true);
+  $('travelPrice').value='Consultando…';
+  google.script.run.withSuccessHandler(q=>{
+    const item=state.catalog.communes.find(c=>c.name===commune);
+    if(item)item.price=Number(q.price)||0;
+    state.depositTouched=false;calculate();setSynced('travelLoading');updateProgress();
+  }).withFailureHandler(e=>{const item=state.catalog.communes.find(c=>c.name===commune);const cached=item?item.price:0;if(item)item.price=0;state.depositTouched=false;calculate();if(item)item.price=cached;$('travelPrice').value='No disponible';setLoading('travelLoading',false);updateProgress();showError(e);}).qsGetTravelQuote(commune);
+}
+function refreshAll(){if($('service').value)refreshService(()=>refreshTravel());else refreshTravel();}
+function addService(){
+  const draft=draftServiceQuote();
+  if(!draft.service){showError('Selecciona un servicio antes de agregarlo al detalle.');return;}
+  if(draft.promoEnabled&&(!draft.discountMode||draft.discount<=0)){showError('Completa una promoción válida antes de agregar el servicio.');return;}
+  state.services.push({type:draft.service.type||$('type').value,name:draft.service.name,quantity:draft.qty,originalServicePrice:draft.original,servicePrice:draft.charged,discount:draft.discount,promo:draft.promoEnabled,discountMode:draft.discountMode,customPromoPrice:$('customPromoPrice').value});
+  $('service').value='';$('quantity').value=1;$('quantity').disabled=true;$('promoEnabled').checked=false;$('promoFields').classList.add('hidden');$('discountMode').value='';$('discountMode').required=false;$('customPromoPrice').value='';$('customPromoPrice').required=false;$('customPromoWrap').classList.add('hidden');setLoading('serviceLoading',false);state.depositTouched=false;calculate();updateConditional();updateProgress();
+}
+function payload(){
+  const types=selectedServiceTypes();
+  return {action:'schedule',type:types.length>1?'Mixto':(types[0]||'Servicio regular'),service:state.services.map(item=>item.name).join(' + '),services:state.services,quantity:1,staff:$('staff').value,
+    clientName:$('clientName').value.trim(),phone:$('phone').value.trim(),address:$('address').value.trim(),includeTravel:$('includeTravel').checked,commune:$('commune').value||'Sin traslado',
+    serviceDate:$('serviceDate').value,serviceTime:$('serviceTime').value,promo:state.quote.serviceDiscount>0,discountMode:'multi',customPromoPrice:'',originalServicePrice:state.services.reduce((sum,item)=>sum+item.originalServicePrice,0),servicePrice:state.quote.servicePrice,travelBase:state.quote.travelBase,travelDiscount:state.quote.travelDiscount,travelPrice:state.quote.travelPrice,
+    total:state.quote.total,deposit:$('withoutDeposit').checked?0:Number($('deposit').value)||0,depositDate:$('depositDate').value,
+    depositDueDate:$('depositDueDate').value,workshopSessionId:$('workshopSessionId').value,endTime:$('endTime').value,
+    attendees:$('attendees').value,staffCount:$('staffCount').value,extraHours:$('extraHours').value,
+    requiresProof:$('requiresProof').checked,proofDate:$('proofDate').value,proofTime:$('proofTime').value,proofPlace:$('proofPlace').value,
+    proofAddressMode:$('proofAddressMode').value,proofNewAddress:$('proofNewAddress').value.trim(),notes:$('notes').value};
+}
+function schedule(){
+  if(!state.services.length){showError('Agrega al menos un servicio al detalle de la reserva.');return;}
+  if($('includeTravel').checked&&!$('commune').value){showError('Selecciona la comuna del traslado incluido.');$('commune').focus();return;}
+  const form=$('quoteForm');if(!form.reportValidity()) return;
+  if($('withoutDeposit').checked&&!$('depositDueDate').value){showError('Indica la fecha de cobro del abono.');$('depositDueDate').focus();return;}
+  $('schedule').disabled=true;$('status').className='status';$('status').textContent='Registrando en Agenda 2026…';
+  google.script.run.withSuccessHandler(r=>{$('status').className='status success';$('status').textContent='Reserva agendada en '+r.sheet+', fila '+r.row+'.';$('schedule').disabled=false;})
+    .withFailureHandler(e=>{showError(e);$('schedule').disabled=false;}).qsGuardarReservaWeb(payload());
+}
+function showError(e){$('status').className='status error';$('status').textContent=e&&e.message?e.message:String(e);}
+function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+$('type').addEventListener('change',()=>{$('promoEnabled').checked=false;$('promoFields').classList.add('hidden');$('discountMode').value='';$('discountMode').required=false;$('customPromoPrice').value='';$('customPromoPrice').required=false;$('customPromoWrap').classList.add('hidden');$('quantity').value=1;$('quantity').disabled=true;$('service').value='';$('service').disabled=!$('type').value;setLoading('serviceLoading',false);state.depositTouched=false;renderServices();updateConditional();calculate();updateProgress();});
+$('service').addEventListener('change',()=>{if($('discountMode').value==='custom')$('customPromoPrice').value='';refreshService();});
+$('promoEnabled').addEventListener('change',()=>{const enabled=$('promoEnabled').checked;$('promoFields').classList.toggle('hidden',!enabled);$('discountMode').required=enabled;if(!enabled){$('discountMode').value='';$('customPromoPrice').value='';$('customPromoPrice').required=false;$('customPromoWrap').classList.add('hidden');}state.depositTouched=false;calculate();updateProgress();});
+$('discountMode').addEventListener('change',()=>{const custom=$('discountMode').value==='custom';$('customPromoWrap').classList.toggle('hidden',!custom);$('customPromoPrice').required=custom;if(custom)$('customPromoPrice').value='';state.depositTouched=false;calculate();updateProgress();});
+$('customPromoPrice').addEventListener('input',()=>{state.depositTouched=false;calculate();updateProgress();});
+$('includeTravel').addEventListener('change',()=>{state.depositTouched=false;calculate();updateProgress();});
+$('commune').addEventListener('change',refreshTravel);
+$('quantity').addEventListener('input',()=>{state.depositTouched=false;calculate();updateProgress();});
+$('deposit').addEventListener('input',()=>{state.depositTouched=true;calculate();});
+$('withoutDeposit').addEventListener('change',()=>{$('dueWrap').classList.toggle('hidden',!$('withoutDeposit').checked);$('deposit').disabled=$('withoutDeposit').checked;if($('withoutDeposit').checked){$('deposit').value=0;}else{state.depositTouched=false;}calculate();updateProgress();});
+['clientName','phone','staff','address','serviceDate','serviceTime','workshopSessionId','endTime','attendees','staffCount','proofDate','proofTime','proofNewAddress'].forEach(id=>$(id).addEventListener('input',updateProgress));
+['requiresProof','proofPlace','proofAddressMode'].forEach(id=>$(id).addEventListener('change',()=>{updateProofFields();updateProgress();}));
+$('addService').addEventListener('click',addService);$('recalculate').addEventListener('click',refreshAll);$('schedule').addEventListener('click',schedule);$('mobileQuote').addEventListener('click',()=>document.querySelector('.quote').scrollIntoView({behavior:'smooth',block:'start'}));load();
+</script>
+<!-- Add inside Cotizador.html, before </body>. -->
+<section class="pending-bookings" id="pending-bookings" aria-labelledby="pending-bookings-title">
+  <div class="pending-bookings__heading">
+    <div>
+      <p class="pending-bookings__eyebrow">Agenda operativa</p>
+      <h2 id="pending-bookings-title">Agendamientos pendientes</h2>
+      <p>Reservas futuras registradas en Agenda 2026.</p>
+    </div>
+    <button class="pending-bookings__refresh" id="pending-refresh" type="button">
+      <span aria-hidden="true">↻</span> Actualizar
+    </button>
+  </div>
+
+  <div class="pending-bookings__status" id="pending-status" role="status" aria-live="polite">
+    Cargando Agenda 2026…
+  </div>
+  <div class="pending-bookings__list" id="pending-list"></div>
+</section>
+
+<dialog class="pending-cancel" id="pending-cancel-dialog" aria-labelledby="pending-cancel-title">
+  <form method="dialog" id="pending-cancel-form">
+    <h3 id="pending-cancel-title">Cancelar agendamiento</h3>
+    <p id="pending-cancel-summary"></p>
+    <label for="pending-cancel-reason">Motivo de cancelación</label>
+    <textarea id="pending-cancel-reason" minlength="5" maxlength="240" required
+      placeholder="Ej. La clienta solicitó cancelar la reserva."></textarea>
+    <p class="pending-cancel__note">
+      Se cancelará el evento y el registro quedará visible en la auditoría. V2 se actualizará con la próxima sincronización.
+    </p>
+    <div class="pending-cancel__actions">
+      <button value="close" type="button" id="pending-cancel-close">Volver</button>
+      <button value="confirm" type="submit" class="pending-cancel__confirm">Confirmar cancelación</button>
+    </div>
+  </form>
+</dialog>
+
+<style>
+  .pending-bookings { margin: 24px auto; max-width: 1110px; padding: 24px; background: #fff; border: 1px solid #eadce8; box-shadow: 0 12px 30px rgba(38, 22, 36, .08); }
+  .pending-bookings__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+  .pending-bookings__heading h2 { margin: 2px 0 6px; color: #1d1720; }
+  .pending-bookings__heading p { margin: 0; color: #665b68; }
+  .pending-bookings__eyebrow { color: #9b4777 !important; font-size: 12px; font-weight: 800; text-transform: uppercase; }
+  .pending-bookings__refresh { min-height: 44px; padding: 0 16px; border: 1px solid #d8c7d5; background: #fff; color: #201820; font-weight: 700; cursor: pointer; }
+  .pending-bookings__refresh:disabled { cursor: wait; opacity: .55; }
+  .pending-bookings__status { min-height: 24px; margin-top: 18px; color: #665b68; }
+  .pending-bookings__list { display: grid; gap: 10px; margin-top: 12px; }
+  .pending-booking { display: grid; grid-template-columns: minmax(130px,.7fr) minmax(220px,1.5fr) minmax(160px,1fr) auto; align-items: center; gap: 16px; padding: 16px; border: 1px solid #eadfe8; background: #fffafd; }
+  .pending-booking__date { color: #4a3947; font-weight: 800; }
+  .pending-booking__service { color: #1d1720; font-weight: 800; }
+  .pending-booking__meta { margin-top: 4px; color: #756a76; font-size: 13px; }
+  .pending-booking__amount { font-weight: 800; text-align: right; }
+  .pending-booking__cancel { min-height: 40px; padding: 0 14px; border: 1px solid #e2a9bf; background: #fff3f7; color: #932b54; font-weight: 800; cursor: pointer; }
+  .pending-booking__cancel:hover { background: #f9dce7; }
+  .pending-cancel { width: min(520px, calc(100% - 32px)); padding: 24px; border: 0; box-shadow: 0 24px 70px rgba(25, 15, 24, .32); }
+  .pending-cancel::backdrop { background: rgba(25, 15, 24, .58); }
+  .pending-cancel textarea { width: 100%; min-height: 100px; box-sizing: border-box; margin-top: 8px; padding: 12px; border: 1px solid #cfbdca; resize: vertical; }
+  .pending-cancel__note { color: #665b68; font-size: 13px; }
+  .pending-cancel__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+  .pending-cancel__actions button { min-height: 42px; padding: 0 16px; font-weight: 800; }
+  .pending-cancel__confirm { border: 1px solid #8f2851; background: #8f2851; color: #fff; }
+  @media (max-width: 720px) {
+    .pending-bookings { margin: 16px 12px 90px; padding: 18px; }
+    .pending-bookings__heading { align-items: stretch; flex-direction: column; }
+    .pending-booking { grid-template-columns: 1fr; gap: 8px; }
+    .pending-booking__amount { text-align: left; }
+    .pending-booking__cancel { width: 100%; }
+  }
+</style>
+
+<script>
+  (() => {
+    const money = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+    const refresh = document.querySelector('#pending-refresh');
+    const status = document.querySelector('#pending-status');
+    const list = document.querySelector('#pending-list');
+    const dialog = document.querySelector('#pending-cancel-dialog');
+    const form = document.querySelector('#pending-cancel-form');
+    const reason = document.querySelector('#pending-cancel-reason');
+    const summary = document.querySelector('#pending-cancel-summary');
+    let selected = null;
+
+    const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    })[character]);
+
+    function setLoading(loading) {
+      refresh.disabled = loading;
+      refresh.querySelector('span').textContent = loading ? '⌛' : '↻';
+    }
+
+    function loadPending() {
+      setLoading(true);
+      status.textContent = 'Consultando Agenda 2026…';
+      list.replaceChildren();
+      google.script.run
+        .withSuccessHandler(renderPending)
+        .withFailureHandler(error => {
+          setLoading(false);
+          status.textContent = error?.message || 'No fue posible consultar los agendamientos.';
+        })
+        .qsListPendingBookings();
+    }
+
+    function renderPending(result) {
+      setLoading(false);
+      const bookings = result?.bookings || [];
+      status.textContent = bookings.length
+        ? `${bookings.length} agendamiento${bookings.length === 1 ? '' : 's'} pendiente${bookings.length === 1 ? '' : 's'}.`
+        : 'No hay agendamientos futuros o servicios pendientes.';
+      list.innerHTML = bookings.map(booking => `
+        <article class="pending-booking">
+          <div class="pending-booking__date">${escapeHtml(booking.dateLabel)}<br>${escapeHtml(booking.time)}</div>
+          <div>
+            <div class="pending-booking__service">${escapeHtml(booking.service || 'Sin servicio')}</div>
+            <div class="pending-booking__meta">${escapeHtml(booking.customer || 'Sin clienta')} · ${escapeHtml(booking.staff || 'Sin encargada')}</div>
+          </div>
+          <div>
+            <div class="pending-booking__amount">${money.format(booking.total || 0)}</div>
+            <div class="pending-booking__meta">Saldo ${money.format(booking.balance || 0)}</div>
+          </div>
+          <button type="button" class="pending-booking__cancel" data-token="${escapeHtml(booking.token)}">Cancelar</button>
+        </article>`).join('');
+      list.querySelectorAll('[data-token]').forEach(button => button.addEventListener('click', () => {
+        selected = bookings.find(booking => booking.token === button.dataset.token);
+        summary.textContent = `${selected.dateLabel} ${selected.time} · ${selected.service} · ${selected.customer}`;
+        reason.value = '';
+        dialog.showModal();
+        reason.focus();
+      }));
+    }
+
+    refresh.addEventListener('click', loadPending);
+    document.querySelector('#pending-cancel-close').addEventListener('click', () => dialog.close());
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      if (!selected || !reason.reportValidity()) return;
+      const submit = form.querySelector('.pending-cancel__confirm');
+      submit.disabled = true;
+      submit.textContent = 'Cancelando…';
+      google.script.run
+        .withSuccessHandler(result => {
+          submit.disabled = false;
+          submit.textContent = 'Confirmar cancelación';
+          dialog.close();
+          status.textContent = result.message || 'Reserva cancelada.';
+          loadPending();
+        })
+        .withFailureHandler(error => {
+          submit.disabled = false;
+          submit.textContent = 'Confirmar cancelación';
+          status.textContent = error?.message || 'No fue posible cancelar la reserva.';
+        })
+        .qsCancelPendingBooking(selected.token, reason.value);
+    });
+    loadPending();
+  })();
+</script>
+
+
+</body></html>

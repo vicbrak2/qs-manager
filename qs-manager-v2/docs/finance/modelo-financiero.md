@@ -35,20 +35,42 @@ La cadena que muestra el dashboard:
 ```
 Vendido            contracted_sales    todos los servicios registrados
 Dinero recibido    collected_revenue   toda la plata que entró (abonos + pagos completos)
-🔒 Retenido        committed_deposits  abonos de servicios AÚN NO realizados
-✅ Liberado        recibido − retenido  la parte que ya es del estudio
+🔒 Retenido        committed_deposits  saldo de abonos de servicios AÚN NO realizados al cierre del período
+✅ Liberado        released_revenue     parte de lo recibido cuyo servicio ya se realizó
 Pendiente de cobro accounts_receivable  vendido − recibido − devoluciones
 ```
 
 Y el resultado del período:
 
 ```
-Resultado disponible = realized_revenue − costos − gastos operativos − gastos fijos − devoluciones
+Resultado disponible = max(0, realized_revenue − costos − gastos operativos − gastos fijos − devoluciones)
 ```
 
 `realized_revenue` cuenta **solo servicios en estado realizado**
 (`realizada/realizado/terminado/ejecutado/completed`). Un abono de un
 servicio futuro nunca infla el resultado.
+
+Cuando los ingresos realizados no alcanzan para cubrir gastos fijos, caja
+queda en **$0**. Los servicios realizados primero cubren el gasto fijo; solo el
+excedente se considera disponible/caja.
+
+## Vista mensual y rango
+
+La pestaña Finanzas abre por defecto en modo mensual, usando el mes actual en
+America/Santiago. En ese modo el selector principal es el mes y el dashboard
+debe mostrar la brecha real para cubrir gastos fijos:
+
+```
+Nos falta MONTO para cubrir el gasto fijo de este mes.
+```
+
+`MONTO` se calcula como lo que falta para que los ingresos realizados del mes,
+después de costos directos, otros gastos y devoluciones, cubran los gastos
+fijos confirmados.
+
+El cálculo por rango existe solo como modo secundario: al activar “Calcular
+por rango de fechas” se habilitan Desde/Hasta, se deshabilita el selector de
+mes y no se muestra el mensaje mensual de gasto fijo.
 
 > ⚠️ El abono **no es siempre el 50%**. En los datos reales de 2026 va del
 > 25% al 100% (ej. Camila Soto abonó 60.000 de 244.500 = 25%). El sistema usa
@@ -60,15 +82,15 @@ servicio futuro nunca infla el resultado.
 |---|---|---|
 | Vendido | $217.530 | $112.530 (Nadia, 27/07) + $105.000 (talleres) |
 | Dinero recibido | $165.000 | $60.000 abono de Nadia + $105.000 talleres |
-| 🔒 Retenido | $60.000 | abono de Nadia: su servicio es el 27, aún no realizado |
+| 🔒 Retenido | $370.000 | abonos abiertos al 31/07: Nadia, Cecilia, Camila Soto, Maria Bravo y Verónica Garate |
 | ✅ Liberado | $105.000 | solo los talleres, ya realizados |
 | Pendiente de cobro | $52.530 | saldo de Nadia |
 | Gastos fijos | $309.110 | Gastos_Fijos confirmados mensuales |
-| **Resultado** | **−$204.110** | $105.000 − $309.110 |
+| **Resultado** | **$0** | $105.000 no alcanza a cubrir $309.110 de gastos fijos |
 
-El resultado es negativo porque en julio solo se realizaron talleres y los
-gastos fijos del mes son mayores. Los $60.000 de Nadia **no** lo mejoran:
-entran recién cuando el servicio del 27 quede como realizado.
+Julio no deja caja disponible porque solo se realizaron talleres y los gastos
+fijos del mes son mayores. Los $60.000 de Nadia **no** lo mejoran: entran
+recién cuando el servicio del 27 quede como realizado.
 
 ## Directorio de profesionales
 

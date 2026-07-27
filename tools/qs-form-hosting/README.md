@@ -13,6 +13,14 @@ Frontend publico del Cotizador y Agenda QS, alojado en Firebase Hosting y conect
 
 Firebase Hosting sirve una URL publica estable, recursos visuales y el contenedor de la aplicacion. Google Apps Script conserva el acceso a Google Sheets, Calendar y correo.
 
+El unico despliegue GAS canonico para produccion es:
+
+`https://script.google.com/macros/s/AKfycbwiV_i0haP4lAQ2ZDrCoR28IWfUODpYlimNswDVBs2DNNnBSt2XPq38aOWhnWQsb4Zyiw/exec`
+
+Ese despliegue debe pertenecer y mantenerse desde la cuenta del estudio
+`qamilunaservices@qamilunastudio.com`. No publicar ni apuntar Firebase a
+implementaciones creadas desde cuentas personales.
+
 La migracion se ejecuta en dos etapas:
 
 1. **Puente embebido:** Firebase aloja un `iframe` de pantalla completa con el formulario GAS V15. Esto elimina la navegacion directa que Google reescribe como `/u/1/` y mantiene `google.script.run` sin cambios.

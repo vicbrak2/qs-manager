@@ -11,7 +11,7 @@ import { loadStaff, loadBookings, resetBookingForm, editBooking, bookingPayload,
 import { loadBitacoras, resetBitacoraForm, editBitacora, startBitacoraFromBooking, bitacoraPayload, fillBitacoraStaffSelects, addBitacoraNote, addTramoRow, updateBitacoraPlan, copyTeamBitacora, generateBitacoraImage } from './features/bitacora.js';
 import { loadTeam, resetStaffForm, editStaff, staffPayload, deleteStaff } from './features/team.js';
 import { syncAll, renderSyncModal, syncBookingGas } from './features/sync.js';
-import { initFinanceDetails, loadFinanceDashboard } from './features/finance.js';
+import { initFinanceDetails, loadFinanceDashboard } from './features/finance.js?v=6';
 
 async function boot() {
   initFinanceDetails();

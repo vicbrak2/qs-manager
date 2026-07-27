@@ -34,8 +34,8 @@ final class WebController
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap">
-  <link rel="stylesheet" href="/assets/css/tokens.css?v=5">
-  <link rel="stylesheet" href="/assets/css/main.css?v=5">
+  <link rel="stylesheet" href="/assets/css/tokens.css?v=6">
+  <link rel="stylesheet" href="/assets/css/main.css?v=6">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -78,8 +78,12 @@ final class WebController
           <p class="finance-header-copy">Compara lo vendido con el dinero recibido y los gastos del período.</p>
         </div>
         <div class="finance-filters">
-          <label>Desde <input type="date" id="finance-from"></label>
-          <label>Hasta <input type="date" id="finance-to"></label>
+          <label class="finance-month-field">Mes
+            <select id="finance-month"></select>
+          </label>
+          <label class="finance-range-toggle"><input type="checkbox" id="finance-use-range"> Calcular por rango de fechas</label>
+          <label class="finance-range-field">Desde <input type="date" id="finance-from" disabled></label>
+          <label class="finance-range-field">Hasta <input type="date" id="finance-to" disabled></label>
           <label>Vista
             <select id="finance-basis" disabled title="Por ahora solo se soporta dinero recibido estimado">
               <option value="cash_estimated" selected>Dinero recibido</option>
@@ -97,32 +101,13 @@ final class WebController
         </div>
       </div>
 
-      <div class="finance-dashboard-row">
-        <div class="finance-main">
-          <section class="finance-section" aria-labelledby="finance-flow-title">
-            <div class="finance-section-head">
-              <div><p class="finance-step">1. Flujo comercial</p><h3 id="finance-flow-title">De lo vendido a lo cobrado</h3></div>
-              <span class="finance-period-note">Las ventas pueden cobrarse en fechas diferentes.</span>
-            </div>
-            <div class="finance-flow-grid">
-              <div class="finance-card finance-card--sales"><div class="finance-card-title">Vendido</div><div class="finance-val" id="finance-val-contracted">$ 0</div><p>Valor total de los servicios registrados.</p></div>
-              <div class="finance-card finance-card--collected"><div class="finance-card-title">Dinero recibido</div><div class="finance-val" id="finance-val-collected">$ 0</div><p>Todo lo que ingresó en el período: abonos de reserva y pagos completos.</p></div>
-              <div class="finance-card finance-card--committed"><div class="finance-card-title">🔒 Retenido como reserva</div><div class="finance-val" id="finance-val-committed">$ 0</div><p>Abonos de servicios que aún no se realizan. <strong>No es plata disponible:</strong> se libera al terminar el servicio.</p></div>
-              <div class="finance-card finance-card--released"><div class="finance-card-title">✅ Liberado</div><div class="finance-val" id="finance-val-released">$ 0</div><p>Parte de lo recibido cuyo servicio ya se realizó. Es lo que entra al resultado.</p></div>
-              <div class="finance-card finance-card--pending"><div class="finance-card-title">Pendiente de cobro</div><div class="finance-val" id="finance-val-receivable">$ 0</div><p>Parte vendida que todavía no aparece pagada.</p></div>
-            </div>
-          </section>
-
-          <section class="finance-section" aria-labelledby="finance-result-title">
-            <div class="finance-section-head"><div><p class="finance-step">2. Resultado de caja</p><h3 id="finance-result-title">Lo que quedó después de egresos</h3></div></div>
-            <div class="finance-result-grid">
               <div class="finance-card finance-card--realized"><div class="finance-card-title">Ingresos realizados</div><div class="finance-val" id="finance-val-realized">$ 0</div><p>Valor de servicios terminados en el período.</p></div>
               <div class="finance-card finance-card--expense"><div class="finance-card-title">Pago a profesionales</div><div class="finance-val" id="finance-val-costs">$ 0</div><p>Costos asociados directamente a los servicios.</p></div>
-              <div class="finance-card finance-card--expense"><div class="finance-card-title">Gastos fijos</div><div class="finance-val" id="finance-val-fixed-expenses">$ 0</div><p>Arriendo y suscripciones mensuales confirmadas.</p><small id="finance-fixed-expense-status">Sin partidas pendientes</small></div>
+              <div class="finance-card finance-card--expense finance-card--clickable" id="finance-fixed-expenses-card" role="button" tabindex="0" aria-expanded="false" aria-controls="finance-fixed-expense-details"><div class="finance-card-title">Gastos fijos</div><div class="finance-val" id="finance-val-fixed-expenses">$ 0</div><p>Arriendo y suscripciones mensuales confirmadas.</p><small id="finance-fixed-expense-status">Sin partidas pendientes</small><button type="button" class="finance-detail-button" id="finance-fixed-details-toggle" aria-expanded="false" aria-controls="finance-fixed-expense-details">Ver detalle</button></div>
               <div class="finance-card finance-card--expense"><div class="finance-card-title">Otros gastos</div><div class="finance-val" id="finance-val-expenses">$ 0</div><p>Gastos variables pagados durante el período.</p></div>
               <div class="finance-card finance-card--expense"><div class="finance-card-title">Devoluciones</div><div class="finance-val" id="finance-val-refunds">$ 0</div><p>Dinero devuelto a clientes.</p></div>
-              <div class="finance-card finance-card--result"><div class="finance-card-title">Resultado disponible</div><div class="finance-val" id="finance-val-net">$ 0</div><p>Ingresos realizados menos costos, gastos y devoluciones. Los abonos retenidos no entran acá.</p><button type="button" class="finance-detail-button" id="finance-details-toggle" aria-expanded="false" aria-controls="finance-available-details">Ver detalle por servicio</button></div>
-              <div class="finance-card finance-card--margin"><div class="finance-card-title">Margen sobre lo cobrado</div><div class="finance-val" id="finance-val-margin">0%</div><p>Porcentaje del cobro que quedó disponible.</p></div>
+              <div class="finance-card finance-card--result"><div class="finance-card-title">Resultado disponible</div><div class="finance-val" id="finance-val-net">$ 0</div><p>Ingresos realizados después de cubrir costos, gastos y devoluciones. Si no alcanza, queda en $0.</p><button type="button" class="finance-detail-button" id="finance-details-toggle" aria-expanded="false" aria-controls="finance-available-details">Ver detalle por servicio</button></div>
+              <div class="finance-card finance-card--margin"><div class="finance-card-title">Margen sobre lo cobrado</div><div class="finance-val" id="finance-val-margin">0%</div><p>Porcentaje del cobro que quedó disponible después de cubrir gastos.</p></div>
             </div>
           </section>
         </div>
@@ -149,6 +134,90 @@ final class WebController
         <div class="finance-details-adjustments">
           <h3>Deducciones generales del período</h3>
           <dl><div><dt>Costos sin abono asociado</dt><dd id="finance-details-unmatched">$ 0</dd></div><div><dt>Gastos fijos</dt><dd id="finance-details-fixed-expenses">$ 0</dd></div><div><dt>Otros gastos</dt><dd id="finance-details-expenses">$ 0</dd></div><div><dt>Devoluciones</dt><dd id="finance-details-refunds">$ 0</dd></div><div class="finance-details-final"><dt>Resultado disponible final</dt><dd id="finance-details-net">$ 0</dd></div></dl>
+        </div>
+      </section>
+
+      <section class="panel finance-details hidden" id="finance-fixed-expense-details" aria-labelledby="finance-fixed-details-title">
+        <div class="panel-head finance-details-head">
+          <div><p class="finance-step">Detalle de gastos fijos</p><h2 id="finance-fixed-details-title">Conceptos cobrados en el período</h2><p>Incluye arriendo, licencias y suscripciones confirmadas para el mes o rango seleccionado.</p></div>
+          <button type="button" class="secondary" id="finance-fixed-details-close">Cerrar</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table finance-details-table">
+            <thead><tr><th>Fecha</th><th>Concepto</th><th>Categoría</th><th>Periodicidad</th><th>Notas</th><th class="numeric">Monto</th></tr></thead>
+            <tbody id="finance-fixed-details-body"><tr><td colspan="6">Abre el detalle para consultar los gastos fijos.</td></tr></tbody>
+            <tfoot><tr><th colspan="5">Total gastos fijos</th><th class="numeric" id="finance-fixed-details-total">$ 0</th></tr></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel finance-details hidden" id="finance-contracted-sales-details" aria-labelledby="finance-sales-details-title">
+        <div class="panel-head finance-details-head">
+          <div><p class="finance-step">Detalle de ventas</p><h2 id="finance-sales-details-title">Servicios registrados en el período (Vendido)</h2><p>Muestra todos los servicios agendados o ingresados en el rango de fechas seleccionado.</p></div>
+          <button type="button" class="secondary" id="finance-sales-details-close">Cerrar</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table finance-details-table">
+            <thead><tr><th>Fecha</th><th>Cliente</th><th>Servicio</th><th>Estado</th><th>Origen</th><th class="numeric">Monto</th></tr></thead>
+            <tbody id="finance-sales-details-body"><tr><td colspan="6">Abre el detalle para consultar las ventas.</td></tr></tbody>
+            <tfoot><tr><th colspan="5">Total vendido</th><th class="numeric" id="finance-sales-details-total">$ 0</th></tr></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel finance-details hidden" id="finance-collected-revenue-details" aria-labelledby="finance-collected-details-title">
+        <div class="panel-head finance-details-head">
+          <div><p class="finance-step">Detalle de ingresos</p><h2 id="finance-collected-details-title">Dinero recibido en el período</h2><p>Muestra abonos de reserva y pagos totales ingresados durante el mes o rango seleccionado.</p></div>
+          <button type="button" class="secondary" id="finance-collected-details-close">Cerrar</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table finance-details-table">
+            <thead><tr><th>Fecha</th><th>Cliente</th><th>Concepto</th><th>Estado de pago</th><th>Origen</th><th class="numeric">Monto</th></tr></thead>
+            <tbody id="finance-collected-details-body"><tr><td colspan="6">Abre el detalle para consultar los ingresos.</td></tr></tbody>
+            <tfoot><tr><th colspan="5">Total recibido</th><th class="numeric" id="finance-collected-details-total">$ 0</th></tr></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel finance-details hidden" id="finance-committed-deposits-details" aria-labelledby="finance-committed-details-title">
+        <div class="panel-head finance-details-head">
+          <div><p class="finance-step">Detalle de reservas</p><h2 id="finance-committed-details-title">Abonos retenidos como reserva</h2><p>Abonos de servicios confirmados que aún no se realizan al cierre del período.</p></div>
+          <button type="button" class="secondary" id="finance-committed-details-close">Cerrar</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table finance-details-table">
+            <thead><tr><th>Fecha servicio</th><th>Cliente</th><th>Servicio</th><th>Estado</th><th>Origen</th><th class="numeric">Abono</th></tr></thead>
+            <tbody id="finance-committed-details-body"><tr><td colspan="6">Abre el detalle para consultar las reservas.</td></tr></tbody>
+            <tfoot><tr><th colspan="5">Total retenido</th><th class="numeric" id="finance-committed-details-total">$ 0</th></tr></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel finance-details hidden" id="finance-released-revenue-details" aria-labelledby="finance-released-details-title">
+        <div class="panel-head finance-details-head">
+          <div><p class="finance-step">Detalle de ingresos liberados</p><h2 id="finance-released-details-title">Dinero liberado por servicios realizados</h2><p>Pagos y abonos cuyos servicios ya se finalizaron en el período.</p></div>
+          <button type="button" class="secondary" id="finance-released-details-close">Cerrar</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table finance-details-table">
+            <thead><tr><th>Fecha servicio</th><th>Cliente</th><th>Servicio</th><th>Estado servicio</th><th>Origen</th><th class="numeric">Monto</th></tr></thead>
+            <tbody id="finance-released-details-body"><tr><td colspan="6">Abre el detalle para consultar lo liberado.</td></tr></tbody>
+            <tfoot><tr><th colspan="5">Total liberado</th><th class="numeric" id="finance-released-details-total">$ 0</th></tr></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel finance-details hidden" id="finance-accounts-receivable-details" aria-labelledby="finance-receivable-details-title">
+        <div class="panel-head finance-details-head">
+          <div><p class="finance-step">Detalle de saldos pendientes</p><h2 id="finance-receivable-details-title">Cuentas pendientes de cobro</h2><p>Servicios agendados en el período que presentan un saldo por pagar.</p></div>
+          <button type="button" class="secondary" id="finance-receivable-details-close">Cerrar</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table finance-details-table">
+            <thead><tr><th>Fecha</th><th>Cliente</th><th>Servicio</th><th class="numeric">Total venta</th><th class="numeric">Pagado</th><th class="numeric">Pendiente</th></tr></thead>
+            <tbody id="finance-receivable-details-body"><tr><td colspan="6">Abre el detalle para consultar los saldos pendientes.</td></tr></tbody>
+            <tfoot><tr><th colspan="5">Total pendiente de cobro</th><th class="numeric" id="finance-receivable-details-total">$ 0</th></tr></tfoot>
+          </table>
         </div>
       </section>
 

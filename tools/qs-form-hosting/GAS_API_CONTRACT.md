@@ -1,6 +1,10 @@
 # Contrato HTTP GAS para Cotizador QS
 
-Base provisional: despliegue web de Apps Script propietario de `qamilunaservices@qamilunastudio.com`.
+Base provisional:
+`https://script.google.com/macros/s/AKfycbwiV_i0haP4lAQ2ZDrCoR28IWfUODpYlimNswDVBs2DNNnBSt2XPq38aOWhnWQsb4Zyiw/exec`
+
+Este despliegue debe ser propietario de `qamilunaservices@qamilunastudio.com`.
+No usar deployments de cuentas personales como backend productivo.
 
 Todas las respuestas usan JSON:
 
@@ -18,6 +22,13 @@ Todas las respuestas usan JSON:
 ### `GET ?action=bootstrap&api_version=1`
 
 Devuelve servicios activos disponibles para el selector del cotizador, tipos, profesionales seleccionables y metadatos de vigencia. La opcion `Todos` pertenece al selector de tipo de servicio; al seleccionarla, el selector de servicios debe listar todos los servicios activos sin filtro por tipo. El selector de servicios muestra solo el nombre del servicio, sin precios. No devuelve correos privados de profesionales.
+
+La respuesta debe incluir:
+
+- `service_types`: lista de tipos disponibles, comenzando con `Todos`.
+- `services[].label` o `services[].nombre_canonico`: nombre visible del servicio, sin monto.
+- `services[].tipo_servicio`: tipo usado por el filtro.
+- `services[].sale_price`: precio numerico para calculos internos, no para el texto del selector.
 
 ### `GET ?action=travel_quote&api_version=1&commune=...`
 

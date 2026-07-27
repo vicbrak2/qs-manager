@@ -54,7 +54,7 @@ Los talleres tambien deben registrarse como una fila normal y con la cantidad re
 
 Despues de guardar la fila, el GAS crea el evento en el calendario cuyo propietario es `qamilunaservices@qamilunastudio.com`. El ID de Calendar se escribe en Bitacora para mantener trazabilidad e idempotencia.
 
-En la fase actual, el unico invitado permitido es `vic.martinez777@gmail.com`. Las profesionales no deben recibir invitaciones ni correos hasta habilitar explicitamente ese comportamiento en una fase posterior.
+La configuracion productiva no debe usar cuentas personales como invitadas por defecto. Solo se deben agregar las profesionales seleccionadas cuando esa funcionalidad este habilitada.
 
 ### Paso 4. Propagacion a Bitacora QS
 
@@ -116,21 +116,21 @@ Cada registro genero un `calendar_event_id`, lo que confirma que la creacion del
 
 ### P0. Verificar la politica de invitados antes de publicar
 
-**Estado corregido:** el proyecto productivo `QS - Formulario de Reservas - Qamiluna`
-ya contiene `inviteAssignedStaff: false` y configura
-`defaultCalendarGuest: 'vic.martinez777@gmail.com'`. La alerta anterior provenia de
-una copia antigua del script vinculado a Agenda y no demuestra que el cotizador
-productivo haya invitado a Cami.
+**Estado actualizado:** el proyecto productivo `QS - Formulario de Reservas - Qamiluna`
+no debe configurar una cuenta personal como invitado predeterminado. La alerta
+anterior provenia de una copia antigua del script vinculado a Agenda y no
+demuestra que el cotizador productivo haya invitado a Cami.
 
-**Cambio requerido:** mantener esta configuracion y cubrirla con una prueba de
-regresion. La copia antigua no debe volver a desplegarse sobre el proyecto productivo.
+**Cambio requerido:** mantener el calendario y el despliegue bajo la cuenta del
+estudio, y cubrir la politica de invitados con una prueba de regresion. La copia
+antigua no debe volver a desplegarse sobre el proyecto productivo.
 
 **Criterios de aceptacion:**
 
-1. Un evento nuevo contiene como unico invitado a `vic.martinez777@gmail.com`.
-2. Ninguna profesional recibe correo ni invitacion.
+1. Un evento nuevo no contiene invitados de cuentas personales.
+2. Solo reciben invitacion las profesionales seleccionadas cuando esa opcion este habilitada.
 3. El organizador sigue siendo `qamilunaservices@qamilunastudio.com`.
-4. Una prueba controlada confirma la recepcion del correo predeterminado.
+4. Una prueba controlada confirma la politica de invitados vigente.
 
 ### P0. Corregir el desfase horario Agenda -> V2
 
@@ -164,7 +164,7 @@ regresion. La copia antigua no debe volver a desplegarse sobre el proyecto produ
 
 **Problema:** Calendar creo seis IDs, pero no se pudo auditar el inbox por falta de scopes del conector Gmail.
 
-**Accion requerida:** reautorizar Gmail en modo lectura o comprobar manualmente el inbox de `vic.martinez777@gmail.com` buscando los seis eventos. Registrar asunto, remitente, hora y event ID sin exponer contenido personal.
+**Accion requerida:** reautorizar Gmail en modo lectura o comprobar manualmente los inboxes de las cuentas invitadas en una prueba controlada. Registrar asunto, remitente, hora y event ID sin exponer contenido personal.
 
 ### P1. Limpieza coordinada de datos QA
 
@@ -213,7 +213,7 @@ La suite no debe enviar correos a profesionales. En automatizacion se debe usar 
 
 El flujo se considera cerrado cuando:
 
-- el unico invitado durante esta fase es el correo predeterminado;
+- no se usan cuentas personales como invitadas predeterminadas;
 - la fecha y hora son identicas en Agenda, Calendar, Bitacora y V2;
 - la cantidad y los valores coinciden peso por peso;
 - dos sincronizaciones consecutivas no crean duplicados;

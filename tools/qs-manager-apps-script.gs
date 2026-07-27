@@ -8,7 +8,7 @@ const BITACORA_ID = "1cXOd9imvZGA5oj-Hlk8QHwB48cbx5hNptnGi0HdjMWE";
 const BITACORA_SHEET_NAME = "Bitácora QS — Servicios";
 const DURATION_HOURS = 2;
 const NOTE_PREFIX = "[QS MANAGER]";
-const DEFAULT_GUEST = "vic.martinez777@gmail.com";
+const DEFAULT_GUEST = "";
 const ENCARGADA_EMAILS = {
   paz: "vi.espectral@gmail.com",
   mou: "mymarchantc@gmail.com",
@@ -324,7 +324,7 @@ function actualizarEvento(ev, titulo, startDate, endDate, direccion, comuna, des
 
 function obtenerInvitados(encargada) {
   const encargadaNormalizada = normalizarTexto(encargada);
-  const invitados = [DEFAULT_GUEST];
+  const invitados = DEFAULT_GUEST ? [DEFAULT_GUEST] : [];
 
   Object.keys(ENCARGADA_EMAILS).forEach(nombre => {
     const patron = new RegExp("(^|[^a-z])" + nombre + "([^a-z]|$)");
@@ -976,15 +976,15 @@ function probarConfiguracion() {
   const pruebasInvitados = [
     {
       encargada: "Paz",
-      esperados: [DEFAULT_GUEST, ENCARGADA_EMAILS.paz],
+      esperados: [ENCARGADA_EMAILS.paz],
     },
     {
       encargada: "Mou",
-      esperados: [DEFAULT_GUEST, ENCARGADA_EMAILS.mou],
+      esperados: [ENCARGADA_EMAILS.mou],
     },
     {
       encargada: "Cami - Paz",
-      esperados: [DEFAULT_GUEST, ENCARGADA_EMAILS.paz, ENCARGADA_EMAILS.cami],
+      esperados: [ENCARGADA_EMAILS.paz, ENCARGADA_EMAILS.cami],
     },
   ];
 

@@ -38,6 +38,13 @@ final class FinanceRoutesTest extends HttpTestCase
             'Available detail must close against the dashboard result.'
         );
 
+        $fixedDetailsResponse = $this->json('GET', '/api/v1/finance/fixed-expense-details?from=2026-07-01&to=2026-07-31');
+        self::assertSame(200, $fixedDetailsResponse->getStatusCode());
+        $fixedDetails = $this->payload($fixedDetailsResponse);
+        self::assertArrayHasKey('items', $fixedDetails);
+        self::assertArrayHasKey('total', $fixedDetails);
+        self::assertArrayHasKey('count', $fixedDetails);
+
         // Test accrual rejection
         $accrualResponse = $this->json('GET', '/api/v1/finance/dashboard?from=2026-07-01&to=2026-07-31&basis=accrual');
         self::assertSame(422, $accrualResponse->getStatusCode());
@@ -52,5 +59,8 @@ final class FinanceRoutesTest extends HttpTestCase
 
         $invalidDetails = $this->json('GET', '/api/v1/finance/available-details?from=bad-date&to=2026-07-31');
         self::assertSame(422, $invalidDetails->getStatusCode());
+
+        $invalidFixedDetails = $this->json('GET', '/api/v1/finance/fixed-expense-details?from=bad-date&to=2026-07-31');
+        self::assertSame(422, $invalidFixedDetails->getStatusCode());
     }
 }

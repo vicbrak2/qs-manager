@@ -233,14 +233,29 @@ function listQsManagerV2ActiveAccountingServices_(payload) {
     if (!serviceName || seen[serviceKey]) continue;
     seen[serviceKey] = true;
 
+    const serviceType = stringQsManagerV2Value_(
+      valueQsManagerV2_(row, columns, ['tipo de servicio', 'tipo', 'categoria', 'categoría'], 1)
+    );
+    const salePrice = integerQsManagerV2Value_(
+      valueQsManagerV2_(row, columns, ['valor', 'precio venta', 'precio_venta', 'valor servicio', 'total servicio'], 4)
+    );
+
     services.push({
       service_id: '',
       nombre_canonico: serviceName,
       label: serviceName,
+      tipo_servicio: serviceType,
+      category: serviceType,
+      sale_price: salePrice,
       source_sheet: QS_MANAGER_V2_ACCOUNTING_SERVICES_SHEET,
       source_row: index + 1,
     });
   }
+
+  const serviceTypes = ['Todos'].concat(Object.keys(services.reduce((types, service) => {
+    if (service.tipo_servicio) types[service.tipo_servicio] = true;
+    return types;
+  }, {})).sort());
 
   return {
     generated_at: new Date(),
@@ -249,6 +264,7 @@ function listQsManagerV2ActiveAccountingServices_(payload) {
       sheet: QS_MANAGER_V2_ACCOUNTING_SERVICES_SHEET,
     },
     count: services.length,
+    service_types: serviceTypes,
     services,
   };
 }
@@ -594,6 +610,17 @@ function numberOrBlankQsManagerV2_(value) {
   if (value === '' || value == null) return '';
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : '';
+}
+
+function integerQsManagerV2Value_(value) {
+  if (value === '' || value == null) return 0;
+  if (typeof value === 'number') return Math.round(value);
+  const normalized = String(value)
+    .replace(/[^\d,-]/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.');
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? Math.round(parsed) : 0;
 }
 
 function booleanQsManagerV2Value_(value, defaultValue) {

@@ -21,6 +21,12 @@ final class FinanceController
     {
         $app->get('/api/v1/finance/dashboard', [$this, 'dashboard']);
         $app->get('/api/v1/finance/available-details', [$this, 'availableDetails']);
+        $app->get('/api/v1/finance/fixed-expense-details', [$this, 'fixedExpenseDetails']);
+        $app->get('/api/v1/finance/contracted-sales-details', [$this, 'contractedSalesDetails']);
+        $app->get('/api/v1/finance/collected-revenue-details', [$this, 'collectedRevenueDetails']);
+        $app->get('/api/v1/finance/committed-deposits-details', [$this, 'committedDepositsDetails']);
+        $app->get('/api/v1/finance/released-revenue-details', [$this, 'releasedRevenueDetails']);
+        $app->get('/api/v1/finance/accounts-receivable-details', [$this, 'accountsReceivableDetails']);
     }
 
     public function dashboard(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
@@ -102,6 +108,120 @@ final class FinanceController
                 'basis' => $basis->value,
             ],
             ...$this->repository->availableDetails($period, $basis),
+        ]);
+    }
+
+    public function fixedExpenseDetails(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $validation = $this->validatedPeriod($request);
+        if ($validation instanceof ResponseInterface) {
+            return $validation;
+        }
+
+        [$period, $basis] = $validation;
+
+        return $this->json($response, [
+            'period' => [
+                'from' => $period->from()->format('Y-m-d'),
+                'to' => $period->to()->format('Y-m-d'),
+                'basis' => $basis->value,
+            ],
+            ...$this->repository->fixedExpenseDetails($period, $basis),
+        ]);
+    }
+
+    public function contractedSalesDetails(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $validation = $this->validatedPeriod($request);
+        if ($validation instanceof ResponseInterface) {
+            return $validation;
+        }
+
+        [$period, $basis] = $validation;
+
+        return $this->json($response, [
+            'period' => [
+                'from' => $period->from()->format('Y-m-d'),
+                'to' => $period->to()->format('Y-m-d'),
+                'basis' => $basis->value,
+            ],
+            ...$this->repository->contractedSalesDetails($period, $basis),
+        ]);
+    }
+
+    public function collectedRevenueDetails(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $validation = $this->validatedPeriod($request);
+        if ($validation instanceof ResponseInterface) {
+            return $validation;
+        }
+
+        [$period, $basis] = $validation;
+
+        return $this->json($response, [
+            'period' => [
+                'from' => $period->from()->format('Y-m-d'),
+                'to' => $period->to()->format('Y-m-d'),
+                'basis' => $basis->value,
+            ],
+            ...$this->repository->collectedRevenueDetails($period, $basis),
+        ]);
+    }
+
+    public function committedDepositsDetails(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $validation = $this->validatedPeriod($request);
+        if ($validation instanceof ResponseInterface) {
+            return $validation;
+        }
+
+        [$period, $basis] = $validation;
+
+        return $this->json($response, [
+            'period' => [
+                'from' => $period->from()->format('Y-m-d'),
+                'to' => $period->to()->format('Y-m-d'),
+                'basis' => $basis->value,
+            ],
+            ...$this->repository->committedDepositsDetails($period, $basis),
+        ]);
+    }
+
+    public function releasedRevenueDetails(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $validation = $this->validatedPeriod($request);
+        if ($validation instanceof ResponseInterface) {
+            return $validation;
+        }
+
+        [$period, $basis] = $validation;
+
+        return $this->json($response, [
+            'period' => [
+                'from' => $period->from()->format('Y-m-d'),
+                'to' => $period->to()->format('Y-m-d'),
+                'basis' => $basis->value,
+            ],
+            ...$this->repository->releasedRevenueDetails($period, $basis),
+        ]);
+    }
+
+    public function accountsReceivableDetails(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $validation = $this->validatedPeriod($request);
+        if ($validation instanceof ResponseInterface) {
+            return $validation;
+        }
+
+        [$period, $basis] = $validation;
+
+        return $this->json($response, [
+            'period' => [
+                'from' => $period->from()->format('Y-m-d'),
+                'to' => $period->to()->format('Y-m-d'),
+                'basis' => $basis->value,
+            ],
+            ...$this->repository->accountsReceivableDetails($period, $basis),
         ]);
     }
 

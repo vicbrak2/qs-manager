@@ -229,7 +229,7 @@ final class RebuildFinanceProjection
             SELECT
                 b.stable_external_id || '-pay',
                 'customer_payment', 'bitacora', s.sheet_name, b.source_row,
-                b.service_date, 'completed', 'CLP',
+                COALESCE(a.deposit_date, b.service_date), 'completed', 'CLP',
                 jsonb_build_object(
                     'service', b.service_name,
                     'customer', b.customer_name,
@@ -245,6 +245,10 @@ final class RebuildFinanceProjection
             FROM v_bitacora_latest b
             JOIN qs_sheet_import_runs run ON run.id = b.import_run_id
             JOIN qs_sheet_sources s ON s.id = run.source_id
+            LEFT JOIN v_agenda_latest a
+              ON a.stable_external_id = b.stable_external_id
+              OR (a.calendar_event_id IS NOT NULL AND b.calendar_event_id IS NOT NULL AND a.calendar_event_id = b.calendar_event_id)
+              OR b.agenda_reference = 'Agenda: ' || a.source_sheet || '!' || a.source_row
             WHERE lower(trim(b.service_status)) NOT IN ('anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste')
               AND (b.deposit_amount > 0 OR lower(trim(b.payment_status)) = 'pagado')
               AND NOT EXISTS (
