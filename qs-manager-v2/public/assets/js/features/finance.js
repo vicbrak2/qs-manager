@@ -639,6 +639,12 @@ export async function loadFinanceDashboard() {
         : `Ingresaron ${formatCurrency(received)}, sin abonos retenidos.`;
     }
 
+    const storyContainer = $('.finance-story');
+    if (storyContainer) {
+      const hasDeficit = !rangeMode && fixedExpenses > 0 && missingFixed > 0;
+      storyContainer.classList.toggle('finance-story--alert', hasDeficit);
+    }
+
     const partes = [];
     if (!rangeMode && fixedExpenses > 0) partes.push(`${formatCurrency(amountTowardFixed)} cubiertos de ${formatCurrency(fixedExpenses)} en gastos fijos`);
     if (committed > 0) partes.push(`${formatCurrency(committed)} corresponden a reservas de servicios que aún no se realizan y se liberan al terminarlos`);

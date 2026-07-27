@@ -983,6 +983,10 @@
     .finance-story-icon { display: grid; place-items: center; width: 36px; height: 36px; flex: 0 0 36px; border-radius: 50%; background: #087f70; color: white; font-weight: 800; }
     .finance-story strong { display: block; color: #075f55; font-size: 16px; }
     .finance-story p { margin: 3px 0 0; color: #3d625d; font-size: 13px; }
+    .finance-story--alert { border-color: #fca5a5; background: #fef2f2; }
+    .finance-story--alert .finance-story-icon { background: #dc2626; }
+    .finance-story--alert strong { color: #991b1b; }
+    .finance-story--alert p { color: #7f1d1d; }
 
     .finance-main { display: grid; gap: 16px; }
     .finance-section { padding: 18px; background: var(--bg-panel); border: 1px solid var(--border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
