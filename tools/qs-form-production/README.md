@@ -110,6 +110,11 @@ duplicados. `inviteAssignedStaff` debe permanecer habilitado en `Codigo.gs`.
 - Version 27 (2026-07-27): mantiene el texto no editable seleccionable para copiar,
   pero oculta el caret con `caret-color: transparent`; los campos editables siguen
   mostrando caret normal.
+- Version 28 (2026-07-27): evita conflicto entre traslado y servicio en estudio
+  deshabilitando el checkbox de estudio cuando el traslado esta activo y validandolo
+  en GAS. El abono del paso Reserva se muestra en CLP, la fecha del abono se inicializa
+  con la fecha actual y `vic.martinez777@gmail.com` queda como invitado Calendar
+  obligatorio por defecto.
 
 Antes de desplegar, el contenido completo de `Codigo.gs` y `Cotizador.html` debe
 versionarse en este directorio. No se debe publicar una implementacion nueva si el

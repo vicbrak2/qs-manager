@@ -111,7 +111,7 @@ header span{color:#66566b}
       <div class="field"><label>Nombre de la clienta (nombre y apellido)</label><input id="clientName" required></div>
       <div class="field"><label>Teléfono (WhatsApp con código de país)</label><input id="phone" inputmode="tel" placeholder="+56912345678" required></div>
       <div class="field"><label>¿Quién realizará el servicio? <small>Selecciona a la integrante o dupla responsable.</small></label><select id="staff" required></select></div>
-      <div class="field wide"><label class="check"><input id="serviceAtStudio" type="checkbox"><span>El servicio es en el estudio<small>Usa “Estudio QS” como dirección y bloquea el campo para evitar cambios accidentales.</small></span></label></div>
+      <div class="field wide"><label class="check"><input id="serviceAtStudio" type="checkbox"><span>El servicio es en el estudio<small id="serviceAtStudioHint">Usa “Estudio QS” como dirección y bloquea el campo para evitar cambios accidentales.</small></span></label></div>
       <div class="field wide"><label>Lugar del servicio <small>Escribe la dirección o marca que el servicio es en el estudio.</small></label><input id="address" required></div>
     </div></fieldset>
     <fieldset id="sectionDate" class="locked" disabled><legend>🗓️ 4. Fecha y condiciones</legend><div class="grid">
@@ -135,7 +135,7 @@ header span{color:#66566b}
       <div class="field wide"><label>Observaciones (información operativa adicional)</label><textarea id="notes"></textarea></div>
     </div></fieldset>
     <fieldset id="sectionPayment" class="locked" disabled><legend>💗 5. Reserva y pago</legend><div class="grid">
-      <div class="field"><label>Abono recibido (monto efectivamente pagado)</label><input id="deposit" type="number" min="0" value="0"></div>
+      <div class="field"><label>Abono recibido (monto efectivamente pagado)</label><input id="deposit" type="text" inputmode="numeric" value="$0"></div>
       <div class="field"><label>Fecha del abono (fecha del pago recibido)</label><input id="depositDate" type="date"></div>
       <div class="field wide"><label class="check"><input id="withoutDeposit" type="checkbox"><span>Reservar sin abono<small>Permite agendar ahora y registrar una fecha de cobro pendiente.</small></span></label></div>
       <div id="dueWrap" class="field hidden"><label>Fecha de cobro del abono (día comprometido para solicitar el pago)</label><input id="depositDueDate" type="date"></div>
@@ -169,7 +169,7 @@ const state={catalog:null,depositTouched:false,previousServiceAddress:'',service
 const money=new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0});
 const $=id=>document.getElementById(id);
 function load(){
-  google.script.run.withSuccessHandler(c=>{state.catalog=c;renderCatalog();$('loading').classList.add('hidden');$('app').classList.remove('hidden');})
+  google.script.run.withSuccessHandler(c=>{state.catalog=c;initDefaults();renderCatalog();$('loading').classList.add('hidden');$('app').classList.remove('hidden');})
     .withFailureHandler(e=>{$('loading').innerHTML='⚠️ No pudimos cargar los valores vigentes.<br><small>'+escapeHtml(e&&e.message?e.message:String(e))+'</small>';}).qsGetQuoteCatalog();
 }
 function renderCatalog(){
@@ -187,6 +187,19 @@ function renderServices(){
   const list=type?state.catalog.services.filter(s=>type==='Todos'||s.type===type):[];
   $('service').innerHTML='<option value="">Seleccionar servicio</option>'+list.map(s=>'<option value="'+escapeHtml(s.name)+'">'+escapeHtml(s.name)+'</option>').join('');
   $('service').disabled=!type;
+}
+function initDefaults(){
+  if(!$('depositDate').value)$('depositDate').value=localDateInputValue(new Date());
+}
+function localDateInputValue(date){
+  const offset=date.getTimezoneOffset()*60000;
+  return new Date(date.getTime()-offset).toISOString().slice(0,10);
+}
+function moneyInputValue(id){
+  return Number(String($(id).value||'').replace(/[^\d-]/g,''))||0;
+}
+function setMoneyInput(id,amount){
+  $(id).value=amount>0?money.format(amount):'$0';
 }
 function updateConditional(){
   const types=selectedServiceTypes();
@@ -214,6 +227,14 @@ function updateProofFields(){
   if(atHome&&!newAddress)$('proofNewAddress').value='';
 }
 function updateStudioAddress(){
+  if($('includeTravel').checked){
+    $('serviceAtStudio').checked=false;
+    $('serviceAtStudio').disabled=true;
+    $('serviceAtStudioHint').textContent='No disponible cuando el traslado está agregado a la reserva.';
+  }else{
+    $('serviceAtStudio').disabled=$('sectionClient').disabled;
+    $('serviceAtStudioHint').textContent='Usa “Estudio QS” como dirección y bloquea el campo para evitar cambios accidentales.';
+  }
   if($('serviceAtStudio').checked){
     const current=$('address').value.trim();
     if(current&&current!==STUDIO_ADDRESS)state.previousServiceAddress=current;
@@ -265,8 +286,8 @@ function calculate(){
   state.quote.total=state.quote.servicePrice+state.quote.travelPrice;
   state.quote.reserve=Math.ceil(state.quote.total/2);
   $('travelPrice').value=state.quote.travelBase?money.format(state.quote.travelBase):'$0';
-  if(!$('withoutDeposit').checked && !state.depositTouched) $('deposit').value=state.quote.reserve;
-  const deposit=Number($('deposit').value)||0;
+  if(!$('withoutDeposit').checked && !state.depositTouched) setMoneyInput('deposit',state.quote.reserve);
+  const deposit=moneyInputValue('deposit');
   $('originalServicePrice').value=money.format(state.quote.draftOriginal);
   $('draftPreview').classList.toggle('hidden',!draft.service);
   $('draftServiceName').textContent=draft.service?draft.service.name:'Servicio tentativo';
@@ -382,7 +403,7 @@ function payload(){
   return {action:'schedule',type:types.length>1?'Mixto':(types[0]||'Servicio regular'),service:state.services.map(item=>item.name).join(' + '),services:state.services,quantity:1,staff:$('staff').value,
     clientName:$('clientName').value.trim(),phone:$('phone').value.trim(),address:$('address').value.trim(),includeTravel:$('includeTravel').checked,commune:$('commune').value||'Sin traslado',
     serviceDate:$('serviceDate').value,serviceTime:$('serviceTime').value,promo:state.quote.serviceDiscount>0,discountMode:'multi',customPromoPrice:'',originalServicePrice:state.services.reduce((sum,item)=>sum+item.originalServicePrice,0),servicePrice:state.quote.servicePrice,travelBase:state.quote.travelBase,travelDiscount:state.quote.travelDiscount,travelPrice:state.quote.travelPrice,
-    total:state.quote.total,deposit:$('withoutDeposit').checked?0:Number($('deposit').value)||0,depositDate:$('depositDate').value,
+    total:state.quote.total,deposit:$('withoutDeposit').checked?0:moneyInputValue('deposit'),depositDate:$('depositDate').value,
     depositDueDate:$('depositDueDate').value,workshopSessionId:$('workshopSessionId').value,endTime:$('endTime').value,
     attendees:$('attendees').value,staffCount:$('staffCount').value,extraHours:$('extraHours').value,
     requiresProof:$('requiresProof').checked,proofDate:$('proofDate').value,proofTime:$('proofTime').value,proofPlace:$('proofPlace').value,
@@ -408,8 +429,8 @@ $('customPromoPrice').addEventListener('input',()=>{state.depositTouched=false;c
 $('includeTravel').addEventListener('change',()=>{$('commune').disabled=!$('includeTravel').checked;if(!$('includeTravel').checked)$('commune').value='';state.depositTouched=false;calculate();updateProgress();});
 $('commune').addEventListener('change',refreshTravel);
 $('quantity').addEventListener('input',()=>{state.depositTouched=false;calculate();updateProgress();});
-$('deposit').addEventListener('input',()=>{state.depositTouched=true;calculate();});
-$('withoutDeposit').addEventListener('change',()=>{$('dueWrap').classList.toggle('hidden',!$('withoutDeposit').checked);$('deposit').disabled=$('withoutDeposit').checked;if($('withoutDeposit').checked){$('deposit').value=0;}else{state.depositTouched=false;}calculate();updateProgress();});
+$('deposit').addEventListener('input',()=>{state.depositTouched=true;const amount=moneyInputValue('deposit');$('deposit').value=amount>0?money.format(amount):'';calculate();});
+$('withoutDeposit').addEventListener('change',()=>{$('dueWrap').classList.toggle('hidden',!$('withoutDeposit').checked);$('deposit').disabled=$('withoutDeposit').checked;if($('withoutDeposit').checked){setMoneyInput('deposit',0);}else{state.depositTouched=false;}calculate();updateProgress();});
 ['clientName','phone','staff','address','serviceDate','serviceTime','workshopSessionId','endTime','attendees','staffCount','proofDate','proofTime','proofNewAddress'].forEach(id=>$(id).addEventListener('input',updateProgress));
 $('serviceAtStudio').addEventListener('change',()=>{updateStudioAddress();updateProgress();});
 ['requiresProof','proofPlace','proofAddressMode'].forEach(id=>$(id).addEventListener('change',()=>{updateProofFields();updateProgress();}));

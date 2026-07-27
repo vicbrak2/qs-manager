@@ -19,7 +19,7 @@ const QS_FORM_CONFIG = {
   serviceRangeA1: 'E2:E120',
   encargadasRangeA1: 'F2:F40',
   calendarId: 'qamilunaservices@qamilunastudio.com',
-  defaultCalendarGuest: '',
+  defaultCalendarGuest: 'vic.martinez777@gmail.com',
   inviteAssignedStaff: true,
   assignedStaffEmails: {
     paz: 'vi.espectral@gmail.com',
@@ -1162,6 +1162,9 @@ function qsGuardarReservaWeb(payload) {
   }
 
   const includeTravel = data.includeTravel === true || String(data.includeTravel || '').toLowerCase() === 'true';
+  if (includeTravel && String(data.address || '').trim().toLowerCase() === 'estudio qs') {
+    throw new Error('El traslado no puede quedar incluido cuando el servicio es en el estudio.');
+  }
   const liveTravelBase = includeTravel ? qsGetTravelQuote(data.commune).price : 0;
   const expectedTravelDiscountRate = qsTravelDiscountRate_(services.length);
   const expectedTravelDiscount = includeTravel && expectedTravelDiscountRate > 0 ? Math.round(liveTravelBase * expectedTravelDiscountRate) : 0;
