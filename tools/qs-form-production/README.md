@@ -89,6 +89,10 @@ duplicados. `inviteAssignedStaff` debe permanecer habilitado en `Codigo.gs`.
   de agregado ahora cambia su texto y ayuda segun el estado del servicio, con layout
   mobile en una sola columna. Se retira la barra flotante mobile de cotizacion para
   que no tape campos ni acciones durante el flujo.
+- Version 22 (2026-07-27): agrega detalle preliminar del servicio tentativo antes de
+  sumarlo a la reserva, mostrando precio vigente, descuento y cobro. La agenda
+  operativa pasa a una vista escaneable con filtros rapidos, buscador, fecha humana,
+  cliente/equipo en columna propia y bloque vertical de pago con saldo destacado.
 
 Antes de desplegar, el contenido completo de `Codigo.gs` y `Cotizador.html` debe
 versionarse en este directorio. No se debe publicar una implementacion nueva si el

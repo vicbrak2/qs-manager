@@ -40,7 +40,7 @@ fieldset.current-step{box-shadow:inset 4px 0 0 var(--pink-strong)}.mobile-quote{
 .field-loader{display:inline-flex;align-items:center;margin-left:6px;color:var(--pink-strong);font-weight:800;font-size:12px;animation:pulseLoader .8s ease-in-out infinite alternate}.field-loader.loaded{color:#287a62;animation:none}
 @keyframes pulseLoader{from{opacity:.45;transform:translateX(0)}to{opacity:1;transform:translateX(3px)}}
 fieldset.locked{opacity:.65;filter:saturate(.72);position:relative}
-fieldset.locked:after{display:none}fieldset.locked.next-step:after{display:block;content:"🔒 Completa el paso anterior";position:absolute;right:18px;top:18px;color:var(--muted);font-size:12px;font-weight:700}
+fieldset.locked:after{display:none}fieldset.locked.next-step:before{display:block;content:"🔒 Completa el paso anterior";margin:-6px 0 10px;text-align:right;color:var(--muted);font-size:12px;font-weight:700}
 fieldset:not(.locked){transition:opacity .25s,background .25s}
 
 .brand-header{display:flex;align-items:center;gap:14px}.brand-logo{width:64px;height:64px;flex:0 0 64px;border-radius:50%;object-fit:cover;background:#f8dfe8;border:2px solid rgba(255,255,255,.78);box-shadow:0 5px 16px rgba(0,0,0,.2)}.brand-copy{min-width:0}.brand-copy strong{display:block}@media(max-width:480px){.brand-header{gap:10px}.brand-logo{width:48px;height:48px;flex-basis:48px}.brand-copy strong{font-size:17px}.brand-copy span{font-size:11px}}
@@ -61,8 +61,8 @@ header span{color:#66566b}
 .field label.check small{display:block;margin-top:3px;color:var(--muted);font-weight:400}
 .field label.check:hover{border-color:#d89ab7;background:#fff4f9}
 .field label.check:focus-within{border-color:var(--pink-strong);box-shadow:0 0 0 4px rgba(223,110,156,.13)}
-.service-compose{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px;border:1px solid #e6c8d7;border-radius:7px;background:#fff8fb}.service-compose strong{display:block;color:var(--black)}.service-compose small{display:block;color:var(--muted);font-size:12px}.service-list-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:2px 0 -2px}.service-list-heading strong{display:block;color:var(--black)}.service-list-heading small{display:block;color:var(--muted)}.service-list{display:grid;gap:10px;margin-top:4px}.service-empty{padding:12px 14px;border:1px dashed #d9c4d8;border-radius:7px;color:var(--muted);background:#fff}.service-item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:12px 14px;border:1px solid #eadce8;border-radius:7px;background:#fff}.service-item strong{display:block;color:var(--black)}.service-item small{display:block;color:var(--muted)}.service-item__amount{font-weight:800;white-space:nowrap}.service-item button{min-height:36px;border:1px solid #e2a9bf;background:#fff3f7;color:#932b54;font-weight:800;cursor:pointer}.quote .service-detail{display:grid;gap:8px;padding:12px 20px;border-bottom:1px solid #3a303d;background:#342838}.quote .service-detail__row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;font-size:13px}.quote .service-detail__row span{min-width:0}.travel-discount{color:#ffd6e5;background:#503b58}
-@media(max-width:720px){.service-compose{grid-template-columns:1fr}.service-compose .btn{width:100%}.service-list-heading{display:grid;gap:2px}.service-item{grid-template-columns:1fr}.service-item__amount{white-space:normal}.service-item button{width:100%}}
+.draft-preview{display:grid;grid-template-columns:minmax(0,1fr) repeat(3,auto);gap:12px;align-items:center;padding:14px;border:1px solid #d9c4d8;border-radius:7px;background:#fff;color:var(--ink)}.draft-preview__title strong{display:block;color:var(--black)}.draft-preview__title small,.draft-preview div small{display:block;color:var(--muted);font-size:12px}.draft-preview div:not(.draft-preview__title){text-align:right}.draft-preview b{display:block;font-size:15px}.draft-preview__discount{color:var(--ok)}.service-compose{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px;border:1px solid #e6c8d7;border-radius:7px;background:#fff8fb}.service-compose strong{display:block;color:var(--black)}.service-compose small{display:block;color:var(--muted);font-size:12px}.service-list-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:2px 0 -2px}.service-list-heading strong{display:block;color:var(--black)}.service-list-heading small{display:block;color:var(--muted)}.service-list{display:grid;gap:10px;margin-top:4px}.service-empty{padding:12px 14px;border:1px dashed #d9c4d8;border-radius:7px;color:var(--muted);background:#fff}.service-item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:12px 14px;border:1px solid #eadce8;border-radius:7px;background:#fff}.service-item strong{display:block;color:var(--black)}.service-item small{display:block;color:var(--muted)}.service-item__amount{font-weight:800;white-space:nowrap}.service-item button{min-height:36px;border:1px solid #e2a9bf;background:#fff3f7;color:#932b54;font-weight:800;cursor:pointer}.quote .service-detail{display:grid;gap:8px;padding:12px 20px;border-bottom:1px solid #3a303d;background:#342838}.quote .service-detail__row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;font-size:13px}.quote .service-detail__row span{min-width:0}.travel-discount{color:#ffd6e5;background:#503b58}
+@media(max-width:720px){.draft-preview{grid-template-columns:1fr 1fr}.draft-preview__title{grid-column:1/-1}.draft-preview div:not(.draft-preview__title){text-align:left}.service-compose{grid-template-columns:1fr}.service-compose .btn{width:100%}.service-list-heading{display:grid;gap:2px}.service-item{grid-template-columns:1fr}.service-item__amount{white-space:normal}.service-item button{width:100%}}
 </style>
 </head>
 <body>
@@ -81,6 +81,12 @@ header span{color:#66566b}
       <div class="field"><label>Tipo de servicio <small>Elige si es atención regular, novia, taller o Glitter Bar.</small></label><select id="type"><option value="" selected disabled>Seleccionar tipo de servicio</option><option>Todos</option><option>Servicio regular</option><option>Novia</option><option>Taller</option><option>Glitter Bar</option></select></div>
       <div class="field"><label>Servicio <small>El precio se consulta automáticamente en Seguimiento Contable.</small> <span id="serviceLoading" class="field-loader hidden">💫 consultando…</span></label><select id="service" disabled></select></div>
       <div class="field"><label>Cantidad <small>Número de servicios, packs o participantes.</small></label><input id="quantity" type="number" min="1" value="1" required disabled></div>
+      <div id="draftPreview" class="draft-preview wide hidden" aria-live="polite">
+        <div class="draft-preview__title"><strong id="draftServiceName">Servicio tentativo</strong><small id="draftServiceMeta">Revisa el valor antes de aplicar promoción o agregarlo.</small></div>
+        <div><small>Precio vigente</small><b id="draftOriginalAmount">$0</b></div>
+        <div class="draft-preview__discount"><small>Descuento</small><b id="draftDiscountAmount">$0</b></div>
+        <div><small>Cobro tentativo</small><b id="draftChargedAmount">$0</b></div>
+      </div>
       <div class="field wide"><label class="check"><input id="promoEnabled" type="checkbox"><span>Aplicar promoción<small>Habilita un precio diferente sin modificar el precio maestro.</small></span></label></div>
       <div id="promoFields" class="promo-box wide hidden"><div class="grid">
         <div class="field"><label>Precio original <small>Valor vigente en Seguimiento Contable.</small></label><input id="originalServicePrice" readonly tabindex="-1" value="0"></div>
@@ -237,6 +243,12 @@ function calculate(){
   if(!$('withoutDeposit').checked && !state.depositTouched) $('deposit').value=state.quote.reserve;
   const deposit=Number($('deposit').value)||0;
   $('originalServicePrice').value=money.format(state.quote.draftOriginal);
+  $('draftPreview').classList.toggle('hidden',!draft.service);
+  $('draftServiceName').textContent=draft.service?draft.service.name:'Servicio tentativo';
+  $('draftServiceMeta').textContent=draft.service?(escapeText(draft.service.type||$('type').value||'Servicio')+' · Cantidad '+draft.qty):'Revisa el valor antes de aplicar promoción o agregarlo.';
+  $('draftOriginalAmount').textContent=money.format(draft.original);
+  $('draftDiscountAmount').textContent=draft.discount>0?'− '+money.format(draft.discount):'$0';
+  $('draftChargedAmount').textContent=money.format(draft.charged);
   $('serviceAmount').textContent=money.format(state.quote.servicePrice);
   $('promoSavingsLine').classList.toggle('hidden',state.quote.serviceDiscount<=0);
   $('promoSavingsAmount').textContent='− '+money.format(state.quote.serviceDiscount);
@@ -359,6 +371,7 @@ function schedule(){
     .withFailureHandler(e=>{showError(e);$('schedule').disabled=false;}).qsGuardarReservaWeb(payload());
 }
 function showError(e){$('status').className='status error';$('status').textContent=e&&e.message?e.message:String(e);}
+function escapeText(v){const div=document.createElement('div');div.textContent=String(v??'');return div.textContent;}
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 $('type').addEventListener('change',()=>{$('promoEnabled').checked=false;$('promoFields').classList.add('hidden');$('discountMode').value='';$('discountMode').required=false;$('customPromoPrice').value='';$('customPromoPrice').required=false;$('customPromoWrap').classList.add('hidden');$('quantity').value=1;$('quantity').disabled=true;$('service').value='';$('service').disabled=!$('type').value;setLoading('serviceLoading',false);state.depositTouched=false;renderServices();updateConditional();calculate();updateProgress();});
 $('service').addEventListener('change',()=>{if($('discountMode').value==='custom')$('customPromoPrice').value='';refreshService();});
@@ -390,6 +403,14 @@ $('addService').addEventListener('click',addService);$('recalculate').addEventLi
   <div class="pending-bookings__status" id="pending-status" role="status" aria-live="polite">
     Cargando Agenda 2026…
   </div>
+  <div class="pending-controls" aria-label="Filtros de agendamientos">
+    <div class="pending-filter" role="group" aria-label="Estado de pago">
+      <button type="button" class="active" data-pending-filter="all">Todas</button>
+      <button type="button" data-pending-filter="balance">Con saldo</button>
+      <button type="button" data-pending-filter="paid">Pagadas</button>
+    </div>
+    <label class="pending-search"><span>Buscar</span><input id="pending-search" placeholder="Cliente, servicio o equipo"></label>
+  </div>
   <div class="pending-bookings__list" id="pending-list"></div>
 </section>
 
@@ -419,13 +440,27 @@ $('addService').addEventListener('click',addService);$('recalculate').addEventLi
   .pending-bookings__refresh { min-height: 44px; padding: 0 16px; border: 1px solid #d8c7d5; background: #fff; color: #201820; font-weight: 700; cursor: pointer; }
   .pending-bookings__refresh:disabled { cursor: wait; opacity: .55; }
   .pending-bookings__status { min-height: 24px; margin-top: 18px; color: #665b68; }
+  .pending-controls { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 10px; }
+  .pending-filter { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pending-filter button { min-height: 36px; padding: 0 12px; border: 1px solid #dccbd9; background: #fff; color: #4a3947; font-weight: 800; cursor: pointer; }
+  .pending-filter button.active { border-color: #45334c; background: #45334c; color: #fff; }
+  .pending-search { display: grid; gap: 4px; min-width: min(300px, 100%); color: #665b68; font-size: 12px; font-weight: 800; }
+  .pending-search input { min-height: 40px; padding: 8px 11px; }
   .pending-bookings__list { display: grid; gap: 10px; margin-top: 12px; }
-  .pending-booking { display: grid; grid-template-columns: minmax(130px,.7fr) minmax(220px,1.5fr) minmax(160px,1fr) auto; align-items: center; gap: 16px; padding: 16px; border: 1px solid #eadfe8; background: #fffafd; }
+  .pending-booking { display: grid; grid-template-columns: minmax(110px,.7fr) minmax(230px,1.45fr) minmax(150px,1fr) minmax(145px,.85fr) auto; align-items: center; gap: 16px; padding: 16px; border: 1px solid #eadfe8; background: #fffafd; }
   .pending-booking__date { color: #4a3947; font-weight: 800; }
+  .pending-booking__time { display: block; margin-top: 3px; color: #756a76; font-size: 13px; }
   .pending-booking__service { color: #1d1720; font-weight: 800; }
   .pending-booking__meta { margin-top: 4px; color: #756a76; font-size: 13px; }
-  .pending-booking__amount { font-weight: 800; text-align: right; }
-  .pending-booking__cancel { min-height: 40px; padding: 0 14px; border: 1px solid #e2a9bf; background: #fff3f7; color: #932b54; font-weight: 800; cursor: pointer; }
+  .pending-booking__team strong { display: block; color: #1d1720; }
+  .pending-payment { display: grid; gap: 3px; padding: 10px 12px; border-radius: 7px; background: #fff; border: 1px solid #eadce8; }
+  .pending-payment span { display: flex; justify-content: space-between; gap: 10px; color: #665b68; font-size: 12px; }
+  .pending-payment em { font-style: normal; }
+  .pending-payment b { color: #241c27; }
+  .pending-payment__balance b { font-size: 15px; }
+  .pending-payment--due { border-color: #f0c08a; background: #fff8ed; }
+  .pending-payment--paid { border-color: #b6e3d2; background: #f0fbf6; }
+  .pending-booking__cancel { min-height: 38px; padding: 0 12px; border: 1px solid #d8c7d5; background: #fff; color: #932b54; font-weight: 800; cursor: pointer; }
   .pending-booking__cancel:hover { background: #f9dce7; }
   .pending-cancel { width: min(520px, calc(100% - 32px)); padding: 24px; border: 0; box-shadow: 0 24px 70px rgba(25, 15, 24, .32); }
   .pending-cancel::backdrop { background: rgba(25, 15, 24, .58); }
@@ -437,8 +472,10 @@ $('addService').addEventListener('click',addService);$('recalculate').addEventLi
   @media (max-width: 720px) {
     .pending-bookings { margin: 16px 12px 90px; padding: 18px; }
     .pending-bookings__heading { align-items: stretch; flex-direction: column; }
+    .pending-controls { align-items: stretch; flex-direction: column; }
+    .pending-filter { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .pending-filter button { padding: 0 8px; }
     .pending-booking { grid-template-columns: 1fr; gap: 8px; }
-    .pending-booking__amount { text-align: left; }
     .pending-booking__cancel { width: 100%; }
   }
 </style>
@@ -453,7 +490,12 @@ $('addService').addEventListener('click',addService);$('recalculate').addEventLi
     const form = document.querySelector('#pending-cancel-form');
     const reason = document.querySelector('#pending-cancel-reason');
     const summary = document.querySelector('#pending-cancel-summary');
+    const search = document.querySelector('#pending-search');
+    const filterButtons = Array.from(document.querySelectorAll('[data-pending-filter]'));
+    const dateFormat = new Intl.DateTimeFormat('es-CL', { day: 'numeric', month: 'short', year: 'numeric' });
     let selected = null;
+    let pendingBookings = [];
+    let pendingFilter = 'all';
 
     const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
@@ -479,20 +521,40 @@ $('addService').addEventListener('click',addService);$('recalculate').addEventLi
 
     function renderPending(result) {
       setLoading(false);
-      const bookings = result?.bookings || [];
-      status.textContent = bookings.length
-        ? `${bookings.length} agendamiento${bookings.length === 1 ? '' : 's'} pendiente${bookings.length === 1 ? '' : 's'}.`
+      pendingBookings = result?.bookings || [];
+      renderPendingList();
+    }
+
+    function renderPendingList() {
+      const query = normalize(search.value);
+      const bookings = pendingBookings.filter(booking => {
+        const matchesFilter = pendingFilter === 'all'
+          || (pendingFilter === 'balance' && Number(booking.balance || 0) > 0)
+          || (pendingFilter === 'paid' && Number(booking.balance || 0) <= 0);
+        const haystack = normalize([booking.service, booking.customer, booking.staff, booking.dateLabel].join(' '));
+        return matchesFilter && (!query || haystack.includes(query));
+      });
+      status.textContent = pendingBookings.length
+        ? `${bookings.length} de ${pendingBookings.length} agendamiento${pendingBookings.length === 1 ? '' : 's'} pendiente${pendingBookings.length === 1 ? '' : 's'}.`
         : 'No hay agendamientos futuros o servicios pendientes.';
       list.innerHTML = bookings.map(booking => `
         <article class="pending-booking">
-          <div class="pending-booking__date">${escapeHtml(booking.dateLabel)}<br>${escapeHtml(booking.time)}</div>
           <div>
-            <div class="pending-booking__service">${escapeHtml(booking.service || 'Sin servicio')}</div>
-            <div class="pending-booking__meta">${escapeHtml(booking.customer || 'Sin clienta')} · ${escapeHtml(booking.staff || 'Sin encargada')}</div>
+            <div class="pending-booking__date">${escapeHtml(formatBookingDate(booking.date, booking.dateLabel))}</div>
+            <span class="pending-booking__time">🕒 ${escapeHtml(booking.time || 'Sin hora')}</span>
           </div>
           <div>
-            <div class="pending-booking__amount">Abono ${money.format(booking.deposit || 0)}</div>
-            <div class="pending-booking__meta">Total ${money.format(booking.total || 0)} · Saldo ${money.format(booking.balance || 0)}</div>
+            <div class="pending-booking__service">${escapeHtml(serviceTitle(booking.service))}</div>
+            <div class="pending-booking__meta">${escapeHtml(serviceMeta(booking.service))}</div>
+          </div>
+          <div class="pending-booking__team">
+            <strong>${escapeHtml(booking.customer || 'Sin clienta')}</strong>
+            <div class="pending-booking__meta">${escapeHtml(booking.staff || 'Sin encargada')}</div>
+          </div>
+          <div class="pending-payment ${Number(booking.balance || 0)>0?'pending-payment--due':'pending-payment--paid'}">
+            <span><em>Abono</em><b>${money.format(booking.deposit || 0)}</b></span>
+            <span class="pending-payment__balance"><em>Saldo</em><b>${money.format(booking.balance || 0)}</b></span>
+            <span><em>Total</em><b>${money.format(booking.total || 0)}</b></span>
           </div>
           <button type="button" class="pending-booking__cancel" data-token="${escapeHtml(booking.token)}">Cancelar</button>
         </article>`).join('');
@@ -505,7 +567,40 @@ $('addService').addEventListener('click',addService);$('recalculate').addEventLi
       }));
     }
 
+    function normalize(value) {
+      return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function formatBookingDate(date, fallback) {
+      if (!date) return fallback || 'Sin fecha';
+      const parsed = new Date(date + 'T00:00:00');
+      return Number.isNaN(parsed.getTime()) ? (fallback || 'Sin fecha') : dateFormat.format(parsed).replace('.', '');
+    }
+
+    function serviceParts(service) {
+      const text = String(service || '').trim();
+      const modality = (text.match(/\(([^)]+)\)/) || [])[1] || '';
+      const clean = text.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+      const parts = clean.split(/\s+\+\s+/).filter(Boolean);
+      return { title: parts[0] || text || 'Sin servicio', detail: parts.slice(1).join(' + '), modality };
+    }
+
+    function serviceTitle(service) {
+      return serviceParts(service).title;
+    }
+
+    function serviceMeta(service) {
+      const parts = serviceParts(service);
+      return [parts.detail, parts.modality].filter(Boolean).join(' · ') || 'Servicio agendado';
+    }
+
     refresh.addEventListener('click', loadPending);
+    search.addEventListener('input', renderPendingList);
+    filterButtons.forEach(button => button.addEventListener('click', () => {
+      pendingFilter = button.dataset.pendingFilter;
+      filterButtons.forEach(item => item.classList.toggle('active', item === button));
+      renderPendingList();
+    }));
     document.querySelector('#pending-cancel-close').addEventListener('click', () => dialog.close());
     form.addEventListener('submit', event => {
       event.preventDefault();
