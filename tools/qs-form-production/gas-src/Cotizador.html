@@ -398,6 +398,28 @@ function addService(){
   state.services.push({type:draft.service.type||$('type').value,name:draft.service.name,quantity:draft.qty,originalServicePrice:draft.original,servicePrice:draft.charged,discount:draft.discount,promo:draft.promoEnabled,discountMode:draft.discountMode,customPromoPrice:$('customPromoPrice').value});
   $('service').value='';$('quantity').value=1;$('quantity').disabled=true;$('promoEnabled').checked=false;$('promoFields').classList.add('hidden');$('discountMode').value='';$('discountMode').required=false;$('customPromoPrice').value='';$('customPromoPrice').required=false;$('customPromoWrap').classList.add('hidden');setLoading('serviceLoading',false);state.depositTouched=false;calculate();updateConditional();updateProgress();
 }
+function resetFormAfterSchedule(){
+  state.services=[];
+  state.depositTouched=false;
+  state.previousServiceAddress='';
+  $('type').value='';
+  $('service').innerHTML='<option value="">Seleccionar servicio</option>';
+  $('service').disabled=true;
+  $('quantity').value=1;$('quantity').disabled=true;
+  $('promoEnabled').checked=false;$('promoFields').classList.add('hidden');
+  $('discountMode').value='';$('discountMode').required=false;
+  $('customPromoPrice').value='';$('customPromoPrice').required=false;$('customPromoWrap').classList.add('hidden');
+  $('includeTravel').checked=false;$('commune').value='';$('commune').disabled=true;setLoading('travelLoading',false);
+  ['clientName','phone','address','serviceDate','serviceTime','workshopSessionId','endTime','attendees','staffCount','extraHours','proofDate','proofTime','proofNewAddress','notes','depositDueDate'].forEach(id=>$(id).value='');
+  $('staff').value='';
+  $('serviceAtStudio').checked=false;$('serviceAtStudio').disabled=true;
+  $('requiresProof').checked=false;$('proofPlace').value='';$('proofAddressMode').value='';
+  $('withoutDeposit').checked=false;$('dueWrap').classList.add('hidden');$('deposit').disabled=false;
+  $('depositDate').value=localDateInputValue(new Date());
+  setMoneyInput('deposit',0);
+  setLoading('serviceLoading',false);
+  calculate();updateConditional();updateProgress();
+}
 function payload(){
   const types=selectedServiceTypes();
   return {action:'schedule',type:types.length>1?'Mixto':(types[0]||'Servicio regular'),service:state.services.map(item=>item.name).join(' + '),services:state.services,quantity:1,staff:$('staff').value,
@@ -415,7 +437,7 @@ function schedule(){
   const form=$('quoteForm');if(!form.reportValidity()) return;
   if($('withoutDeposit').checked&&!$('depositDueDate').value){showError('Indica la fecha de cobro del abono.');$('depositDueDate').focus();return;}
   $('schedule').disabled=true;$('status').className='status';$('status').textContent='Registrando en Agenda 2026…';
-  google.script.run.withSuccessHandler(r=>{$('status').className='status success';$('status').textContent='Reserva agendada en '+r.sheet+', fila '+r.row+'.';$('schedule').disabled=false;})
+  google.script.run.withSuccessHandler(r=>{const message='Reserva agendada en '+r.sheet+', fila '+r.row+'.';resetFormAfterSchedule();$('status').className='status success';$('status').textContent=message;$('schedule').disabled=false;if(window.qsRefreshPendingBookings)window.qsRefreshPendingBookings();})
     .withFailureHandler(e=>{showError(e);$('schedule').disabled=false;}).qsGuardarReservaWeb(payload());
 }
 function showError(e){$('status').className='status error';$('status').textContent=e&&e.message?e.message:String(e);}
@@ -644,6 +666,7 @@ $('addService').addEventListener('click',addService);$('recalculate').addEventLi
     }
 
     refresh.addEventListener('click', loadPending);
+    window.qsRefreshPendingBookings = loadPending;
     search.addEventListener('input', renderPendingList);
     filterButtons.forEach(button => button.addEventListener('click', () => {
       pendingFilter = button.dataset.pendingFilter;

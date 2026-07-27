@@ -115,6 +115,9 @@ duplicados. `inviteAssignedStaff` debe permanecer habilitado en `Codigo.gs`.
   en GAS. El abono del paso Reserva se muestra en CLP, la fecha del abono se inicializa
   con la fecha actual y `vic.martinez777@gmail.com` queda como invitado Calendar
   obligatorio por defecto.
+- Version 29 (2026-07-27): despues de agendar correctamente, el formulario vuelve a
+  su estado inicial, conserva el mensaje de confirmacion y recarga la agenda operativa
+  para mostrar el nuevo servicio agendado.
 
 Antes de desplegar, el contenido completo de `Codigo.gs` y `Cotizador.html` debe
 versionarse en este directorio. No se debe publicar una implementacion nueva si el
