@@ -477,8 +477,8 @@ $('addService').addEventListener('click',addService);$('recalculate').addEventLi
             <div class="pending-booking__meta">${escapeHtml(booking.customer || 'Sin clienta')} · ${escapeHtml(booking.staff || 'Sin encargada')}</div>
           </div>
           <div>
-            <div class="pending-booking__amount">${money.format(booking.total || 0)}</div>
-            <div class="pending-booking__meta">Saldo ${money.format(booking.balance || 0)}</div>
+            <div class="pending-booking__amount">Abono ${money.format(booking.deposit || 0)}</div>
+            <div class="pending-booking__meta">Total ${money.format(booking.total || 0)} · Saldo ${money.format(booking.balance || 0)}</div>
           </div>
           <button type="button" class="pending-booking__cancel" data-token="${escapeHtml(booking.token)}">Cancelar</button>
         </article>`).join('');

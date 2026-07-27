@@ -19,7 +19,7 @@ const QS_PENDING_CONFIG = Object.freeze({
 });
 
 function qsListPendingBookings() {
-  const cached = qsPendingCacheGet_('pending_bookings_v2');
+  const cached = qsPendingCacheGet_('pending_bookings_v3');
   if (cached) return cached;
 
   const agenda = SpreadsheetApp.openById(QS_PENDING_CONFIG.agendaSpreadsheetId);
@@ -75,6 +75,7 @@ function qsListPendingBookings() {
         customer: qsPendingText_(qsPendingValue_(row, columns, 'clienta')),
         staff: qsPendingText_(qsPendingValue_(row, columns, 'encargada')),
         status: serviceState || eventState || 'Pendiente',
+        deposit: qsPendingNumber_(qsPendingValue_(row, columns, 'abono')),
         total: qsPendingNumber_(qsPendingValue_(row, columns, 'total servicio')),
         balance: qsPendingNumber_(qsPendingValue_(row, columns, 'total por pagar')),
         isFuture: Boolean(isFuture)
@@ -94,7 +95,7 @@ function qsListPendingBookings() {
     truncated: rows.length > QS_PENDING_CONFIG.maxResults,
     bookings: rows.slice(0, QS_PENDING_CONFIG.maxResults)
   };
-  qsPendingCachePut_('pending_bookings_v2', result, 60);
+  qsPendingCachePut_('pending_bookings_v3', result, 60);
   return result;
 }
 
@@ -223,6 +224,7 @@ function qsPendingCachePut_(key, value, seconds) {
 }
 
 function qsPendingClearCache_() {
+  CacheService.getScriptCache().remove('pending_bookings_v3');
   CacheService.getScriptCache().remove('pending_bookings_v2');
 }
 

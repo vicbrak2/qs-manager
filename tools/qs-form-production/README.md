@@ -80,6 +80,10 @@ duplicados. `inviteAssignedStaff` debe permanecer habilitado en `Codigo.gs`.
 - Version 19 (2026-07-27): el checkbox `Agregar traslado a la reserva` vuelve a
   ser el unico control que habilita/deshabilita la comuna y el calculo de traslado.
   Para consultar un traslado preliminar, la usuaria debe marcarlo explicitamente.
+- Version 20 (2026-07-27): la lista de agendamientos pendientes destaca el `Abono`
+  real de la reserva y deja `Total` y `Saldo` como detalle secundario. La cache de
+  pendientes cambia a `pending_bookings_v3` para evitar respuestas con el esquema
+  anterior.
 
 Antes de desplegar, el contenido completo de `Codigo.gs` y `Cotizador.html` debe
 versionarse en este directorio. No se debe publicar una implementacion nueva si el
