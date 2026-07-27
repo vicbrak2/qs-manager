@@ -27,6 +27,10 @@ final class ServicesCatalogImporter
      */
     public function import(int $runId, string $sheetName, array $rows): int
     {
+        // Deactivate all services from this sheet to handle deleted rows/shifts
+        $this->connection->prepare('update qs_services set active = false where source_sheet = :sheet_name')
+            ->execute(['sheet_name' => $sheetName]);
+
         [$headerIndex, $headers] = $this->mapper->findHeader($rows, ['servicio', 'precio venta']);
         $imported = 0;
 
