@@ -84,6 +84,11 @@ duplicados. `inviteAssignedStaff` debe permanecer habilitado en `Codigo.gs`.
   real de la reserva y deja `Total` y `Saldo` como detalle secundario. La cache de
   pendientes cambia a `pending_bookings_v3` para evitar respuestas con el esquema
   anterior.
+- Version 21 (2026-07-27): mejora UX del armado multi-servicio separando el
+  servicio en preparacion del listado que realmente se guardara en Agenda. El boton
+  de agregado ahora cambia su texto y ayuda segun el estado del servicio, con layout
+  mobile en una sola columna. Se retira la barra flotante mobile de cotizacion para
+  que no tape campos ni acciones durante el flujo.
 
 Antes de desplegar, el contenido completo de `Codigo.gs` y `Cotizador.html` debe
 versionarse en este directorio. No se debe publicar una implementacion nueva si el
