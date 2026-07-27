@@ -162,6 +162,60 @@ function receiptStatusText(booking = null) {
   return 'Opcional. La imagen se comprime antes de guardar.';
 }
 
+function bookingCostBreakdownHtml(booking) {
+  const costs = booking.operational_costs;
+  if (!costs) {
+    return '';
+  }
+
+  const professionals = Array.isArray(costs.professional_payments)
+    ? costs.professional_payments
+    : [];
+  const professionalLines = professionals.length
+    ? professionals.map((item) => `
+        <span class="booking-cost-chip">
+          <span>${escapeHtml(item.name || 'Profesional')}</span>
+          <strong>${money(item.amount || 0)}</strong>
+        </span>
+      `).join('')
+    : '<span class="booking-cost-muted">Sin profesionales asociados.</span>';
+  const sourceLabel = costs.source === 'finanzas'
+    ? 'calculado en Finanzas'
+    : costs.source === 'bitacora'
+      ? 'calculado desde Bitácora'
+      : 'estimado desde la reserva';
+
+  return `
+    <tr class="booking-cost-row">
+      <td colspan="15">
+        <div class="booking-cost-breakdown">
+          <div class="booking-cost-section booking-cost-section--wide">
+            <span class="booking-cost-label">Pago a profesionales</span>
+            <div class="booking-cost-chips">${professionalLines}</div>
+          </div>
+          <div class="booking-cost-section">
+            <span class="booking-cost-label">Traslado</span>
+            <strong>${money(costs.transfer_amount || 0)}</strong>
+          </div>
+          <div class="booking-cost-section">
+            <span class="booking-cost-label">Caja disponible hoy</span>
+            <strong>${money(costs.cash_amount || 0)}</strong>
+          </div>
+          <div class="booking-cost-section">
+            <span class="booking-cost-label">Caja final esperada</span>
+            <strong>${money(costs.final_cash_amount || 0)}</strong>
+          </div>
+          <div class="booking-cost-section">
+            <span class="booking-cost-label">Recibido</span>
+            <strong>${money(costs.received_amount || 0)}</strong>
+          </div>
+          <div class="booking-cost-note">${escapeHtml(sourceLabel)}</div>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
 function readImage(file) {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -324,6 +378,7 @@ export function renderBookings() {
           </div>
         </td>
       </tr>
+      ${bookingCostBreakdownHtml(booking)}
     `;
   }).join('');
 }

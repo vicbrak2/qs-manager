@@ -21,6 +21,7 @@ use QSManager\Infrastructure\Gas\HttpGasServiceCatalogGateway;
 use QSManager\Domain\Bitacora\BitacoraPolicy;
 use QSManager\Domain\Team\AvailabilityChecker;
 use QSManager\Infrastructure\Persistence\Postgres\PostgresBitacoraRepository;
+use QSManager\Infrastructure\Persistence\Postgres\PostgresBookingOperationalCostReadRepository;
 use QSManager\Infrastructure\Persistence\Postgres\PostgresBookingRepository;
 use QSManager\Infrastructure\Persistence\Postgres\PostgresServiceRepository;
 use QSManager\Infrastructure\Persistence\Postgres\PostgresStaffRepository;
@@ -108,6 +109,7 @@ final class AppFactory
             new BookingRequestValidator($serviceRepository, $staffRepository),
             new SyncBookingToGas($bookingRepository, $gasGateway),
             $bookingRepository,
+            new PostgresBookingOperationalCostReadRepository($connection),
         ))->register($app);
 
         return $app;

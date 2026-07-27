@@ -13,6 +13,7 @@ use QSManager\Application\Booking\ListBookings;
 use QSManager\Application\Booking\SyncBookingToGas;
 use QSManager\Domain\Booking\BookingConflictException;
 use QSManager\Domain\Booking\BookingRepository;
+use QSManager\Infrastructure\Persistence\Postgres\PostgresBookingOperationalCostReadRepository;
 use QSManager\Interfaces\Http\Validation\BookingRequestValidator;
 use QSManager\Interfaces\Http\Validation\ValidationException;
 use Slim\App;
@@ -25,6 +26,7 @@ final class BookingController
         private readonly BookingRequestValidator $validator,
         private readonly SyncBookingToGas $syncBookingToGas,
         private readonly BookingRepository $bookings,
+        private readonly ?PostgresBookingOperationalCostReadRepository $operationalCosts = null,
     ) {
     }
 
@@ -44,6 +46,16 @@ final class BookingController
             static fn ($booking): array => $booking->toArray(),
             $this->listBookings->execute()
         );
+        if ($this->operationalCosts !== null) {
+            $costs = $this->operationalCosts->forBookings($bookings);
+            $bookings = array_map(
+                static fn (array $booking): array => [
+                    ...$booking,
+                    'operational_costs' => $costs[(int) $booking['id']] ?? null,
+                ],
+                $bookings
+            );
+        }
 
         return $this->json($response, ['bookings' => $bookings]);
     }

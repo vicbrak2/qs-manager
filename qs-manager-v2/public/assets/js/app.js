@@ -206,7 +206,7 @@ document.addEventListener('click', async (event) => {
       if (result.sync?.success) {
         notify('Servicio terminado. Sincronizando Sheets para actualizar Finanzas.');
         await syncAll();
-        await loadFinanceDashboard();
+        await Promise.all([loadBookings(), loadFinanceDashboard()]);
       } else {
         notify(result.warning || 'Servicio terminado localmente, pero no se pudo actualizar Sheets.', true);
       }
@@ -384,7 +384,7 @@ $('#complete-booking-service').addEventListener('click', async () => {
     if (result.sync?.success) {
       notify('Servicio terminado. Sincronizando Sheets para actualizar Finanzas.');
       await syncAll();
-      await loadFinanceDashboard();
+      await Promise.all([loadBookings(), loadFinanceDashboard()]);
     } else {
       notify(result.warning || 'Servicio terminado localmente, pero no se pudo actualizar Sheets.', true);
     }
