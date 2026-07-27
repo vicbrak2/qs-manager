@@ -92,8 +92,8 @@ header span{color:#66566b}
       <div class="wide"><div id="serviceItems" class="service-list" aria-live="polite"></div></div>
     </div></fieldset>
     <fieldset id="sectionTravel"><legend>🚗 2. Traslado</legend><div class="grid">
-      <div class="field wide"><label class="check"><input id="includeTravel" type="checkbox"><span>Agregar traslado a la reserva<small>La comuna puede consultarse libremente aunque todavía no agregues el traslado.</small></span></label></div>
-      <div class="field"><label>Comuna o destino <span id="travelLoading" class="field-loader hidden">🚕 consultando…</span></label><select id="commune"><option value="">Seleccionar destino</option></select></div>
+      <div class="field wide"><label class="check"><input id="includeTravel" type="checkbox"><span>Agregar traslado a la reserva<small>Marca esta opción para consultar y sumar la tarifa de traslado.</small></span></label></div>
+      <div class="field"><label>Comuna o destino <span id="travelLoading" class="field-loader hidden">🚕 consultando…</span></label><select id="commune" disabled><option value="">Seleccionar destino</option></select></div>
       <div class="field"><label>Traslado calculado (tarifa final vigente)</label><input id="travelPrice" readonly tabindex="-1" aria-live="polite" value="0"></div>
     </div></fieldset>
     <fieldset id="sectionClient" class="locked" disabled><legend>📍 3. Cliente y ubicación</legend><div class="grid">
@@ -239,7 +239,7 @@ function calculate(){
   const effective=state.quote.draftOriginal>0?Math.round(state.quote.draftDiscount/state.quote.draftOriginal*1000)/10:0;
   $('promoSummary').classList.toggle('active',draft.promoEnabled&&state.quote.draftDiscount>0);
   $('promoSummary').textContent=!draft.promoEnabled?'':(!draft.discountMode?'Selecciona un descuento para calcular la promoción.':(state.quote.draftDiscount>0?'Precio original '+money.format(state.quote.draftOriginal)+' · Cobro '+money.format(state.quote.draftServicePrice)+' · Ahorro '+money.format(state.quote.draftDiscount)+' ('+effective+'%)':'El valor promocional debe ser menor al precio original.'));
-  $('travelLabel').textContent=$('includeTravel').checked?'Traslado incluido':'Traslado solo consultado';
+  $('travelLabel').textContent=$('includeTravel').checked?'Traslado incluido':'Sin traslado';
   $('travelAmount').textContent=money.format(state.quote.travelPrice);
   $('travelDiscountLine').classList.toggle('hidden',state.quote.travelDiscount<=0);
   $('travelDiscountAmount').textContent='− '+money.format(state.quote.travelDiscount);
@@ -269,7 +269,8 @@ function updateProgress(){
   const hasServices=state.services.length>0;
   const promoValid=!$('promoEnabled').checked||(Boolean($('discountMode').value)&&state.quote.draftServicePrice>0&&state.quote.draftDiscount>0);
   $('addService').disabled=!$('service').value||!state.quote.draftServicePrice||!promoValid;
-  $('commune').disabled=false;
+  $('commune').disabled=!$('includeTravel').checked;
+  if(!$('includeTravel').checked){$('commune').value='';setLoading('travelLoading',false);}
   const quoteReady=hasServices&&(!$('includeTravel').checked||Boolean($('commune').value));
   setSection('sectionClient',quoteReady);
   const clientReady=quoteReady&&$('clientName').value.trim()&&$('phone').value.trim()&&$('staff').value&&$('address').value.trim();
@@ -350,7 +351,7 @@ $('service').addEventListener('change',()=>{if($('discountMode').value==='custom
 $('promoEnabled').addEventListener('change',()=>{const enabled=$('promoEnabled').checked;$('promoFields').classList.toggle('hidden',!enabled);$('discountMode').required=enabled;if(!enabled){$('discountMode').value='';$('customPromoPrice').value='';$('customPromoPrice').required=false;$('customPromoWrap').classList.add('hidden');}state.depositTouched=false;calculate();updateProgress();});
 $('discountMode').addEventListener('change',()=>{const custom=$('discountMode').value==='custom';$('customPromoWrap').classList.toggle('hidden',!custom);$('customPromoPrice').required=custom;if(custom)$('customPromoPrice').value='';state.depositTouched=false;calculate();updateProgress();});
 $('customPromoPrice').addEventListener('input',()=>{state.depositTouched=false;calculate();updateProgress();});
-$('includeTravel').addEventListener('change',()=>{state.depositTouched=false;calculate();updateProgress();});
+$('includeTravel').addEventListener('change',()=>{$('commune').disabled=!$('includeTravel').checked;if(!$('includeTravel').checked)$('commune').value='';state.depositTouched=false;calculate();updateProgress();});
 $('commune').addEventListener('change',refreshTravel);
 $('quantity').addEventListener('input',()=>{state.depositTouched=false;calculate();updateProgress();});
 $('deposit').addEventListener('input',()=>{state.depositTouched=true;calculate();});

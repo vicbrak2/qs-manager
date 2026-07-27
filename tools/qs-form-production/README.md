@@ -77,6 +77,9 @@ duplicados. `inviteAssignedStaff` debe permanecer habilitado en `Codigo.gs`.
   cuando la reserva incluye mas de un servicio. El guardado valida cada servicio
   contra `Seguimiento Contable > Servicios`, suma los valores en una sola fila de
   Agenda y deja el desglose en observaciones.
+- Version 19 (2026-07-27): el checkbox `Agregar traslado a la reserva` vuelve a
+  ser el unico control que habilita/deshabilita la comuna y el calculo de traslado.
+  Para consultar un traslado preliminar, la usuaria debe marcarlo explicitamente.
 
 Antes de desplegar, el contenido completo de `Codigo.gs` y `Cotizador.html` debe
 versionarse en este directorio. No se debe publicar una implementacion nueva si el
