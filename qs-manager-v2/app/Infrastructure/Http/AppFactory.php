@@ -11,6 +11,7 @@ use QSManager\Application\Booking\SyncBookingToGas;
 use QSManager\Application\ServicesCatalog\CreateService;
 use QSManager\Application\ServicesCatalog\ListServices;
 use QSManager\Application\Team\CheckStaffAvailability;
+use QSManager\Application\Team\DeleteStaffMember;
 use QSManager\Application\Team\SaveStaffMember;
 use QSManager\Application\Team\ListStaffMembers;
 use QSManager\Infrastructure\Database\ConnectionFactory;
@@ -88,6 +89,7 @@ final class AppFactory
             new ListStaffMembers($staffRepository),
             $staffRepository,
             new CheckStaffAvailability($bookingRepository, new AvailabilityChecker()),
+            new DeleteStaffMember($staffRepository),
         ))->register($app);
         (new SheetSyncController(
             $syncQueue,

@@ -69,7 +69,12 @@ export function staffPayload() {
 
 export async function deleteStaff() {
   const id = $('#staff-form [name=id]').value;
-  if (!id || !confirm('¿Borrar esta profesional? Si tiene servicios asociados, mejor desactivala.')) return;
+  const nombre = $('#staff-form [name=display_name]').value.trim();
+  if (!id || !confirm(
+    `¿Borrar a ${nombre || 'esta profesional'}?\n\n`
+    + 'Sus servicios ya realizados se conservan, pero quedan sin profesional asignada. '
+    + 'Si tiene servicios pendientes, el sistema no te dejará borrarla hasta que los reasignes.'
+  )) return;
   try {
     await api(`/api/v1/team/${id}`, { method: 'DELETE' });
     notify('Profesional borrada.');

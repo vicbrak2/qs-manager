@@ -75,6 +75,61 @@ final class TeamRoutesTest extends HttpTestCase
         self::assertArrayHasKey('role', $this->payload($res)['errors']);
     }
 
+    public function testDeleteIsBlockedOnlyByPendingServices(): void
+    {
+        $crear = fn (string $nombre): int => $this->payload($this->json('POST', '/api/v1/team', [
+            'display_name' => $nombre,
+            'role' => 'staff',
+        ]))['staff_member']['id'];
+
+        $reservar = function (int $staffId, string $cuando, string $estado = 'confirmed'): void {
+            $response = $this->json('POST', '/api/v1/bookings', [
+                'staff_id' => $staffId,
+                'customer_name' => 'Clienta',
+                'scheduled_for' => $cuando,
+                'status' => $estado,
+            ]);
+            self::assertSame(201, $response->getStatusCode());
+        };
+
+        $futuro = (new \DateTimeImmutable('+20 days'))->format(\DateTimeImmutable::ATOM);
+        $pasado = (new \DateTimeImmutable('-60 days'))->format(\DateTimeImmutable::ATOM);
+
+        // 1. Servicio futuro sin cerrar -> no se puede borrar, con el detalle.
+        $conPendiente = $crear('Con Pendiente');
+        $reservar($conPendiente, $futuro);
+        $bloqueada = $this->json('DELETE', '/api/v1/team/' . $conPendiente);
+        self::assertSame(409, $bloqueada->getStatusCode());
+        $cuerpo = $this->payload($bloqueada);
+        self::assertStringContainsString('servicio pendiente', $cuerpo['error']);
+        self::assertCount(1, $cuerpo['pending_services']);
+
+        // 2. Solo servicios pasados -> se borra, y el historial queda sin
+        //    profesional en vez de impedir la baja.
+        $soloPasado = $crear('Solo Pasado');
+        $reservar($soloPasado, $pasado);
+        self::assertSame(200, $this->json('DELETE', '/api/v1/team/' . $soloPasado)->getStatusCode());
+
+        $historicas = array_filter(
+            $this->payload($this->json('GET', '/api/v1/bookings'))['bookings'],
+            static fn (array $b): bool => $b['scheduled_for'] !== null && $b['scheduled_for'] < date('c')
+        );
+        self::assertNotEmpty($historicas);
+        foreach ($historicas as $booking) {
+            self::assertNotSame($soloPasado, $booking['staff_id']);
+        }
+
+        // 3. Un servicio futuro cancelado no retiene a nadie.
+        $conCancelado = $crear('Con Cancelado');
+        $reservar($conCancelado, $futuro, 'cancelled');
+        self::assertSame(200, $this->json('DELETE', '/api/v1/team/' . $conCancelado)->getStatusCode());
+
+        // 4. Sin servicios -> se borra; borrarla de nuevo da 404.
+        $sinServicios = $crear('Sin Servicios');
+        self::assertSame(200, $this->json('DELETE', '/api/v1/team/' . $sinServicios)->getStatusCode());
+        self::assertSame(404, $this->json('DELETE', '/api/v1/team/' . $sinServicios)->getStatusCode());
+    }
+
     public function testStaffAvailabilityReflectsActiveBookings(): void
     {
         $staffId = $this->payload($this->json('POST', '/api/v1/team', [

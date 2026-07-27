@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use QSManager\Application\Team\CheckStaffAvailability;
+use QSManager\Application\Team\DeleteStaffMember;
 use QSManager\Application\Team\ListStaffMembers;
 use QSManager\Application\Team\SaveStaffMember;
 use QSManager\Domain\Team\StaffRepository;
@@ -22,6 +23,7 @@ final class TeamController
         private readonly ListStaffMembers $listStaffMembers,
         private readonly StaffRepository $staff,
         private readonly CheckStaffAvailability $availability,
+        private readonly DeleteStaffMember $deleteStaffMember,
         private readonly TeamRequestValidator $validator = new TeamRequestValidator(),
     ) {
     }
@@ -69,18 +71,17 @@ final class TeamController
             return $this->json($response, ['error' => 'Staff id must be a positive integer.'], 422);
         }
 
-        try {
-            if (!$this->staff->delete($id)) {
-                return $this->json($response, ['error' => 'Staff member not found.'], 404);
-            }
-        } catch (\PDOException $exception) {
-            // Tiene reservas o bitacoras asociadas: se desactiva, no se borra.
-            if ($exception->getCode() === '23503') {
-                return $this->json($response, [
-                    'error' => 'Esta profesional tiene servicios asociados. Desactívala en vez de borrarla.',
-                ], 409);
-            }
-            throw $exception;
+        $result = $this->deleteStaffMember->execute($id);
+
+        if (!$result['found']) {
+            return $this->json($response, ['error' => 'Staff member not found.'], 404);
+        }
+
+        if ($result['pending'] !== []) {
+            return $this->json($response, [
+                'error' => DeleteStaffMember::pendingMessage($result['pending']),
+                'pending_services' => $result['pending'],
+            ], 409);
         }
 
         return $this->json($response, ['deleted' => true]);

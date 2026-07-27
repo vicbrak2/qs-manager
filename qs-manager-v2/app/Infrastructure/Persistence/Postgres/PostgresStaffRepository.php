@@ -75,6 +75,30 @@ final class PostgresStaffRepository implements StaffRepository
         return $statement->rowCount() > 0;
     }
 
+    public function pendingServices(int $staffId): array
+    {
+        $statement = $this->connection->prepare(
+            "select b.scheduled_for, b.customer_name
+             from qs_bookings b
+             where (b.staff_id = :id or b.estilista_id = :id)
+               and b.scheduled_for is not null
+               and b.scheduled_for >= now()
+               and b.status not in ('cancelled', 'completed')
+             order by b.scheduled_for asc"
+        );
+        $statement->execute(['id' => $staffId]);
+
+        $pending = [];
+        foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $pending[] = [
+                'scheduled_for' => (string) $row['scheduled_for'],
+                'customer_name' => $row['customer_name'] === null ? null : (string) $row['customer_name'],
+            ];
+        }
+
+        return $pending;
+    }
+
     public function exists(int $id): bool
     {
         $statement = $this->connection->prepare('select exists(select 1 from qs_staff where id = :id)');
