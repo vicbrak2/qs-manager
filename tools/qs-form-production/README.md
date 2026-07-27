@@ -97,6 +97,9 @@ duplicados. `inviteAssignedStaff` debe permanecer habilitado en `Codigo.gs`.
   y ubicacion. Al marcarlo, el formulario usa `Estudio QS` como lugar del servicio y
   bloquea el campo de direccion; al desmarcarlo restaura la direccion previa si
   existia.
+- Version 24 (2026-07-27): actualiza regla de descuento de traslado multi-servicio:
+  20% cuando hay 2 servicios y 40% cuando hay mas de 2. El detalle de cotizacion y
+  las observaciones de Agenda indican el motivo del descuento aplicado.
 
 Antes de desplegar, el contenido completo de `Codigo.gs` y `Cotizador.html` debe
 versionarse en este directorio. No se debe publicar una implementacion nueva si el

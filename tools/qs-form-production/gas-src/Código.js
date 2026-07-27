@@ -1016,6 +1016,18 @@ function qsGetTravelQuote(commune) {
   return quote;
 }
 
+function qsTravelDiscountRate_(serviceCount) {
+  if (serviceCount > 2) return 0.4;
+  if (serviceCount === 2) return 0.2;
+  return 0;
+}
+
+function qsTravelDiscountReason_(serviceCount) {
+  if (serviceCount > 2) return '40% por más de 2 servicios';
+  if (serviceCount === 2) return '20% por servicio extra';
+  return 'sin descuento';
+}
+
 function qsCacheGetJson_(key) {
   const raw = CacheService.getScriptCache().get(key);
   if (!raw) return null;
@@ -1151,7 +1163,8 @@ function qsGuardarReservaWeb(payload) {
 
   const includeTravel = data.includeTravel === true || String(data.includeTravel || '').toLowerCase() === 'true';
   const liveTravelBase = includeTravel ? qsGetTravelQuote(data.commune).price : 0;
-  const expectedTravelDiscount = includeTravel && services.length > 1 ? Math.round(liveTravelBase * 0.5) : 0;
+  const expectedTravelDiscountRate = qsTravelDiscountRate_(services.length);
+  const expectedTravelDiscount = includeTravel && expectedTravelDiscountRate > 0 ? Math.round(liveTravelBase * expectedTravelDiscountRate) : 0;
   const expectedTravel = includeTravel ? Math.max(0, liveTravelBase - expectedTravelDiscount) : 0;
   if (qsParseMoney_(data.travelBase) && qsParseMoney_(data.travelBase) !== liveTravelBase) {
     throw new Error('La tarifa de traslado cambió. Actualiza la cotización antes de agendar.');
@@ -1169,7 +1182,7 @@ function qsGuardarReservaWeb(payload) {
     (item.discount > 0 ? ' (desc. $' + item.discount + ')' : '')
   ).join(' / ');
   const travelNote = includeTravel
-    ? 'Traslado: base $' + liveTravelBase + (expectedTravelDiscount > 0 ? ', descuento multi-servicio $' + expectedTravelDiscount + ', cobro $' + expectedTravel : ', cobro $' + expectedTravel)
+    ? 'Traslado: base $' + liveTravelBase + (expectedTravelDiscount > 0 ? ', descuento ' + qsTravelDiscountReason_(services.length) + ' $' + expectedTravelDiscount + ', cobro $' + expectedTravel : ', cobro $' + expectedTravel)
     : 'Traslado no incluido';
   const promoNote = serviceDiscountTotal > 0
     ? 'Descuento servicios total: $' + serviceDiscountTotal

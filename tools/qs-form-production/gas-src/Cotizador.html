@@ -145,7 +145,7 @@ header span{color:#66566b}
     <div class="line"><span>Servicios agregados</span><strong id="serviceAmount">$0</strong></div>
     <div id="quoteServiceDetail" class="service-detail hidden"></div>
     <div class="line"><span id="travelLabel">Sin traslado</span><strong id="travelAmount">$0</strong></div>
-    <div id="travelDiscountLine" class="line travel-discount hidden"><span>Descuento traslado multi-servicio</span><strong id="travelDiscountAmount">$0</strong></div>
+    <div id="travelDiscountLine" class="line travel-discount hidden"><span id="travelDiscountLabel">Descuento traslado multi-servicio</span><strong id="travelDiscountAmount">$0</strong></div>
     <div id="promoSavingsLine" class="line promo-saving hidden"><span>Ahorro promoción</span><strong id="promoSavingsAmount">$0</strong></div><div class="line total"><span>Total</span><strong id="totalAmount">$0</strong></div>
     <div class="reserve"><div>Reserva sugerida (50%)</div><strong id="reserveAmount">$0</strong></div>
     <div class="line"><span>Abono ingresado</span><strong id="depositAmount">$0</strong></div>
@@ -223,6 +223,16 @@ function updateStudioAddress(){
     if($('address').value===STUDIO_ADDRESS)$('address').value=state.previousServiceAddress||'';
   }
 }
+function travelDiscountRate(serviceCount){
+  if(serviceCount>2)return 0.4;
+  if(serviceCount===2)return 0.2;
+  return 0;
+}
+function travelDiscountReason(serviceCount){
+  if(serviceCount>2)return '40% por más de 2 servicios';
+  if(serviceCount===2)return '20% por servicio extra';
+  return '';
+}
 function draftServiceQuote(){
   const service=state.catalog.services.find(s=>s.name===$('service').value);
   const qty=Math.max(1,Number($('quantity').value)||1);
@@ -248,7 +258,8 @@ function calculate(){
   const commune=state.catalog&&$('commune').value?state.catalog.communes.find(c=>c.name===$('commune').value):null;
   state.quote.travelBase=commune?commune.price:0;
   const hasTravel=$('includeTravel').checked&&state.quote.travelBase>0;
-  state.quote.travelDiscount=hasTravel&&state.services.length>1?Math.round(state.quote.travelBase*0.5):0;
+  const travelRate=travelDiscountRate(state.services.length);
+  state.quote.travelDiscount=hasTravel&&travelRate>0?Math.round(state.quote.travelBase*travelRate):0;
   state.quote.travelPrice=hasTravel?Math.max(0,state.quote.travelBase-state.quote.travelDiscount):0;
   state.quote.total=state.quote.servicePrice+state.quote.travelPrice;
   state.quote.reserve=Math.ceil(state.quote.total/2);
@@ -271,6 +282,7 @@ function calculate(){
   $('travelLabel').textContent=$('includeTravel').checked?'Traslado incluido':'Sin traslado';
   $('travelAmount').textContent=money.format(state.quote.travelPrice);
   $('travelDiscountLine').classList.toggle('hidden',state.quote.travelDiscount<=0);
+  $('travelDiscountLabel').textContent='Descuento traslado '+travelDiscountReason(state.services.length);
   $('travelDiscountAmount').textContent='− '+money.format(state.quote.travelDiscount);
   $('totalAmount').textContent=money.format(state.quote.total);
   $('reserveAmount').textContent=money.format(state.quote.reserve);
