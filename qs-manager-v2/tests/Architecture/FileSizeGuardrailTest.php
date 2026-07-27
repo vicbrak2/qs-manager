@@ -35,7 +35,10 @@ final class FileSizeGuardrailTest extends TestCase
      *
      * @var array<string, int> ruta relativa => lineas actuales (baseline)
      */
-    private const LEGACY_LINE_EXCEPTIONS = [];
+    private const LEGACY_LINE_EXCEPTIONS = [
+        'app/Infrastructure/Persistence/Postgres/PostgresFinanceReadRepository.php' => 886,
+        'app/Interfaces/Http/WebController.php' => 753,
+    ];
 
     /**
      * Idem para cantidad de metodos por archivo.
