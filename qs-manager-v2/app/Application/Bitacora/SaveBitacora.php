@@ -121,6 +121,7 @@ final class SaveBitacora
             [],
             $now,
             $now,
+            $data['professional_ids'],
         );
 
         $errors = $this->policy->validate($bitacora);

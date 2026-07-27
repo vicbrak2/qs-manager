@@ -24,7 +24,7 @@ export function renderBitacoras() {
   const rows = state.bitacoras;
   $('#bitacoras-empty').style.display = rows.length ? 'none' : 'block';
   $('#bitacoras-body').innerHTML = rows.map((bitacora) => {
-    const team = [staffName(bitacora.mua_id), staffName(bitacora.estilista_id)].filter(Boolean).join(' + ');
+    const team = professionalIds(bitacora).map(staffName).filter(Boolean).join(' + ');
     const route = bitacora.route_plan || {};
     const travelWarn = route.recommended_minimum_met === false;
     return `
@@ -45,12 +45,14 @@ export function renderBitacoras() {
 }
 
 export function fillBitacoraStaffSelects() {
-  const options = '<option value="">Sin asignar</option>' + state.staff
-    .filter((person) => person.active)
-    .map((person) => `<option value="${person.id}">${escapeHtml(person.display_name)}</option>`)
-    .join('');
-  $('#bitacora-mua-select').innerHTML = options;
-  $('#bitacora-estilista-select').innerHTML = options;
+  document.querySelectorAll('.bitacora-professional-select').forEach((select) => {
+    const value = select.value;
+    select.innerHTML = staffIdOptions(value);
+    select.value = value;
+  });
+  if ($('#bitacora-professionals-list') && !document.querySelector('[data-bitacora-professional]')) {
+    addBitacoraProfessional();
+  }
 }
 
 export function resetBitacoraForm() {
@@ -64,6 +66,7 @@ export function resetBitacoraForm() {
   $('#bitacora-notes-panel').classList.add('hidden');
   $('#bitacora-notes-list').innerHTML = '';
   $('#tramos-list').innerHTML = '';
+  renderBitacoraProfessionals([]);
   const plan = $('#bitacora-plan');
   plan.classList.add('hidden');
   plan.innerHTML = '';
@@ -105,8 +108,7 @@ export function editBitacora(id) {
   fields.fecha_servicio.value = bitacora.fecha_servicio;
   fields.tipo_servicio.value = bitacora.tipo_servicio;
   fields.clienta_nombre.value = bitacora.clienta_nombre;
-  fields.mua_id.value = bitacora.mua_id || '';
-  fields.estilista_id.value = bitacora.estilista_id || '';
+  renderBitacoraProfessionals(professionalIds(bitacora));
   fields.direccion_servicio.value = bitacora.direccion_servicio;
   fields.punto_salida.value = route.pickup_point || '';
   fields.costo_staff_clp.value = bitacora.costo_staff_clp;
@@ -141,9 +143,7 @@ export function startBitacoraFromBooking(booking) {
   fields.direccion_servicio.value = addressParts.join(', ');
   fields.tipo_servicio.value = booking.service_name || '';
   fields.precio_cliente_clp.value = booking.total_service ?? 0;
-  fields.mua_id.value = staff ? staff.id : '';
-  // La planilla registra las dos profesionales; la reserva ahora guarda ambas.
-  if (booking.estilista_id) fields.estilista_id.value = booking.estilista_id;
+  renderBitacoraProfessionals([staff?.id, booking.estilista_id].filter(Boolean));
 
   // Punto de salida habitual del estudio, editable si ese dia sale de otro lado.
   fields.punto_salida.value = PUNTO_SALIDA_HABITUAL;
@@ -188,6 +188,63 @@ function staffOptions(selected = '') {
       return `<option value="${nombre}" data-comuna="${comuna}"${sel}>${nombre}</option>`;
     })
     .join('');
+}
+
+function staffIdOptions(selected = '') {
+  const active = state.staff.filter((person) => person.active);
+  return '<option value="">Seleccionar profesional</option>' + active
+    .map((person) => {
+      const selectedAttr = String(person.id) === String(selected) ? ' selected' : '';
+      return `<option value="${person.id}"${selectedAttr}>${escapeHtml(person.display_name)}</option>`;
+    })
+    .join('');
+}
+
+function professionalRowHtml(id = '') {
+  return `
+    <div class="bitacora-professional-row" data-bitacora-professional>
+      <select class="bitacora-professional-select">${staffIdOptions(id)}</select>
+      <button type="button" class="secondary btn-sm" data-remove-bitacora-professional title="Quitar profesional">Quitar</button>
+    </div>
+  `;
+}
+
+export function addBitacoraProfessional(id = '') {
+  $('#bitacora-professionals-list').insertAdjacentHTML('beforeend', professionalRowHtml(id));
+}
+
+function renderBitacoraProfessionals(ids) {
+  const cleanIds = Array.from(new Set((ids || []).filter(Boolean).map(Number)));
+  $('#bitacora-professionals-list').innerHTML = '';
+  if (!cleanIds.length) {
+    addBitacoraProfessional();
+    syncLegacyProfessionalFields();
+    return;
+  }
+  cleanIds.forEach((id) => addBitacoraProfessional(id));
+  syncLegacyProfessionalFields();
+}
+
+function collectProfessionalIds() {
+  const ids = Array.from(document.querySelectorAll('.bitacora-professional-select'))
+    .map((select) => Number(select.value || 0))
+    .filter((id) => id > 0);
+
+  return Array.from(new Set(ids));
+}
+
+function professionalIds(bitacora) {
+  const ids = Array.isArray(bitacora.professional_ids) ? bitacora.professional_ids : [];
+  return Array.from(new Set([bitacora.mua_id, bitacora.estilista_id, ...ids].filter(Boolean).map(Number)));
+}
+
+export function syncLegacyProfessionalFields() {
+  const form = $('#bitacora-form');
+  if (!form) return;
+  const fields = form.elements;
+  const ids = collectProfessionalIds();
+  fields.mua_id.value = ids[0] || '';
+  fields.estilista_id.value = ids[1] || '';
 }
 
 function tramoRowHtml(tramo = {}) {
@@ -310,8 +367,7 @@ function bitacoraFields() {
     ? timeMinus(inicio, ARRIVAL_BUFFER_MIN + totalTramos + SLACK_MIN)
     : null;
 
-  const mua = selectedName(fields.mua_id);
-  const estilista = selectedName(fields.estilista_id);
+  const profesionales = collectProfessionalIds().map((id) => staffName(id)).filter(Boolean);
 
   return {
     tipo: fields.tipo_servicio.value.trim(),
@@ -328,10 +384,7 @@ function bitacoraFields() {
     salida,
     tramos,
     totalTramos,
-    profesionales: [
-      mua ? `${mua} (maquilladora)` : null,
-      estilista ? `${estilista} (estilista)` : null,
-    ].filter(Boolean).join(', '),
+    profesionales: profesionales.join(', '),
   };
 }
 
@@ -407,12 +460,7 @@ function teamBitacoraText() {
     ? timeMinus(inicio, ARRIVAL_BUFFER_MIN + totalTramos + SLACK_MIN)
     : null;
 
-  const mua = selectedName(fields.mua_id);
-  const estilista = selectedName(fields.estilista_id);
-  const profesionales = [
-    mua ? `${mua} (maquilladora)` : null,
-    estilista ? `${estilista} (estilista)` : null,
-  ].filter(Boolean).join(', ');
+  const profesionales = collectProfessionalIds().map((id) => staffName(id)).filter(Boolean).join(', ');
 
   const lines = [
     `✨ Bitácora — ${fields.tipo_servicio.value.trim() || '—'} — ${fields.clienta_nombre.value.trim() || '—'}`,
@@ -474,13 +522,16 @@ export function generateBitacoraImage() {
 
 export function bitacoraPayload() {
   const fields = $('#bitacora-form').elements;
+  syncLegacyProfessionalFields();
+  const professional_ids = collectProfessionalIds();
   return {
     booking_id: fields.booking_id.value ? Number(fields.booking_id.value) : null,
     fecha_servicio: fields.fecha_servicio.value,
     tipo_servicio: fields.tipo_servicio.value.trim(),
     clienta_nombre: fields.clienta_nombre.value.trim(),
-    mua_id: fields.mua_id.value ? Number(fields.mua_id.value) : null,
-    estilista_id: fields.estilista_id.value ? Number(fields.estilista_id.value) : null,
+    mua_id: professional_ids[0] || null,
+    estilista_id: professional_ids[1] || null,
+    professional_ids,
     direccion_servicio: fields.direccion_servicio.value.trim(),
     punto_salida: fields.punto_salida.value.trim(),
     costo_staff_clp: Number(fields.costo_staff_clp.value || 0),

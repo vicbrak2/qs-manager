@@ -39,6 +39,16 @@ final class BitacoraRequestValidator
             $errors['estilista_id'][] = 'Selected staff member does not exist.';
         }
 
+        $professionalIds = $this->professionalIdsField($body, $errors);
+        foreach ($professionalIds as $professionalId) {
+            if (!$this->staff->exists($professionalId)) {
+                $errors['professional_ids'][] = "Selected professional #$professionalId does not exist.";
+            }
+        }
+        $professionalIds = $this->mergeProfessionalIds($professionalIds, $muaId, $estilistaId);
+        $muaId ??= $professionalIds[0] ?? null;
+        $estilistaId ??= $professionalIds[1] ?? null;
+
         $bookingId = $this->optionalPositiveInt($body, 'booking_id', 'Booking id', $errors);
         if ($bookingId !== null && $this->bookings->findById($bookingId) === null) {
             $errors['booking_id'][] = 'Selected booking does not exist.';
@@ -82,6 +92,7 @@ final class BitacoraRequestValidator
             'tipo_servicio' => $tipoServicio,
             'mua_id' => $muaId,
             'estilista_id' => $estilistaId,
+            'professional_ids' => $professionalIds,
             'booking_id' => $bookingId,
             'clienta_nombre' => $clientaNombre,
             'direccion_servicio' => $direccionServicio,
@@ -98,6 +109,46 @@ final class BitacoraRequestValidator
             'costo_staff_clp' => $costoStaffClp ?? 0,
             'precio_cliente_clp' => $precioClienteClp ?? 0,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     * @param array<string, list<string>> $errors
+     * @return list<int>
+     */
+    private function professionalIdsField(array $body, array &$errors): array
+    {
+        if (!array_key_exists('professional_ids', $body) || $body['professional_ids'] === null) {
+            return [];
+        }
+
+        if (!is_array($body['professional_ids'])) {
+            $errors['professional_ids'][] = 'Professional ids must be a list of staff ids.';
+            return [];
+        }
+
+        $ids = [];
+        foreach (array_values($body['professional_ids']) as $index => $value) {
+            if (filter_var($value, FILTER_VALIDATE_INT) === false || (int) $value <= 0) {
+                $errors['professional_ids'][] = 'Professional id #' . ($index + 1) . ' must be a positive integer.';
+                continue;
+            }
+            $ids[] = (int) $value;
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /**
+     * @param list<int> $professionalIds
+     * @return list<int>
+     */
+    private function mergeProfessionalIds(array $professionalIds, ?int $muaId, ?int $estilistaId): array
+    {
+        return array_values(array_unique(array_filter(
+            [$muaId, $estilistaId, ...$professionalIds],
+            static fn (?int $id): bool => $id !== null && $id > 0,
+        )));
     }
 
     /**

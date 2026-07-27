@@ -16,6 +16,7 @@ final class Bitacora
 {
     /**
      * @param list<TravelNote> $notes
+     * @param list<int> $professionalIds
      */
     public function __construct(
         private readonly ?int $id,
@@ -38,7 +39,8 @@ final class Bitacora
         private readonly int $precioClienteClp,
         private readonly array $notes,
         private readonly DateTimeImmutable $createdAt,
-        private readonly DateTimeImmutable $updatedAt
+        private readonly DateTimeImmutable $updatedAt,
+        private readonly array $professionalIds = [],
     ) {
     }
 
@@ -140,11 +142,6 @@ final class Bitacora
         return $this->notes;
     }
 
-    public function createdAt(): DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
     public function updatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;
@@ -152,7 +149,7 @@ final class Bitacora
 
     public function hasAssignedTeam(): bool
     {
-        return $this->muaId !== null || $this->estilistaId !== null;
+        return $this->normalizedProfessionalIds() !== [];
     }
 
     public function projectedMarginClp(): int
@@ -175,6 +172,7 @@ final class Bitacora
             'tipo_servicio' => $this->tipoServicio,
             'mua_id' => $this->muaId,
             'estilista_id' => $this->estilistaId,
+            'professional_ids' => $this->normalizedProfessionalIds(),
             'clienta_nombre' => $this->clientaNombre,
             'direccion_servicio' => $this->serviceAddress->value(),
             'route_plan' => $this->routePlan->toArray(),
@@ -201,5 +199,18 @@ final class Bitacora
             'created_at' => $this->createdAt->format(DATE_ATOM),
             'updated_at' => $this->updatedAt->format(DATE_ATOM),
         ];
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function normalizedProfessionalIds(): array
+    {
+        $ids = array_filter(
+            [$this->muaId, $this->estilistaId, ...$this->professionalIds],
+            static fn (?int $id): bool => $id !== null && $id > 0,
+        );
+
+        return array_values(array_unique($ids));
     }
 }

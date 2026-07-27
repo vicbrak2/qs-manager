@@ -8,7 +8,7 @@ import { clearFormErrors, showFormErrors } from './ui/validation.js';
 import { setTab, loadHealth, loadSyncStatus } from './features/dashboard.js';
 import { loadServices, resetServiceForm, editService, servicePayload, renderServices, toggleServiceSort } from './features/services.js';
 import { loadStaff, loadBookings, resetBookingForm, editBooking, bookingPayload, renderBookings, visibleBookings, toggleBookingSort, setBookingsView, refreshStaffAvailability, completeBookingService } from './features/bookings.js';
-import { loadBitacoras, resetBitacoraForm, editBitacora, startBitacoraFromBooking, bitacoraPayload, fillBitacoraStaffSelects, addBitacoraNote, addTramoRow, updateBitacoraPlan, copyTeamBitacora, generateBitacoraImage } from './features/bitacora.js';
+import { loadBitacoras, resetBitacoraForm, editBitacora, startBitacoraFromBooking, bitacoraPayload, fillBitacoraStaffSelects, addBitacoraNote, addTramoRow, addBitacoraProfessional, syncLegacyProfessionalFields, updateBitacoraPlan, copyTeamBitacora, generateBitacoraImage } from './features/bitacora.js';
 import { loadTeam, resetStaffForm, editStaff, staffPayload, deleteStaff } from './features/team.js';
 import { syncAll, renderSyncModal, syncBookingGas } from './features/sync.js';
 import { initFinanceDetails, loadFinanceDashboard } from './features/finance.js?v=6';
@@ -73,6 +73,10 @@ $('#staff-form').addEventListener('submit', async (event) => {
 
 // Elegir a quien se recoge completa el destino con su comuna base.
 $('#bitacora-form').addEventListener('change', (event) => {
+  if (event.target.closest('.bitacora-professional-select')) {
+    syncLegacyProfessionalFields();
+  }
+
   const select = event.target.closest('.tramo-recoge');
   if (!select) return;
   const destino = select.closest('[data-tramo]').querySelector('.tramo-destino');
@@ -85,6 +89,7 @@ $('#add-tramo').addEventListener('click', () => {
   addTramoRow();
   updateBitacoraPlan();
 });
+$('#add-bitacora-professional').addEventListener('click', () => addBitacoraProfessional());
 $('#copy-bitacora-team').addEventListener('click', copyTeamBitacora);
 $('#image-bitacora-team').addEventListener('click', generateBitacoraImage);
 
@@ -222,6 +227,12 @@ document.addEventListener('click', async (event) => {
   if (removeTramoButton) {
     removeTramoButton.closest('[data-tramo]').remove();
     updateBitacoraPlan();
+  }
+
+  const removeProfessionalButton = event.target.closest('[data-remove-bitacora-professional]');
+  if (removeProfessionalButton) {
+    removeProfessionalButton.closest('[data-bitacora-professional]').remove();
+    syncLegacyProfessionalFields();
   }
 
   const bitacoraBookingLink = event.target.closest('[data-bitacora-booking-link]');

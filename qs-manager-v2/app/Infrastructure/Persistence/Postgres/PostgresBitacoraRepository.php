@@ -75,6 +75,7 @@ final class PostgresBitacoraRepository implements BitacoraRepository
             'tipo_servicio' => $bitacora->tipoServicio(),
             'mua_id' => $bitacora->muaId(),
             'estilista_id' => $bitacora->estilistaId(),
+            'professional_ids' => json_encode($bitacora->toArray()['professional_ids'], JSON_THROW_ON_ERROR),
             'clienta_nombre' => $bitacora->clientaNombre(),
             'direccion_servicio' => $bitacora->serviceAddress()->value(),
             'punto_salida' => $bitacora->routePlan()->pickupPoint()->value(),
@@ -94,12 +95,12 @@ final class PostgresBitacoraRepository implements BitacoraRepository
         if ($bitacora->id() === null) {
             $statement = $this->connection->prepare(
                 'insert into qs_bitacoras (
-                    booking_id, booking_external_id, fecha_servicio, tipo_servicio, mua_id, estilista_id, clienta_nombre,
+                    booking_id, booking_external_id, fecha_servicio, tipo_servicio, mua_id, estilista_id, professional_ids, clienta_nombre,
                     direccion_servicio, punto_salida, orden_recogida, tiempo_traslado_min,
                     hora_llegada, hora_inicio_servicio, hora_fin_servicio, tramos, objetivo,
                     consideraciones, notas_logisticas, costo_staff_clp, precio_cliente_clp
                 ) values (
-                    :booking_id, :booking_external_id, :fecha_servicio, :tipo_servicio, :mua_id, :estilista_id, :clienta_nombre,
+                    :booking_id, :booking_external_id, :fecha_servicio, :tipo_servicio, :mua_id, :estilista_id, cast(:professional_ids as jsonb), :clienta_nombre,
                     :direccion_servicio, :punto_salida, :orden_recogida, :tiempo_traslado_min,
                     :hora_llegada, :hora_inicio_servicio, :hora_fin_servicio, :tramos, :objetivo,
                     :consideraciones, :notas_logisticas, :costo_staff_clp, :precio_cliente_clp
@@ -117,6 +118,7 @@ final class PostgresBitacoraRepository implements BitacoraRepository
                     tipo_servicio = :tipo_servicio,
                     mua_id = :mua_id,
                     estilista_id = :estilista_id,
+                    professional_ids = cast(:professional_ids as jsonb),
                     clienta_nombre = :clienta_nombre,
                     direccion_servicio = :direccion_servicio,
                     punto_salida = :punto_salida,
@@ -226,6 +228,28 @@ final class PostgresBitacoraRepository implements BitacoraRepository
             $notes,
             new DateTimeImmutable((string) $row['created_at']),
             new DateTimeImmutable((string) $row['updated_at']),
+            $this->professionalIdsFromRow($row),
         );
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return list<int>
+     */
+    private function professionalIdsFromRow(array $row): array
+    {
+        $decoded = json_decode((string) ($row['professional_ids'] ?? '[]'), true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $ids = [];
+        foreach ($decoded as $id) {
+            if (filter_var($id, FILTER_VALIDATE_INT) !== false && (int) $id > 0) {
+                $ids[] = (int) $id;
+            }
+        }
+
+        return array_values(array_unique($ids));
     }
 }

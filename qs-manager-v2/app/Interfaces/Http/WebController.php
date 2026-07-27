@@ -34,8 +34,7 @@ final class WebController
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap">
-  <link rel="stylesheet" href="/assets/css/tokens.css?v=7">
-  <link rel="stylesheet" href="/assets/css/main.css?v=7">
+  <link rel="stylesheet" href="/assets/css/tokens.css?v=8"><link rel="stylesheet" href="/assets/css/main.css?v=8">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -609,12 +608,8 @@ final class WebController
           <label class="full">Clienta
             <input name="clienta_nombre" maxlength="160" required>
           </label>
-          <label>MUA
-            <select name="mua_id" id="bitacora-mua-select"></select>
-          </label>
-          <label>Estilista
-            <select name="estilista_id" id="bitacora-estilista-select"></select>
-          </label>
+          <input type="hidden" name="mua_id"><input type="hidden" name="estilista_id">
+          <div class="full bitacora-professionals"><div class="tramos-head"><span>Profesionales que asistirán</span><button type="button" class="secondary btn-sm" id="add-bitacora-professional">+ Agregar profesional</button></div><p class="tramos-help">Agrega todas las personas que irán al servicio: MUA, estilista, apoyo, traslado o coordinación.</p><div id="bitacora-professionals-list"></div></div>
           <label class="full">Dirección servicio
             <input name="direccion_servicio" maxlength="240" required>
           </label>
@@ -750,8 +745,7 @@ final class WebController
       </div>
     </dialog>
   </main>
-  <script type="module" src="/assets/js/app.js?v=7"></script>
-  <div id="toast-container" class="toast-container"></div>
+  <script type="module" src="/assets/js/app.js"></script><div id="toast-container" class="toast-container"></div>
 </body>
 </html>
 HTML;

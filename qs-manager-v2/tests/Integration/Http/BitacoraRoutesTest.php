@@ -181,6 +181,35 @@ final class BitacoraRoutesTest extends HttpTestCase
         self::assertSame(404, $this->json('POST', '/api/v1/bitacoras/999999/notes', ['message' => 'x'])->getStatusCode());
     }
 
+    public function testBitacoraAcceptsMultipleServiceProfessionals(): void
+    {
+        $ids = [];
+        foreach (['Mou', 'Andrea', 'Camila', 'Paz', 'Victor'] as $name) {
+            $ids[] = $this->payload($this->json('POST', '/api/v1/team', [
+                'display_name' => $name,
+                'role' => 'staff',
+            ]))['staff_member']['id'];
+        }
+
+        $created = $this->json('POST', '/api/v1/bitacoras', [
+            'fecha_servicio' => '2026-07-27',
+            'tipo_servicio' => 'Novia Civil Maquillaje Peinado',
+            'clienta_nombre' => 'Nadia Palomino',
+            'direccion_servicio' => 'Gerónimo de Alderete 208, La Florida',
+            'professional_ids' => $ids,
+            'hora_inicio_servicio' => '08:00',
+        ]);
+
+        self::assertSame(201, $created->getStatusCode());
+        $bitacora = $this->payload($created)['bitacora'];
+        self::assertSame($ids, $bitacora['professional_ids']);
+        self::assertSame($ids[0], $bitacora['mua_id']);
+        self::assertSame($ids[1], $bitacora['estilista_id']);
+
+        $summary = $this->payload($this->json('GET', '/api/v1/bitacoras/' . $bitacora['id'] . '/summary'))['summary'];
+        self::assertSame($ids, $summary['team']['professional_ids']);
+    }
+
     public function testTravelPlanDerivesDepartureFromLegsAndServiceStart(): void
     {
         $staffId = $this->payload($this->json('POST', '/api/v1/team', [

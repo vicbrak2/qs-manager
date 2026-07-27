@@ -1201,6 +1201,22 @@
     .tramo-fields label { display: flex; flex-direction: column; gap: 4px; font-size: 0.72rem; color: var(--muted); margin: 0; }
     .tramo-fields input, .tramo-fields select { width: 100%; min-width: 0; }
     .tramo-row .tramo-remove { flex: 0 0 auto; margin-bottom: 2px; }
+    .bitacora-professionals { margin-top: 2px; }
+    .bitacora-professional-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+      padding: 10px;
+      background: var(--soft);
+      border-radius: 10px;
+    }
+    .bitacora-professional-row select { width: 100%; min-width: 0; }
     .panel-help { margin: 0 0 12px; font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
     .staff-inactive td { opacity: 0.55; }
     @media (max-width: 1100px) { .tramo-fields { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 640px) {
+      .bitacora-professional-row { grid-template-columns: 1fr; }
+      .bitacora-professional-row button { width: 100%; }
+    }

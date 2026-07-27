@@ -118,6 +118,8 @@ final class BitacoraController
             return $this->json($response, ['error' => 'Bitacora not found.'], 404);
         }
 
+        $bitacoraData = $bitacora->toArray();
+
         return $this->json($response, ['summary' => [
             'id' => $bitacora->id(),
             'fecha_servicio' => $bitacora->fechaServicio(),
@@ -127,6 +129,7 @@ final class BitacoraController
             'team' => [
                 'mua_id' => $bitacora->muaId(),
                 'estilista_id' => $bitacora->estilistaId(),
+                'professional_ids' => $bitacoraData['professional_ids'],
             ],
             'route_plan' => $bitacora->routePlan()->toArray(),
             'pricing' => [
