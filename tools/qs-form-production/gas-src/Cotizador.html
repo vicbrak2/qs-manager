@@ -110,7 +110,8 @@ header span{color:#66566b}
       <div class="field"><label>Nombre de la clienta (nombre y apellido)</label><input id="clientName" required></div>
       <div class="field"><label>Teléfono (WhatsApp con código de país)</label><input id="phone" inputmode="tel" placeholder="+56912345678" required></div>
       <div class="field"><label>¿Quién realizará el servicio? <small>Selecciona a la integrante o dupla responsable.</small></label><select id="staff" required></select></div>
-      <div class="field wide"><label>Lugar del servicio <small>Escribe la dirección o “Estudio QS”.</small></label><input id="address" required></div>
+      <div class="field wide"><label class="check"><input id="serviceAtStudio" type="checkbox"><span>El servicio es en el estudio<small>Usa “Estudio QS” como dirección y bloquea el campo para evitar cambios accidentales.</small></span></label></div>
+      <div class="field wide"><label>Lugar del servicio <small>Escribe la dirección o marca que el servicio es en el estudio.</small></label><input id="address" required></div>
     </div></fieldset>
     <fieldset id="sectionDate" class="locked" disabled><legend>🗓️ 4. Fecha y condiciones</legend><div class="grid">
       <div class="field"><label>Fecha del servicio <small>Día que quedará registrado en Agenda 2026.</small></label><input id="serviceDate" type="date" required></div>
@@ -162,7 +163,8 @@ header span{color:#66566b}
   </button>
 </main>
 <script>
-const state={catalog:null,depositTouched:false,services:[],quote:{draftOriginal:0,draftServicePrice:0,draftDiscount:0,servicePrice:0,serviceDiscount:0,travelBase:0,travelDiscount:0,travelPrice:0,total:0,reserve:0}};
+const STUDIO_ADDRESS='Estudio QS';
+const state={catalog:null,depositTouched:false,previousServiceAddress:'',services:[],quote:{draftOriginal:0,draftServicePrice:0,draftDiscount:0,servicePrice:0,serviceDiscount:0,travelBase:0,travelDiscount:0,travelPrice:0,total:0,reserve:0}};
 const money=new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0});
 const $=id=>document.getElementById(id);
 function load(){
@@ -209,6 +211,17 @@ function updateProofFields(){
   $('proofNewAddress').disabled=!enabled||!atHome||!newAddress;$('proofNewAddress').required=enabled&&atHome&&newAddress;
   if(!atHome){$('proofAddressMode').value='';$('proofNewAddress').value='';}
   if(atHome&&!newAddress)$('proofNewAddress').value='';
+}
+function updateStudioAddress(){
+  if($('serviceAtStudio').checked){
+    const current=$('address').value.trim();
+    if(current&&current!==STUDIO_ADDRESS)state.previousServiceAddress=current;
+    $('address').value=STUDIO_ADDRESS;
+    $('address').disabled=true;
+  }else{
+    $('address').disabled=$('sectionClient').disabled;
+    if($('address').value===STUDIO_ADDRESS)$('address').value=state.previousServiceAddress||'';
+  }
 }
 function draftServiceQuote(){
   const service=state.catalog.services.find(s=>s.name===$('service').value);
@@ -299,6 +312,7 @@ function updateProgress(){
   if(!$('includeTravel').checked){$('commune').value='';setLoading('travelLoading',false);}
   const quoteReady=hasServices&&(!$('includeTravel').checked||Boolean($('commune').value));
   setSection('sectionClient',quoteReady);
+  updateStudioAddress();
   const clientReady=quoteReady&&$('clientName').value.trim()&&$('phone').value.trim()&&$('staff').value&&$('address').value.trim();
   setSection('sectionDate',Boolean(clientReady));
   updateConditional();
@@ -384,6 +398,7 @@ $('quantity').addEventListener('input',()=>{state.depositTouched=false;calculate
 $('deposit').addEventListener('input',()=>{state.depositTouched=true;calculate();});
 $('withoutDeposit').addEventListener('change',()=>{$('dueWrap').classList.toggle('hidden',!$('withoutDeposit').checked);$('deposit').disabled=$('withoutDeposit').checked;if($('withoutDeposit').checked){$('deposit').value=0;}else{state.depositTouched=false;}calculate();updateProgress();});
 ['clientName','phone','staff','address','serviceDate','serviceTime','workshopSessionId','endTime','attendees','staffCount','proofDate','proofTime','proofNewAddress'].forEach(id=>$(id).addEventListener('input',updateProgress));
+$('serviceAtStudio').addEventListener('change',()=>{updateStudioAddress();updateProgress();});
 ['requiresProof','proofPlace','proofAddressMode'].forEach(id=>$(id).addEventListener('change',()=>{updateProofFields();updateProgress();}));
 $('addService').addEventListener('click',addService);$('recalculate').addEventListener('click',refreshAll);$('schedule').addEventListener('click',schedule);$('mobileQuote').addEventListener('click',()=>document.querySelector('.quote').scrollIntoView({behavior:'smooth',block:'start'}));load();
 </script>
