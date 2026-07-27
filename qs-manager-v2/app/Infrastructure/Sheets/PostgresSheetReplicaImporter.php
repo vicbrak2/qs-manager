@@ -312,8 +312,12 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
             }
 
             $muaId = $staffIds[mb_strtolower((string) $assignment->mua())] ?? null;
+            $estilistaId = $assignment->estilista() !== null
+                ? ($staffIds[mb_strtolower($assignment->estilista())] ?? null)
+                : null;
+
             if ($muaId !== null) {
-                $this->assignStaffToBookings((string) $rawValue, $muaId);
+                $this->assignStaffToBookings((string) $rawValue, $muaId, $estilistaId);
             }
         }
     }
@@ -338,24 +342,28 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
         return (int) $insert->fetchColumn();
     }
 
-    private function assignStaffToBookings(string $rawStaffName, int $staffId): void
+    private function assignStaffToBookings(string $rawStaffName, int $staffId, ?int $estilistaId): void
     {
+        $params = ['staff_id' => $staffId, 'estilista_id' => $estilistaId, 'raw' => $rawStaffName];
+
         $this->connection->prepare(
-            'update qs_bookings k set staff_id = :staff_id
+            'update qs_bookings k set staff_id = :staff_id, estilista_id = :estilista_id
              from v_bitacora_latest r
              where k.sheet_external_id = r.qs_external_id
                and r.staff_name = :raw
-               and k.staff_id is distinct from :staff_id'
-        )->execute(['staff_id' => $staffId, 'raw' => $rawStaffName]);
+               and (k.staff_id is distinct from :staff_id
+                    or k.estilista_id is distinct from :estilista_id)'
+        )->execute($params);
 
         $this->connection->prepare(
-            'update qs_bookings k set staff_id = :staff_id
+            'update qs_bookings k set staff_id = :staff_id, estilista_id = :estilista_id
              from v_agenda_latest r
              where k.source_sheet = r.source_sheet
                and k.source_row = r.source_row
                and r.staff_name = :raw
-               and k.staff_id is distinct from :staff_id'
-        )->execute(['staff_id' => $staffId, 'raw' => $rawStaffName]);
+               and (k.staff_id is distinct from :staff_id
+                    or k.estilista_id is distinct from :estilista_id)'
+        )->execute($params);
     }
 
     public function relinkBitacorasToImportedBookings(): void

@@ -209,12 +209,15 @@ export function renderBookings() {
     } else if (syncStatus === 'pending' || syncStatus === 'not-synced') {
       syncStatusClass = 'pending';
     }
+    // Sin bitácora y con el servicio encima: la fila se marca en rojo para
+    // que no se pase la fecha sin haberla mandado al equipo.
+    const bitacoraPendiente = !booking.bitacora_id && trafficKind === 'urgent';
     const bitacoraAction = booking.bitacora_id
       ? `<button class="secondary btn-sm" type="button" data-open-bitacora="${booking.bitacora_id}">Ver bitácora #${booking.bitacora_id}</button>`
-      : `<button class="secondary btn-sm" type="button" data-create-bitacora="${booking.id}">Crear bitácora</button>`;
+      : `<button class="${bitacoraPendiente ? 'danger' : 'secondary'} btn-sm" type="button" data-create-bitacora="${booking.id}">${bitacoraPendiente ? '⚠ Falta bitácora' : 'Crear bitácora'}</button>`;
     
     return `
-      <tr class="booking-traffic-${trafficKind}" data-booking-traffic="${trafficKind}">
+      <tr class="booking-traffic-${trafficKind}${bitacoraPendiente ? ' booking-sin-bitacora' : ''}" data-booking-traffic="${trafficKind}"${bitacoraPendiente ? ' data-bitacora-pendiente="true"' : ''}>
         <td>${booking.id}</td>
         <td>${formatDate(booking.scheduled_for)}</td>
         <td>${formatTime(booking.scheduled_for)}</td>

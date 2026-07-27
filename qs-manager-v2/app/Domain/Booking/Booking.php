@@ -38,6 +38,8 @@ final class Booking
         private readonly ?string $sourceSheet,
         private readonly ?int $sourceRow,
         private readonly ?int $bitacoraId,
+        private readonly ?int $estilistaId,
+        private readonly ?string $estilistaName,
         private readonly ?string $gasLastSyncStatus,
         private readonly ?string $gasLastSyncMessage,
     ) {
@@ -93,6 +95,8 @@ final class Booking
             null,
             null,
             null,
+            null,
+            null,
         );
     }
 
@@ -124,6 +128,8 @@ final class Booking
         ?string $sourceSheet = null,
         ?int $sourceRow = null,
         ?int $bitacoraId = null,
+        ?int $estilistaId = null,
+        ?string $estilistaName = null,
         ?string $gasLastSyncStatus = null,
         ?string $gasLastSyncMessage = null,
     ): self {
@@ -155,6 +161,8 @@ final class Booking
             self::normalizeString($sourceSheet),
             $sourceRow,
             $bitacoraId,
+            $estilistaId,
+            self::normalizeString($estilistaName),
             self::normalizeString($gasLastSyncStatus),
             self::normalizeString($gasLastSyncMessage),
         );
@@ -295,6 +303,8 @@ final class Booking
             'source_sheet' => $this->sourceSheet,
             'source_row' => $this->sourceRow,
             'bitacora_id' => $this->bitacoraId,
+            'estilista_id' => $this->estilistaId,
+            'estilista_name' => $this->estilistaName,
             'gas_last_sync_status' => $this->gasLastSyncStatus,
             'gas_last_sync_message' => $this->gasLastSyncMessage,
         ];

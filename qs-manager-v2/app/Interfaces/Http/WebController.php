@@ -499,7 +499,7 @@ final class WebController
             <input name="direccion_servicio" maxlength="240" required>
           </label>
           <label class="full">Punto de salida
-            <input name="punto_salida" maxlength="240" required>
+            <input name="punto_salida" maxlength="240" placeholder="Metro Macul (por defecto)">
           </label>
           <label class="full">Orden de recogida
             <input name="orden_recogida" placeholder="Ej: MUA primero, luego estilista">
@@ -518,6 +518,7 @@ final class WebController
           </label>
           <div class="full bitacora-tramos">
             <div class="tramos-head"><span>🚗 Tramos del traslado (min reales)</span><button type="button" class="secondary btn-sm" id="add-tramo">+ Agregar tramo</button></div>
+            <p class="tramos-help">Lo único que hay que completar. Si en el tramo se recoge a alguien, indicá quién y en qué comuna: la bitácora calcula a qué hora pasa el vehículo por ahí.</p>
             <div id="tramos-list"></div>
           </div>
           <div id="bitacora-plan" class="availability-hint full hidden" aria-live="polite"></div>
@@ -531,10 +532,10 @@ final class WebController
             <textarea name="notas_logisticas" rows="2"></textarea>
           </label>
           <label class="full">🎯 Objetivo principal
-            <textarea name="objetivo" rows="2"></textarea>
+            <textarea name="objetivo" rows="2" placeholder="Se genera solo según el tipo de servicio"></textarea>
           </label>
           <label class="full">📝 Consideraciones
-            <textarea name="consideraciones" rows="2"></textarea>
+            <textarea name="consideraciones" rows="2" placeholder="Se generan solas según horario, ruta y dirección"></textarea>
           </label>
           <div class="actions full">
             <button type="submit" id="save-bitacora">Guardar</button>

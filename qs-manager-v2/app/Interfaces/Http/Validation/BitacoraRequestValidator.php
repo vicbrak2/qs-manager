@@ -50,7 +50,8 @@ final class BitacoraRequestValidator
         $direccionServicio = $this->stringField($body, 'direccion_servicio', true, $errors);
         $this->maxLength($direccionServicio, 'direccion_servicio', 240, $errors);
 
-        $puntoSalida = $this->stringField($body, 'punto_salida', true, $errors);
+        // Opcional: si no viene, SaveBitacora usa el punto de salida habitual.
+        $puntoSalida = $this->stringField($body, 'punto_salida', false, $errors);
         $this->maxLength($puntoSalida, 'punto_salida', 240, $errors);
 
         $ordenRecogida = $this->stringField($body, 'orden_recogida', false, $errors);
@@ -150,7 +151,17 @@ final class BitacoraRequestValidator
                 continue;
             }
 
-            $tramos[] = ['nombre' => $nombre, 'minutos' => (int) $minutos];
+            $tramo = ['nombre' => $nombre, 'minutos' => (int) $minutos];
+
+            // Un tramo puede terminar en una recogida. La comuna es lo unico
+            // que se publica del punto: nunca la direccion exacta.
+            foreach (['recoge', 'comuna'] as $campo) {
+                if (isset($row[$campo]) && is_string($row[$campo]) && trim($row[$campo]) !== '') {
+                    $tramo[$campo] = trim($row[$campo]);
+                }
+            }
+
+            $tramos[] = $tramo;
         }
 
         return $tramos;

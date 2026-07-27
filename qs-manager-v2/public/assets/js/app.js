@@ -245,13 +245,14 @@ $('#bitacora-form').addEventListener('submit', async (event) => {
   clearFormErrors(form);
   const id = form.querySelector('[name=id]').value;
   try {
-    await api(id ? `/api/v1/bitacoras/${id}` : '/api/v1/bitacoras', {
+    const saved = await api(id ? `/api/v1/bitacoras/${id}` : '/api/v1/bitacoras', {
       method: id ? 'PUT' : 'POST',
       body: JSON.stringify(bitacoraPayload()),
     });
-    notify(id ? 'Bitácora actualizada.' : 'Bitácora creada.');
-    resetBitacoraForm();
+    notify(id ? 'Bitácora actualizada.' : 'Bitácora creada con objetivo y consideraciones sugeridos.');
     await loadBitacoras();
+    // Se reabre para que el usuario vea los campos que se completaron solos.
+    editBitacora(saved.bitacora.id);
   } catch (error) {
     notify(error.message, true);
     if (error.errors) {

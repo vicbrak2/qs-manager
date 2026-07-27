@@ -39,6 +39,52 @@ final class TravelPlanCalculator
         return $inicio->modify(sprintf('-%d minutes', $minutosAntes))->format('H:i');
     }
 
+    /**
+     * A que hora pasa el vehiculo por cada punto de recogida. Se calcula
+     * hacia adelante desde la salida, pero repartiendo la holgura de forma
+     * proporcional a lo recorrido: asi la profesional no espera 15 minutos
+     * de mas en el primer punto, y la llegada al servicio sigue cayendo
+     * exactamente en la hora objetivo.
+     *
+     * @return list<array{recoge: string, comuna: ?string, label: string, hora: string}>
+     */
+    public function pickupSchedule(?string $horaInicioServicio, TravelItinerary $itinerario): array
+    {
+        $salida = $this->salidaSugerida($horaInicioServicio, $itinerario);
+        if ($salida === null) {
+            return [];
+        }
+
+        $total = $itinerario->totalMinutes();
+        if ($total === 0) {
+            return [];
+        }
+
+        $factor = ($total + self::SLACK_MINUTES) / $total;
+        $salidaAt = DateTimeImmutable::createFromFormat('!H:i', $salida);
+        if ($salidaAt === false) {
+            return [];
+        }
+
+        $schedule = [];
+        $elapsed = 0;
+        foreach ($itinerario->legs() as $leg) {
+            $elapsed += $leg->minutos();
+            if (!$leg->isPickup()) {
+                continue;
+            }
+
+            $schedule[] = [
+                'recoge' => (string) $leg->recoge(),
+                'comuna' => $leg->comuna(),
+                'label' => (string) $leg->pickupLabel(),
+                'hora' => $salidaAt->modify(sprintf('+%d minutes', (int) round($elapsed * $factor)))->format('H:i'),
+            ];
+        }
+
+        return $schedule;
+    }
+
     private function parse(?string $hora): ?DateTimeImmutable
     {
         if ($hora === null || preg_match('/^\d{1,2}:\d{2}/', trim($hora)) !== 1) {

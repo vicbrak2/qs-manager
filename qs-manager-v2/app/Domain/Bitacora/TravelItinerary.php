@@ -14,12 +14,17 @@ final class TravelItinerary
     }
 
     /**
-     * @param list<array{nombre: string, minutos: int}> $rows
+     * @param list<array{nombre: string, minutos: int, recoge?: ?string, comuna?: ?string}> $rows
      */
     public static function fromArray(array $rows): self
     {
         return new self(array_map(
-            static fn (array $row): TravelLeg => new TravelLeg((string) $row['nombre'], (int) $row['minutos']),
+            static fn (array $row): TravelLeg => new TravelLeg(
+                (string) $row['nombre'],
+                (int) $row['minutos'],
+                isset($row['recoge']) ? (string) $row['recoge'] : null,
+                isset($row['comuna']) ? (string) $row['comuna'] : null,
+            ),
             $rows
         ));
     }

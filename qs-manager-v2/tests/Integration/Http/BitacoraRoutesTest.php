@@ -114,9 +114,11 @@ final class BitacoraRoutesTest extends HttpTestCase
         $missing = $this->json('POST', '/api/v1/bitacoras', []);
         self::assertSame(422, $missing->getStatusCode());
         $missingErrors = $this->payload($missing)['errors'];
-        foreach (['fecha_servicio', 'tipo_servicio', 'clienta_nombre', 'direccion_servicio', 'punto_salida'] as $field) {
+        foreach (['fecha_servicio', 'tipo_servicio', 'clienta_nombre', 'direccion_servicio'] as $field) {
             self::assertArrayHasKey($field, $missingErrors);
         }
+        // punto_salida ya NO es obligatorio: cae al punto de salida habitual.
+        self::assertArrayNotHasKey('punto_salida', $missingErrors);
 
         // Politica de dominio: sin equipo asignado -> 422 con el mensaje de la policy.
         $noTeam = $this->json('POST', '/api/v1/bitacoras', $base);
@@ -243,6 +245,46 @@ final class BitacoraRoutesTest extends HttpTestCase
         self::assertNull($sinPlan['hora_llegada_objetivo']);
         self::assertNull($sinPlan['hora_salida_sugerida']);
         self::assertSame([], $sinPlan['tramos']);
+    }
+
+    public function testMinimumFieldsAreEnoughAndTheRestIsGenerated(): void
+    {
+        $staffId = $this->payload($this->json('POST', '/api/v1/team', [
+            'display_name' => 'Cami Verdejo',
+            'role' => 'staff',
+        ]))['staff_member']['id'];
+
+        // Sin punto de salida, sin objetivo y sin consideraciones: el usuario
+        // solo aporta el servicio y los tramos con sus tiempos.
+        $created = $this->json('POST', '/api/v1/bitacoras', [
+            'fecha_servicio' => '2026-07-27',
+            'tipo_servicio' => 'Novia Civil Maquillaje Peinado',
+            'clienta_nombre' => 'Nadia Palomino',
+            'direccion_servicio' => 'Gerónimo de Alderete 208, depto 2004, La Florida',
+            'mua_id' => $staffId,
+            'hora_inicio_servicio' => '08:00',
+            'tramos' => [
+                ['nombre' => 'Metro Macul → Providencia', 'minutos' => 15, 'recoge' => 'Paz', 'comuna' => 'Providencia'],
+                ['nombre' => 'Providencia → La Florida', 'minutos' => 25],
+            ],
+        ]);
+
+        self::assertSame(201, $created->getStatusCode());
+        $bitacora = $this->payload($created)['bitacora'];
+
+        self::assertSame('Metro Macul', $bitacora['route_plan']['pickup_point']);
+        self::assertStringContainsString('anticipacion', $bitacora['objetivo']);
+        // Sale 06:50 (temprano) y la direccion es un depto: ambas notas aplican.
+        self::assertStringContainsString('Salida temprana', $bitacora['consideraciones']);
+        self::assertStringContainsString('acceso al edificio', $bitacora['consideraciones']);
+        self::assertStringContainsString('lista en su punto', $bitacora['consideraciones']);
+
+        self::assertSame('06:50', $bitacora['hora_salida_sugerida']);
+        self::assertSame('07:45', $bitacora['hora_llegada_objetivo']);
+        self::assertSame(
+            [['recoge' => 'Paz', 'comuna' => 'Providencia', 'label' => 'Paz (Providencia)', 'hora' => '07:11']],
+            $bitacora['recogidas']
+        );
     }
 
     public function testTravelPlanRejectsMalformedTimesAndLegs(): void

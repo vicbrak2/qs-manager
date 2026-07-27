@@ -50,6 +50,35 @@ final class TravelPlanCalculatorTest extends TestCase
         self::assertSame(45, $itinerario->totalMinutes());
     }
 
+    public function testHorasDeRecogidaDiluyenLaHolguraEnElTrayecto(): void
+    {
+        // Salida 06:50 desde el punto habitual, recogida de Paz al terminar
+        // el primer tramo y llegada 07:45 al servicio de las 08:00.
+        $itinerario = TravelItinerary::fromArray([
+            ['nombre' => 'Metro Macul → Providencia', 'minutos' => 15, 'recoge' => 'Paz', 'comuna' => 'Providencia'],
+            ['nombre' => 'Providencia → La Florida', 'minutos' => 25],
+        ]);
+
+        self::assertSame('06:50', $this->calculator->salidaSugerida('08:00', $itinerario));
+
+        $recogidas = $this->calculator->pickupSchedule('08:00', $itinerario);
+        self::assertCount(1, $recogidas);
+        // 15 min de tramo escalados por (40+15)/40 = 20.6 -> 21 min desde 06:50.
+        self::assertSame('07:11', $recogidas[0]['hora']);
+        self::assertSame('Paz (Providencia)', $recogidas[0]['label']);
+        // La comuna se publica, la direccion exacta nunca entra al value object.
+        self::assertSame('Providencia', $recogidas[0]['comuna']);
+    }
+
+    public function testTramosSinRecogidaNoAparecenEnElItinerarioDePersonas(): void
+    {
+        $itinerario = TravelItinerary::fromArray([
+            ['nombre' => 'Metro Macul → La Florida', 'minutos' => 40],
+        ]);
+
+        self::assertSame([], $this->calculator->pickupSchedule('08:00', $itinerario));
+    }
+
     public function testSalidaSugeridaRequiereHoraDeInicioYTramos(): void
     {
         self::assertNull($this->calculator->salidaSugerida(null, TravelItinerary::fromArray([

@@ -183,6 +183,7 @@ final class Bitacora
             'tramos' => $this->itinerario->toArray(),
             'hora_llegada_objetivo' => $calculadora->llegadaObjetivo($this->horaInicioServicio),
             'hora_salida_sugerida' => $calculadora->salidaSugerida($this->horaInicioServicio, $this->itinerario),
+            'recogidas' => $calculadora->pickupSchedule($this->horaInicioServicio, $this->itinerario),
             'objetivo' => $this->objetivo,
             'consideraciones' => $this->consideraciones,
             'notas_logisticas' => $this->notasLogisticas,

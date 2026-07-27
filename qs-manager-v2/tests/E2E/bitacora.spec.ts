@@ -251,6 +251,39 @@ test.describe('Bitácora y disponibilidad de staff', () => {
     await expect(plan).toContainText('al menos un tramo');
   });
 
+  test('una reserva próxima sin bitácora se marca en rojo', async ({ page }) => {
+    const enTresDias = new Date(Date.now() + 3 * 86400000).toISOString();
+    const enUnMes = new Date(Date.now() + 30 * 86400000).toISOString();
+    const base = {
+      service_id: 7, staff_id: 3, customer_phone: null, status: 'confirmed',
+      service_name: 'Novia', staff_name: 'Fernanda Rojas', address: 'Calle 1',
+      comuna: 'Macul', total_service: 100000, balance_due: null,
+      payment_status: null, source_sheet: null, source_row: null,
+      gas_last_sync_status: null, gas_last_sync_message: null,
+    };
+
+    await page.route('/api/v1/bookings*', (route) => route.fulfill({
+      json: { bookings: [
+        { ...base, id: 91, customer_name: 'Urgente sin bitácora', scheduled_for: enTresDias, bitacora_id: null },
+        { ...base, id: 92, customer_name: 'Lejana sin bitácora', scheduled_for: enUnMes, bitacora_id: null },
+        { ...base, id: 93, customer_name: 'Urgente con bitácora', scheduled_for: enTresDias, bitacora_id: 5 },
+      ] },
+    }));
+
+    await page.goto('/');
+    await page.click('#tab-bookings');
+
+    // A 3 días y sin bitácora -> alerta roja.
+    await expect(page.locator('tr[data-bitacora-pendiente="true"]')).toHaveCount(1);
+    await expect(page.locator('[data-create-bitacora="91"]')).toHaveText('⚠ Falta bitácora');
+    await expect(page.locator('[data-create-bitacora="91"]')).toHaveClass(/danger/);
+
+    // A un mes todavía no urge.
+    await expect(page.locator('[data-create-bitacora="92"]')).toHaveText('Crear bitácora');
+    // Ya tiene bitácora: no hay alerta aunque el servicio esté cerca.
+    await expect(page.locator('[data-open-bitacora="5"]')).toBeVisible();
+  });
+
   test('genera la imagen de la bitácora para mandar al equipo', async ({ page }) => {
     await page.route('/api/v1/bitacoras', (route) => route.fulfill({ json: { bitacoras: [] } }));
 
