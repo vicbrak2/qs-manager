@@ -9,10 +9,12 @@ export function setTab(tab) {
   $('#tab-services').classList.toggle('active', tab === 'services');
   $('#tab-bookings').classList.toggle('active', tab === 'bookings');
   $('#tab-bitacora').classList.toggle('active', tab === 'bitacora');
+  $('#tab-team').classList.toggle('active', tab === 'team');
   $('#finance-view').classList.toggle('hidden', tab !== 'finance');
   $('#services-view').classList.toggle('hidden', tab !== 'services');
   $('#bookings-view').classList.toggle('hidden', tab !== 'bookings');
   $('#bitacora-view').classList.toggle('hidden', tab !== 'bitacora');
+  $('#team-view').classList.toggle('hidden', tab !== 'team');
 }
 
 export function refreshMetrics() {

@@ -324,8 +324,17 @@ final class PostgresSheetReplicaImporter implements SheetReplicaImporter
 
     private function staffIdByName(string $name): int
     {
+        // Busca por nombre y tambien por alias: el mantenedor de equipo
+        // permite declarar las otras ortografias de la planilla (Yeimy/Yeimi)
+        // para que el sync no cree una profesional duplicada por cada una.
         $statement = $this->connection->prepare(
-            'select id from qs_staff where lower(trim(display_name)) = lower(trim(:name)) order by id asc limit 1'
+            "select id from qs_staff
+             where lower(trim(display_name)) = lower(trim(:name))
+                or exists (
+                    select 1 from unnest(string_to_array(coalesce(aliases, ''), ',')) alias
+                    where lower(trim(alias)) = lower(trim(:name))
+                )
+             order by id asc limit 1"
         );
         $statement->execute(['name' => $name]);
         $id = $statement->fetchColumn();

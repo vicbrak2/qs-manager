@@ -109,9 +109,6 @@ export function editBitacora(id) {
   fields.estilista_id.value = bitacora.estilista_id || '';
   fields.direccion_servicio.value = bitacora.direccion_servicio;
   fields.punto_salida.value = route.pickup_point || '';
-  fields.orden_recogida.value = route.pickup_order || '';
-  fields.tiempo_traslado_min.value = route.travel_duration_min ?? 0;
-  fields.hora_llegada.value = route.arrival_time || '';
   fields.costo_staff_clp.value = bitacora.costo_staff_clp;
   fields.precio_cliente_clp.value = bitacora.precio_cliente_clp;
   fields.notas_logisticas.value = bitacora.notas_logisticas || '';
@@ -181,12 +178,32 @@ function timeMinus(hhmm, minutes) {
   return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
 }
 
+function staffOptions(selected = '') {
+  const activos = state.staff.filter((person) => person.active);
+  return '<option value="">nadie</option>' + activos
+    .map((person) => {
+      const nombre = escapeHtml(person.display_name);
+      const comuna = escapeHtml(person.comuna_base || '');
+      const sel = person.display_name === selected ? ' selected' : '';
+      return `<option value="${nombre}" data-comuna="${comuna}"${sel}>${nombre}</option>`;
+    })
+    .join('');
+}
+
 function tramoRowHtml(tramo = {}) {
   return `
     <div class="tramo-row" data-tramo>
-      <input class="tramo-destino" placeholder="destino (comuna)" maxlength="160" value="${escapeHtml(String(tramo.destino ?? ''))}">
-      <input class="tramo-min" type="number" min="0" step="1" placeholder="min" value="${escapeHtml(String(tramo.minutos ?? ''))}">
-      <input class="tramo-recoge" placeholder="recoge a…" maxlength="80" value="${escapeHtml(String(tramo.recoge ?? ''))}">
+      <div class="tramo-fields">
+        <label>Destino (comuna)
+          <input class="tramo-destino" placeholder="Ej: Las Condes" maxlength="160" value="${escapeHtml(String(tramo.destino ?? ''))}">
+        </label>
+        <label>Minutos
+          <input class="tramo-min" type="number" min="0" step="1" placeholder="0" value="${escapeHtml(String(tramo.minutos ?? ''))}">
+        </label>
+        <label>Recoge a
+          <select class="tramo-recoge">${staffOptions(tramo.recoge ?? '')}</select>
+        </label>
+      </div>
       <button type="button" class="secondary btn-sm tramo-remove" data-remove-tramo title="Quitar tramo">✕</button>
     </div>
   `;
@@ -302,7 +319,6 @@ function bitacoraFields() {
     fecha: fields.fecha_servicio.value,
     direccion: fields.direccion_servicio.value.trim(),
     puntoSalida: fields.punto_salida.value.trim(),
-    ordenManual: fields.orden_recogida.value.trim(),
     objetivo: fields.objetivo.value.trim(),
     consideraciones: fields.consideraciones.value.trim(),
     notas: fields.notas_logisticas.value.trim(),
@@ -339,7 +355,7 @@ export function bitacoraImageData() {
   // quien se recoge en cada una. "Metro Macul → Las Condes (Cami) → ...".
   const orden = f.tramos.length
     ? [salidaDesde, ...f.tramos.map((t) => (t.recoge ? `${t.destino} (${t.recoge})` : t.destino))].join(' → ')
-    : (f.ordenManual || '—');
+    : '—';
 
   // Ruta estimada: los mismos lugares sin las personas, y el ultimo destino
   // se reemplaza por la direccion del servicio.
@@ -408,7 +424,7 @@ function teamBitacoraText() {
     `⏰ Horario del servicio: ${inicio || '—'}${fin ? ` - ${fin}` : ''} hrs`,
     `🧑‍🎨 Profesionales: ${profesionales || '—'}`,
     `🚪 Punto de salida: ${fields.punto_salida.value.trim() || '—'}`,
-    `🗺️ Orden de traslado: ${tramos.length ? [fields.punto_salida.value.trim() || PUNTO_SALIDA_HABITUAL, ...tramos.map((t) => (t.recoge ? `${t.destino} (${t.recoge})` : t.destino))].join(' → ') : (fields.orden_recogida.value.trim() || '—')}`,
+    `🗺️ Orden de traslado: ${tramos.length ? [fields.punto_salida.value.trim() || PUNTO_SALIDA_HABITUAL, ...tramos.map((t) => (t.recoge ? `${t.destino} (${t.recoge})` : t.destino))].join(' → ') : '—'}`,
     ...pickupSchedule(inicio, tramos).map((r) => `🧍 Hora de recogida ${r.recoge}: ${r.hora} hrs (${r.comuna})`),
     `🕐 Hora de salida: ${salida ? `${salida} hrs` : '—'}`,
     `🕒 Hora de llegada estimada: ${llegada ? `${llegada} hrs (15 minutos antes del inicio)` : '—'}`,
@@ -467,9 +483,6 @@ export function bitacoraPayload() {
     estilista_id: fields.estilista_id.value ? Number(fields.estilista_id.value) : null,
     direccion_servicio: fields.direccion_servicio.value.trim(),
     punto_salida: fields.punto_salida.value.trim(),
-    orden_recogida: fields.orden_recogida.value.trim() || null,
-    tiempo_traslado_min: Number(fields.tiempo_traslado_min.value || 0),
-    hora_llegada: fields.hora_llegada.value || null,
     costo_staff_clp: Number(fields.costo_staff_clp.value || 0),
     precio_cliente_clp: Number(fields.precio_cliente_clp.value || 0),
     notas_logisticas: fields.notas_logisticas.value.trim() || null,

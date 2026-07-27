@@ -67,6 +67,7 @@ final class WebController
       <button id="tab-services" class="tab" type="button">Servicios</button>
       <button id="tab-bookings" class="tab" type="button">Reservas</button>
       <button id="tab-bitacora" class="tab" type="button">Bitácora</button>
+      <button id="tab-team" class="tab" type="button">Equipo</button>
     </div>
 
     <section id="finance-view">
@@ -501,15 +502,6 @@ final class WebController
           <label class="full">Punto de salida
             <input name="punto_salida" maxlength="240" placeholder="Metro Macul (por defecto)">
           </label>
-          <label class="full">Orden de recogida
-            <input name="orden_recogida" placeholder="Ej: MUA primero, luego estilista">
-          </label>
-          <label>Traslado (min)
-            <input name="tiempo_traslado_min" type="number" min="0" step="1" value="0" title="Se calcula solo cuando registras tramos">
-          </label>
-          <label>Hora llegada
-            <input name="hora_llegada" type="time">
-          </label>
           <label>⏰ Inicio servicio
             <input name="hora_inicio_servicio" type="time">
           </label>
@@ -553,6 +545,75 @@ final class WebController
             <button type="button" class="secondary" id="add-bitacora-note">Agregar nota</button>
           </div>
         </div>
+      </aside>
+    </section>
+    <section id="team-view" class="workspace hidden">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Equipo</h2>
+          <div class="actions">
+            <button class="secondary" type="button" id="refresh-team">Recargar</button>
+            <button type="button" id="new-staff">Nueva</button>
+          </div>
+        </div>
+        <p class="panel-help">Las profesionales que aparecen en las planillas se crean solas al sincronizar, con el nombre nada más. Acá se completan sus datos. La <strong>comuna base</strong> es donde se la recoge habitualmente: al elegirla en un tramo de la bitácora, el destino se completa solo. Los <strong>alias</strong> son las otras formas en que la planilla escribe su nombre (ej. Yeimy / Yeimi), para que el sync no la duplique.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Rol</th>
+                <th>Teléfono</th>
+                <th>Comuna base</th>
+                <th>Alias en planilla</th>
+                <th>Activa</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="team-body"></tbody>
+          </table>
+          <div id="team-empty" class="empty">Sin profesionales registradas.</div>
+        </div>
+      </div>
+
+      <aside class="panel side">
+        <div class="panel-head">
+          <h2 id="staff-form-title">Nueva profesional</h2>
+          <button class="secondary" type="button" id="reset-staff">Limpiar</button>
+        </div>
+        <form id="staff-form">
+          <input type="hidden" name="id">
+          <label class="full">Nombre
+            <input name="display_name" maxlength="160" required minlength="3">
+          </label>
+          <label>Rol
+            <select name="role" required>
+              <option value="staff">staff</option>
+              <option value="coordinadora">coordinadora</option>
+              <option value="admin">admin</option>
+            </select>
+          </label>
+          <label>Activa
+            <select name="active">
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
+          </label>
+          <label>Teléfono
+            <input name="phone" maxlength="40" placeholder="+56 9 1234 5678">
+          </label>
+          <label>Comuna base
+            <input name="comuna_base" maxlength="120" placeholder="Ej: Las Condes">
+          </label>
+          <label class="full">Alias en planilla
+            <input name="aliases" placeholder="Separados por coma. Ej: Yeimy, Yeimi">
+          </label>
+          <div class="actions full">
+            <button type="submit" id="save-staff">Guardar</button>
+            <button class="danger" type="button" id="delete-staff" disabled>Borrar</button>
+          </div>
+        </form>
       </aside>
     </section>
     <dialog id="sync-modal" class="modal">

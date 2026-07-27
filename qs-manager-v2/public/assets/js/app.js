@@ -9,6 +9,7 @@ import { setTab, loadHealth, loadSyncStatus } from './features/dashboard.js';
 import { loadServices, resetServiceForm, editService, servicePayload, renderServices, toggleServiceSort } from './features/services.js';
 import { loadStaff, loadBookings, resetBookingForm, editBooking, bookingPayload, renderBookings, visibleBookings, toggleBookingSort, setBookingsView, refreshStaffAvailability } from './features/bookings.js';
 import { loadBitacoras, resetBitacoraForm, editBitacora, startBitacoraFromBooking, bitacoraPayload, fillBitacoraStaffSelects, addBitacoraNote, addTramoRow, updateBitacoraPlan, copyTeamBitacora, generateBitacoraImage } from './features/bitacora.js';
+import { loadTeam, resetStaffForm, editStaff, staffPayload, deleteStaff } from './features/team.js';
 import { syncAll, renderSyncModal, syncBookingGas } from './features/sync.js';
 import { initFinanceDetails, loadFinanceDashboard } from './features/finance.js';
 
@@ -38,6 +39,48 @@ $('#refresh-bitacoras').addEventListener('click', () => loadBitacoras().catch((e
 $('#new-bitacora').addEventListener('click', resetBitacoraForm);
 $('#reset-bitacora').addEventListener('click', resetBitacoraForm);
 $('#add-bitacora-note').addEventListener('click', addBitacoraNote);
+$('#tab-team').addEventListener('click', () => {
+  setTab('team');
+  loadTeam().catch((error) => notify(error.message, true));
+});
+$('#refresh-team').addEventListener('click', () => loadTeam().catch((error) => notify(error.message, true)));
+$('#new-staff').addEventListener('click', resetStaffForm);
+$('#reset-staff').addEventListener('click', resetStaffForm);
+$('#delete-staff').addEventListener('click', deleteStaff);
+
+$('#staff-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = $('#staff-form');
+  const submitBtn = $('#save-staff');
+  submitBtn.disabled = true;
+  clearFormErrors(form);
+  const id = form.querySelector('[name=id]').value;
+  try {
+    await api(id ? `/api/v1/team/${id}` : '/api/v1/team', {
+      method: id ? 'PUT' : 'POST',
+      body: JSON.stringify(staffPayload()),
+    });
+    notify(id ? 'Profesional actualizada.' : 'Profesional creada.');
+    resetStaffForm();
+    await loadTeam();
+  } catch (error) {
+    notify(error.message, true);
+    if (error.errors) showFormErrors(form, error.errors);
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+// Elegir a quien se recoge completa el destino con su comuna base.
+$('#bitacora-form').addEventListener('change', (event) => {
+  const select = event.target.closest('.tramo-recoge');
+  if (!select) return;
+  const destino = select.closest('[data-tramo]').querySelector('.tramo-destino');
+  const comuna = select.selectedOptions[0]?.dataset.comuna;
+  if (comuna && !destino.value.trim()) destino.value = comuna;
+  updateBitacoraPlan();
+});
+
 $('#add-tramo').addEventListener('click', () => {
   addTramoRow();
   updateBitacoraPlan();
@@ -144,6 +187,9 @@ document.addEventListener('click', async (event) => {
     }
     editBitacora(targetId);
   }
+
+  const staffButton = event.target.closest('[data-edit-staff]');
+  if (staffButton) editStaff(Number(staffButton.dataset.editStaff));
 
   const bitacoraButton = event.target.closest('[data-edit-bitacora]');
   if (bitacoraButton) editBitacora(Number(bitacoraButton.dataset.editBitacora));

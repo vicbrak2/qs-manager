@@ -8,9 +8,8 @@ use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use QSManager\Application\Team\CheckStaffAvailability;
-use QSManager\Application\Team\CreateStaffMember;
-use QSManager\Application\Team\CreateStaffMemberCommand;
 use QSManager\Application\Team\ListStaffMembers;
+use QSManager\Application\Team\SaveStaffMember;
 use QSManager\Domain\Team\StaffRepository;
 use QSManager\Interfaces\Http\Validation\TeamRequestValidator;
 use QSManager\Interfaces\Http\Validation\ValidationException;
@@ -19,7 +18,7 @@ use Slim\App;
 final class TeamController
 {
     public function __construct(
-        private readonly CreateStaffMember $createStaffMember,
+        private readonly SaveStaffMember $saveStaffMember,
         private readonly ListStaffMembers $listStaffMembers,
         private readonly StaffRepository $staff,
         private readonly CheckStaffAvailability $availability,
@@ -31,7 +30,69 @@ final class TeamController
     {
         $app->get('/api/v1/team', [$this, 'index']);
         $app->post('/api/v1/team', [$this, 'store']);
+        $app->put('/api/v1/team/{id}', [$this, 'update']);
+        $app->delete('/api/v1/team/{id}', [$this, 'delete']);
         $app->get('/api/v1/team/{id}/availability', [$this, 'availability']);
+    }
+
+    public function update(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $id = $this->positiveId($args['id'] ?? null);
+        if ($id === null) {
+            return $this->json($response, ['error' => 'Staff id must be a positive integer.'], 422);
+        }
+
+        $body = $request->getParsedBody();
+        if (!is_array($body)) {
+            return $this->json($response, ['error' => 'Invalid JSON body.'], 400);
+        }
+
+        try {
+            $staffMember = $this->saveStaffMember->execute($this->validator->validate($body), $id);
+        } catch (ValidationException $exception) {
+            return $this->validationError($response, $exception->errors());
+        } catch (InvalidArgumentException $exception) {
+            return $this->json($response, ['error' => $exception->getMessage()], 422);
+        }
+
+        if ($staffMember === null) {
+            return $this->json($response, ['error' => 'Staff member not found.'], 404);
+        }
+
+        return $this->json($response, ['staff_member' => $staffMember->toArray()]);
+    }
+
+    public function delete(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $id = $this->positiveId($args['id'] ?? null);
+        if ($id === null) {
+            return $this->json($response, ['error' => 'Staff id must be a positive integer.'], 422);
+        }
+
+        try {
+            if (!$this->staff->delete($id)) {
+                return $this->json($response, ['error' => 'Staff member not found.'], 404);
+            }
+        } catch (\PDOException $exception) {
+            // Tiene reservas o bitacoras asociadas: se desactiva, no se borra.
+            if ($exception->getCode() === '23503') {
+                return $this->json($response, [
+                    'error' => 'Esta profesional tiene servicios asociados. Desactívala en vez de borrarla.',
+                ], 409);
+            }
+            throw $exception;
+        }
+
+        return $this->json($response, ['deleted' => true]);
+    }
+
+    private function positiveId(mixed $value): ?int
+    {
+        if (filter_var($value, FILTER_VALIDATE_INT) === false) {
+            return null;
+        }
+
+        return (int) $value > 0 ? (int) $value : null;
     }
 
     public function availability(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -95,11 +156,7 @@ final class TeamController
         }
 
         try {
-            $validated = $this->validator->validate($body);
-            $staffMember = $this->createStaffMember->execute(new CreateStaffMemberCommand(
-                $validated['display_name'],
-                $validated['role'],
-            ));
+            $staffMember = $this->saveStaffMember->execute($this->validator->validate($body));
         } catch (ValidationException $exception) {
             return $this->validationError($response, $exception->errors());
         } catch (InvalidArgumentException $exception) {

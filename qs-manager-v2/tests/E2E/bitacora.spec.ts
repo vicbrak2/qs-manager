@@ -10,7 +10,10 @@ test.describe('Bitácora y disponibilidad de staff', () => {
       json: { services: [{ id: 7, name: 'Novia', category: null, quantity: 1, duration_minutes: 90, sale_price: 100000, total_cost: null, utility: null, margin_percent: null, margin_status: null, active: true, source_sheet: null, source_row: null }] },
     }));
     await page.route('/api/v1/team*', (route) => route.fulfill({
-      json: { staff: [{ id: 3, display_name: 'Fernanda Rojas', role: 'staff', active: true }] },
+      json: { staff: [
+        { id: 3, display_name: 'Fernanda Rojas', role: 'staff', active: true, phone: '+56911111111', comuna_base: 'Las Condes', aliases: [] },
+        { id: 4, display_name: 'Paz', role: 'staff', active: true, phone: null, comuna_base: 'La Reina', aliases: ['Pazz'] },
+      ] },
     }));
     await page.route('/api/v1/bookings*', (route) => route.fulfill({ json: { bookings: [] } }));
     await page.route('/api/v1/bitacoras', (route) => route.fulfill({
@@ -282,6 +285,52 @@ test.describe('Bitácora y disponibilidad de staff', () => {
     await expect(page.locator('[data-create-bitacora="92"]')).toHaveText('Crear bitácora');
     // Ya tiene bitácora: no hay alerta aunque el servicio esté cerca.
     await expect(page.locator('[data-open-bitacora="5"]')).toBeVisible();
+  });
+
+  test('la pestaña Equipo mantiene los datos de las profesionales', async ({ page }) => {
+    let saved: Record<string, unknown> | null = null;
+    await page.route('/api/v1/team/4', async (route) => {
+      saved = route.request().postDataJSON();
+      await route.fulfill({ json: { staff_member: { id: 4, ...(saved as object) } } });
+    });
+
+    await page.goto('/');
+    await page.click('#tab-team');
+    await expect(page.locator('#team-view')).not.toHaveClass(/hidden/);
+
+    // El listado muestra los datos de contacto y los alias de planilla.
+    const fila = page.locator('#team-body tr', { hasText: 'Paz' });
+    await expect(fila).toContainText('La Reina');
+    await expect(fila).toContainText('Pazz');
+
+    await page.click('[data-edit-staff="4"]');
+    await expect(page.locator('#staff-form-title')).toHaveText('Paz (#4)');
+    await expect(page.locator('#staff-form [name=comuna_base]')).toHaveValue('La Reina');
+    await expect(page.locator('#staff-form [name=aliases]')).toHaveValue('Pazz');
+
+    await page.fill('#staff-form [name=phone]', '+56 9 8765 4321');
+    await page.click('#save-staff');
+    await expect.poll(() => saved?.phone).toBe('+56 9 8765 4321');
+  });
+
+  test('elegir a quién se recoge completa el destino con su comuna base', async ({ page }) => {
+    await page.route('/api/v1/bitacoras', (route) => route.fulfill({ json: { bitacoras: [] } }));
+
+    await page.goto('/');
+    await page.click('#tab-bitacora');
+    await page.click('#add-tramo');
+
+    // El destino arranca vacío y se completa al elegir a la profesional.
+    await expect(page.locator('.tramo-row .tramo-destino')).toHaveValue('');
+    await page.selectOption('.tramo-row .tramo-recoge', 'Paz');
+    await expect(page.locator('.tramo-row .tramo-destino')).toHaveValue('La Reina');
+
+    // Si ya hay un destino escrito, no se pisa.
+    await page.click('#add-tramo');
+    const segundo = page.locator('.tramo-row').nth(1);
+    await segundo.locator('.tramo-destino').fill('Providencia');
+    await segundo.locator('.tramo-recoge').selectOption('Fernanda Rojas');
+    await expect(segundo.locator('.tramo-destino')).toHaveValue('Providencia');
   });
 
   test('genera la imagen de la bitácora para mandar al equipo', async ({ page }) => {

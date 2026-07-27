@@ -13,5 +13,11 @@ interface StaffRepository
      */
     public function findAll(): array;
 
+    public function findById(int $id): ?StaffMember;
+
+    public function update(int $id, StaffMember $staffMember): ?StaffMember;
+
+    public function delete(int $id): bool;
+
     public function exists(int $id): bool;
 }

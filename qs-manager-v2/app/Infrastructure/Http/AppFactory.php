@@ -11,7 +11,7 @@ use QSManager\Application\Booking\SyncBookingToGas;
 use QSManager\Application\ServicesCatalog\CreateService;
 use QSManager\Application\ServicesCatalog\ListServices;
 use QSManager\Application\Team\CheckStaffAvailability;
-use QSManager\Application\Team\CreateStaffMember;
+use QSManager\Application\Team\SaveStaffMember;
 use QSManager\Application\Team\ListStaffMembers;
 use QSManager\Infrastructure\Database\ConnectionFactory;
 use QSManager\Infrastructure\Gas\GasBookingPayloadMapper;
@@ -84,7 +84,7 @@ final class AppFactory
             syncQueue: $syncQueue,
         ))->register($app);
         (new TeamController(
-            new CreateStaffMember($staffRepository),
+            new SaveStaffMember($staffRepository),
             new ListStaffMembers($staffRepository),
             $staffRepository,
             new CheckStaffAvailability($bookingRepository, new AvailabilityChecker()),
