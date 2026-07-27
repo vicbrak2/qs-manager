@@ -314,14 +314,17 @@ final class RebuildFinanceProjectionTest extends TestCase
                 (3, 'Agosto', 2, 'CAL-AUG', '2026-08-21', '2026-07-26', 'CREADO', 60000, 142000),
                 (3, 'Septiembre', 2, 'CAL-SEP', '2026-09-25', '2026-04-14', 'CONFIRMADO', 100000, 218000),
                 (3, 'Septiembre', 3, 'CAL-REAL', '2026-09-26', '2026-07-10', 'TERMINADO', 50000, 120000),
-                (3, 'Noviembre', 2, 'CAL-LATE', '2026-11-06', '2026-08-01', 'CONFIRMADO', 90000, 241000)
+                (3, 'Noviembre', 2, 'CAL-LATE', '2026-11-06', '2026-08-01', 'CONFIRMADO', 90000, 241000),
+                (3, 'Julio', 10, 'CAL-CANCELLED', '2026-07-30', '2026-07-27', 'CANCELADO - FORMULARIO', 36750, 73500),
+                (3, 'Julio', 11, 'CAL-DONE', '2026-07-27', '2026-07-01', 'CONFIRMADO', 45000, 90000)
         ");
         $this->pdo->exec("
             INSERT INTO qs_sheet_bitacora_rows
                 (import_run_id, source_row, qs_external_id, calendar_event_id, agenda_reference, service_date, service_status, deposit_amount, total_service)
             VALUES
                 (2, 2, 'QS-JUL', 'CAL-JUL', 'Agenda: Julio!2', '2026-07-27', 'CONFIRMADO', 60000, 112530),
-                (2, 3, 'QS-NO-AGENDA', 'CAL-OWN', null, '2026-07-20', 'CONFIRMADO', 25000, 80000)
+                (2, 3, 'QS-NO-AGENDA', 'CAL-OWN', null, '2026-07-20', 'CONFIRMADO', 25000, 80000),
+                (2, 4, 'QS-DONE', 'CAL-DONE', 'Agenda: Julio!11', '2026-07-27', 'Realizado', 45000, 90000)
         ");
         $this->pdo->exec("
             INSERT INTO qs_sheet_cash_tracking_rows
@@ -338,6 +341,15 @@ final class RebuildFinanceProjectionTest extends TestCase
         )->toArray();
 
         self::assertSame(260000, $metrics['committed_deposits']);
+
+        $details = $repository->committedDepositsDetails(
+            FinancePeriod::create('2026-07-01', '2026-07-31'),
+            AccountingBasis::CASH_ESTIMATED,
+        );
+        self::assertSame(260000, $details['total']);
+        self::assertSame(5, $details['count']);
+        self::assertNotContains('CANCELADO - FORMULARIO', array_column($details['items'], 'status'));
+        self::assertNotContains('Realizado', array_column($details['items'], 'status'));
     }
 
     public function testBitacoraFallbackPaymentUsesAgendaDepositDateWhenAvailable(): void

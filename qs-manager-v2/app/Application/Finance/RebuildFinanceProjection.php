@@ -186,7 +186,7 @@ final class RebuildFinanceProjection
             FROM v_cash_tracking_latest r
             JOIN qs_sheet_import_runs run ON run.id = r.import_run_id
             JOIN qs_sheet_sources s ON s.id = run.source_id
-            WHERE lower(trim(r.service_status)) NOT IN ('anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste')
+            WHERE lower(trim(COALESCE(r.service_status, ''))) !~ '^(anulado|anulada|cancelado|cancelada|no asiste)'
             AND (r.deposit_amount > 0 OR lower(trim(r.payment_status)) = 'pagado')
         ";
 
@@ -249,7 +249,7 @@ final class RebuildFinanceProjection
               ON a.stable_external_id = b.stable_external_id
               OR (a.calendar_event_id IS NOT NULL AND b.calendar_event_id IS NOT NULL AND a.calendar_event_id = b.calendar_event_id)
               OR b.agenda_reference = 'Agenda: ' || a.source_sheet || '!' || a.source_row
-            WHERE lower(trim(b.service_status)) NOT IN ('anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste')
+            WHERE lower(trim(COALESCE(b.service_status, ''))) !~ '^(anulado|anulada|cancelado|cancelada|no asiste)'
               AND (b.deposit_amount > 0 OR lower(trim(b.payment_status)) = 'pagado')
               AND NOT EXISTS (
                   SELECT 1 FROM v_cash_tracking_latest c

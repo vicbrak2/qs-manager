@@ -51,19 +51,21 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
                 FROM v_agenda_latest a
                 WHERE a.deposit_amount > 0
                   AND COALESCE(a.deposit_date, a.service_date) <= :to
-                  AND lower(trim(COALESCE(a.event_status, ''))) NOT IN (
-                      'realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada',
-                      'completed', 'anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste'
+                  AND lower(trim(COALESCE(a.event_status, ''))) !~ '^(realizada|realizado|terminado|terminada|ejecutado|ejecutada|completed|anulado|anulada|cancelado|cancelada|no asiste)'
+                  AND NOT EXISTS (SELECT 1 FROM v_bitacora_latest b
+                      WHERE lower(trim(COALESCE(b.service_status, ''))) ~ '^(realizada|realizado|terminado|terminada|ejecutado|ejecutada|completed)'
+                        AND (a.stable_external_id = b.stable_external_id OR (a.calendar_event_id IS NOT NULL AND b.calendar_event_id IS NOT NULL AND a.calendar_event_id = b.calendar_event_id) OR b.agenda_reference = 'Agenda: ' || a.source_sheet || '!' || a.source_row)
+                  )
+                  AND NOT EXISTS (SELECT 1 FROM v_cash_tracking_latest c
+                      WHERE lower(trim(COALESCE(c.service_status, ''))) ~ '^(realizada|realizado|terminado|terminada|ejecutado|ejecutada|completed)'
+                        AND (a.stable_external_id = c.stable_external_id OR (a.calendar_event_id IS NOT NULL AND c.stable_external_id = a.calendar_event_id))
                   )
             ), bitacora_open AS (
                 SELECT COALESCE(SUM(b.deposit_amount), 0) AS amount
                 FROM v_bitacora_latest b
                 WHERE b.deposit_amount > 0
                   AND b.service_date <= :to
-                  AND lower(trim(COALESCE(b.service_status, ''))) NOT IN (
-                      'realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada',
-                      'completed', 'anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste'
-                  )
+                  AND lower(trim(COALESCE(b.service_status, ''))) !~ '^(realizada|realizado|terminado|terminada|ejecutado|ejecutada|completed|anulado|anulada|cancelado|cancelada|no asiste)'
                   AND NOT EXISTS (
                       SELECT 1 FROM v_agenda_latest a
                       WHERE a.stable_external_id = b.stable_external_id
@@ -75,10 +77,7 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
                 FROM v_cash_tracking_latest c
                 WHERE c.deposit_amount > 0
                   AND c.service_date <= :to
-                  AND lower(trim(COALESCE(c.service_status, ''))) NOT IN (
-                      'realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada',
-                      'completed', 'anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste'
-                  )
+                  AND lower(trim(COALESCE(c.service_status, ''))) !~ '^(realizada|realizado|terminado|terminada|ejecutado|ejecutada|completed|anulado|anulada|cancelado|cancelada|no asiste)'
                   AND NOT EXISTS (
                       SELECT 1 FROM v_bitacora_latest b
                       WHERE b.stable_external_id = c.stable_external_id
@@ -696,9 +695,14 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
                 JOIN qs_sheet_sources s ON s.id = run.source_id
                 WHERE a.deposit_amount > 0
                   AND COALESCE(a.deposit_date, a.service_date) <= :to
-                  AND lower(trim(COALESCE(a.event_status, ''))) NOT IN (
-                      'realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada',
-                      'completed', 'anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste'
+                  AND lower(trim(COALESCE(a.event_status, ''))) !~ '^(realizada|realizado|terminado|terminada|ejecutado|ejecutada|completed|anulado|anulada|cancelado|cancelada|no asiste)'
+                  AND NOT EXISTS (SELECT 1 FROM v_bitacora_latest b
+                      WHERE lower(trim(COALESCE(b.service_status, ''))) ~ '^(realizada|realizado|terminado|terminada|ejecutado|ejecutada|completed)'
+                        AND (a.stable_external_id = b.stable_external_id OR (a.calendar_event_id IS NOT NULL AND b.calendar_event_id IS NOT NULL AND a.calendar_event_id = b.calendar_event_id) OR b.agenda_reference = 'Agenda: ' || a.source_sheet || '!' || a.source_row)
+                  )
+                  AND NOT EXISTS (SELECT 1 FROM v_cash_tracking_latest c
+                      WHERE lower(trim(COALESCE(c.service_status, ''))) ~ '^(realizada|realizado|terminado|terminada|ejecutado|ejecutada|completed)'
+                        AND (a.stable_external_id = c.stable_external_id OR (a.calendar_event_id IS NOT NULL AND c.stable_external_id = a.calendar_event_id))
                   )
             ), bitacora_open AS (
                 SELECT
@@ -715,10 +719,7 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
                 JOIN qs_sheet_sources s ON s.id = run.source_id
                 WHERE b.deposit_amount > 0
                   AND b.service_date <= :to
-                  AND lower(trim(COALESCE(b.service_status, ''))) NOT IN (
-                      'realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada',
-                      'completed', 'anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste'
-                  )
+                  AND lower(trim(COALESCE(b.service_status, ''))) !~ '^(realizada|realizado|terminado|terminada|ejecutado|ejecutada|completed|anulado|anulada|cancelado|cancelada|no asiste)'
                   AND NOT EXISTS (
                       SELECT 1 FROM v_agenda_latest a
                       JOIN qs_sheet_import_runs arun ON arun.id = a.import_run_id
@@ -742,10 +743,7 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
                 JOIN qs_sheet_sources s ON s.id = run.source_id
                 WHERE c.deposit_amount > 0
                   AND c.service_date <= :to
-                  AND lower(trim(COALESCE(c.service_status, ''))) NOT IN (
-                      'realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada',
-                      'completed', 'anulado', 'cancelado', 'cancelada', 'anulada', 'no asiste'
-                  )
+                  AND lower(trim(COALESCE(c.service_status, ''))) !~ '^(realizada|realizado|terminado|terminada|ejecutado|ejecutada|completed|anulado|anulada|cancelado|cancelada|no asiste)'
                   AND NOT EXISTS (
                       SELECT 1 FROM v_bitacora_latest b
                       WHERE b.stable_external_id = c.stable_external_id
@@ -842,6 +840,7 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
                 FROM qs_finance_entries
                 WHERE entry_type = 'service_revenue'
                   AND occurred_on BETWEEN :from AND :to
+                  AND lower(trim(COALESCE(status, ''))) !~ '^(anulado|anulada|cancelado|cancelada|no asiste)'
             ), payment_totals AS (
                 SELECT
                     regexp_replace(external_id, '-pay$', '') AS base_external_id,
