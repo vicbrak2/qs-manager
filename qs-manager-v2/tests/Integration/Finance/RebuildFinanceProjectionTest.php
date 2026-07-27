@@ -23,7 +23,7 @@ final class RebuildFinanceProjectionTest extends TestCase
         $this->projection = new RebuildFinanceProjection($this->pdo);
 
         // Limpiar base de datos
-        $this->pdo->exec('TRUNCATE qs_finance_entries, qs_sync_runs, qs_sheet_agenda_month_rows, qs_sheet_bitacora_rows, qs_sheet_cash_tracking_rows, qs_sheet_operational_expense_rows, qs_sheet_workshop_rows, qs_sheet_import_runs, qs_sheet_sources RESTART IDENTITY CASCADE');
+        $this->pdo->exec('TRUNCATE qs_finance_entries, qs_sync_runs, qs_sheet_agenda_month_rows, qs_sheet_bitacora_rows, qs_sheet_cash_tracking_rows, qs_sheet_operational_expense_rows, qs_sheet_workshop_rows, qs_bitacoras, qs_sheet_import_runs, qs_sheet_sources RESTART IDENTITY CASCADE');
         
         // Crear fuentes
         $this->pdo->exec("
@@ -422,6 +422,51 @@ final class RebuildFinanceProjectionTest extends TestCase
         self::assertSame(112530, $metrics['contracted_sales']);
         self::assertSame(0, $metrics['collected_revenue']);
         self::assertSame(0, $metrics['accounts_receivable']);
+    }
+
+    public function testDirectCostsIncludeCompletedBitacoraStaffAndTransfer(): void
+    {
+        $this->pdo->exec("INSERT INTO qs_sheet_import_runs (id, source_id, status) VALUES (2, 3, 'completed'), (3, 4, 'completed')");
+        $this->pdo->exec("
+            INSERT INTO qs_sheet_agenda_month_rows
+                (import_run_id, source_sheet, source_row, calendar_event_id, service_date, deposit_date, event_status, deposit_amount, total_service)
+            VALUES (3, 'Julio', 2, 'CAL-PAID', '2026-07-27', '2026-03-16', 'CONFIRMADO', 60000, 112530)
+        ");
+        $this->pdo->exec("
+            INSERT INTO qs_sheet_bitacora_rows
+                (import_run_id, source_row, qs_external_id, calendar_event_id, agenda_reference, service_date, service_status, payment_status, customer_name, service_name, transfer_value, deposit_amount, total_service)
+            VALUES (2, 101, '10669', 'CAL-PAID', 'Agenda: Julio!2', '2026-07-27', 'Realizado', 'Pagado', 'Nadia Palomino', 'Novia Civil Maquillaje Peinado', 7500, 60000, 112530)
+        ");
+        $this->pdo->exec("
+            INSERT INTO qs_bitacoras
+                (fecha_servicio, tipo_servicio, clienta_nombre, direccion_servicio, punto_salida, costo_staff_clp, precio_cliente_clp)
+            VALUES ('2026-07-27', 'Novia Civil Maquillaje Peinado', 'Nadia Palomino', 'La Florida', 'Metro Macul', 95000, 112530)
+        ");
+        $this->pdo->exec("INSERT INTO qs_sync_runs (id, status, mode) VALUES (99, 'completed', 'write')");
+
+        $this->projection->rebuild(99);
+
+        $entry = $this->pdo->query("
+            SELECT amount::integer AS amount,
+                   metadata->>'staff_cost' AS staff_cost,
+                   metadata->>'transfer_cost' AS transfer_cost
+            FROM qs_finance_entries
+            WHERE entry_type = 'direct_cost'
+              AND source_type = 'bitacora'
+              AND source_row = 101
+        ")->fetch(PDO::FETCH_ASSOC);
+
+        self::assertSame(102500, (int) $entry['amount']);
+        self::assertSame(95000, (int) $entry['staff_cost']);
+        self::assertSame(7500, (int) $entry['transfer_cost']);
+
+        $repository = new PostgresFinanceReadRepository($this->pdo);
+        $metrics = $repository->dashboard(
+            FinancePeriod::create('2026-07-01', '2026-07-31'),
+            AccountingBasis::CASH_ESTIMATED,
+        )->toArray();
+
+        self::assertSame(102500, $metrics['direct_costs']);
     }
 
     public function testFixedExpensesProjectMonthlyConfirmedEntries(): void

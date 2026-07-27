@@ -329,7 +329,7 @@ final class RebuildFinanceProjection
 
     private function projectDirectCosts(int $syncRunId): void
     {
-        $sql = "
+        $cashTrackingSql = "
             INSERT INTO qs_finance_entries (
                 external_id, entry_type, source_type, source_sheet, source_row, 
                 occurred_on, status, currency, metadata, import_run_id, sync_run_id, amount
@@ -346,7 +346,73 @@ final class RebuildFinanceProjection
             AND r.operating_expenses > 0
         ";
 
-        $stmt = $this->connection->prepare($sql);
+        $stmt = $this->connection->prepare($cashTrackingSql);
+        $stmt->execute(['run_id' => $syncRunId]);
+
+        $bitacoraSql = "
+            INSERT INTO qs_finance_entries (
+                external_id, entry_type, source_type, source_sheet, source_row,
+                occurred_on, status, currency, metadata, import_run_id, sync_run_id, amount
+            )
+            SELECT
+                b.stable_external_id || '-cost',
+                'direct_cost',
+                'bitacora',
+                s.sheet_name,
+                b.source_row,
+                b.service_date,
+                'completed',
+                'CLP',
+                jsonb_build_object(
+                    'service', b.service_name,
+                    'customer', b.customer_name,
+                    'staff_cost', COALESCE(local_bitacora.costo_staff_clp, 0),
+                    'transfer_cost', COALESCE(b.transfer_value, 0),
+                    'bitacora_id', local_bitacora.id,
+                    'is_estimate', false
+                ),
+                b.import_run_id,
+                :run_id,
+                COALESCE(local_bitacora.costo_staff_clp, 0) + COALESCE(b.transfer_value, 0)
+            FROM v_bitacora_latest b
+            JOIN qs_sheet_import_runs run ON run.id = b.import_run_id
+            JOIN qs_sheet_sources s ON s.id = run.source_id
+            LEFT JOIN LATERAL (
+                SELECT lb.id, lb.costo_staff_clp
+                FROM qs_bitacoras lb
+                WHERE (
+                    lb.booking_external_id IS NOT NULL
+                    AND lb.booking_external_id IN (b.stable_external_id, b.calendar_event_id)
+                )
+                OR (
+                    lb.fecha_servicio = b.service_date::text
+                    AND lower(trim(lb.clienta_nombre)) = lower(trim(b.customer_name))
+                )
+                ORDER BY
+                    CASE
+                        WHEN lb.booking_external_id IS NOT NULL
+                         AND lb.booking_external_id IN (b.stable_external_id, b.calendar_event_id) THEN 1
+                        ELSE 2
+                    END,
+                    lb.updated_at DESC,
+                    lb.id DESC
+                LIMIT 1
+            ) local_bitacora ON true
+            WHERE lower(trim(b.service_status)) IN ('realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada')
+              AND COALESCE(local_bitacora.costo_staff_clp, 0) + COALESCE(b.transfer_value, 0) > 0
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM v_cash_tracking_latest c
+                  WHERE lower(trim(c.service_status)) IN ('realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada')
+                    AND c.operating_expenses > 0
+                    AND (
+                        c.stable_external_id = b.stable_external_id
+                        OR c.stable_external_id = b.calendar_event_id
+                    )
+              )
+        ";
+
+        $stmt = $this->connection->prepare($bitacoraSql);
         $stmt->execute(['run_id' => $syncRunId]);
     }
 

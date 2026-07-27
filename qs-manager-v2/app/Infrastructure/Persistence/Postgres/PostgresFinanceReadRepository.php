@@ -278,7 +278,45 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
             AND service_date >= :from AND service_date <= :to
         ");
         $costSheet->execute($params);
-        $dcSheet = (int) $costSheet->fetchColumn();
+        $costBitacoraSheet = $this->connection->prepare("
+            SELECT COALESCE(SUM(COALESCE(local_bitacora.costo_staff_clp, 0) + COALESCE(b.transfer_value, 0)), 0)
+            FROM v_bitacora_latest b
+            LEFT JOIN LATERAL (
+                SELECT lb.costo_staff_clp
+                FROM qs_bitacoras lb
+                WHERE (
+                    lb.booking_external_id IS NOT NULL
+                    AND lb.booking_external_id IN (b.stable_external_id, b.calendar_event_id)
+                )
+                OR (
+                    lb.fecha_servicio = b.service_date::text
+                    AND lower(trim(lb.clienta_nombre)) = lower(trim(b.customer_name))
+                )
+                ORDER BY
+                    CASE
+                        WHEN lb.booking_external_id IS NOT NULL
+                         AND lb.booking_external_id IN (b.stable_external_id, b.calendar_event_id) THEN 1
+                        ELSE 2
+                    END,
+                    lb.updated_at DESC,
+                    lb.id DESC
+                LIMIT 1
+            ) local_bitacora ON true
+            WHERE lower(trim(b.service_status)) IN ('realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada')
+              AND b.service_date >= :from AND b.service_date <= :to
+              AND COALESCE(local_bitacora.costo_staff_clp, 0) + COALESCE(b.transfer_value, 0) > 0
+              AND NOT EXISTS (
+                  SELECT 1 FROM v_cash_tracking_latest c
+                  WHERE lower(trim(c.service_status)) IN ('realizada', 'realizado', 'terminado', 'terminada', 'ejecutado', 'ejecutada')
+                    AND c.operating_expenses > 0
+                    AND (
+                        c.stable_external_id = b.stable_external_id
+                        OR c.stable_external_id = b.calendar_event_id
+                    )
+              )
+        ");
+        $costBitacoraSheet->execute($params);
+        $dcSheet = (int) $costSheet->fetchColumn() + (int) $costBitacoraSheet->fetchColumn();
 
         $costProjected = $this->connection->prepare("
             SELECT COALESCE(SUM(amount), 0) 
