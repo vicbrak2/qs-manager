@@ -689,9 +689,11 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
                     'Agenda' AS source_type,
                     a.event_status AS status,
                     a.deposit_amount::bigint AS amount,
-                    a.source_sheet,
+                    s.sheet_name AS source_sheet,
                     a.source_row
                 FROM v_agenda_latest a
+                JOIN qs_sheet_import_runs run ON run.id = a.import_run_id
+                JOIN qs_sheet_sources s ON s.id = run.source_id
                 WHERE a.deposit_amount > 0
                   AND COALESCE(a.deposit_date, a.service_date) <= :to
                   AND lower(trim(COALESCE(a.event_status, ''))) NOT IN (
@@ -706,9 +708,11 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
                     'Bitácora' AS source_type,
                     b.service_status AS status,
                     b.deposit_amount::bigint AS amount,
-                    b.source_sheet,
+                    s.sheet_name AS source_sheet,
                     b.source_row
                 FROM v_bitacora_latest b
+                JOIN qs_sheet_import_runs run ON run.id = b.import_run_id
+                JOIN qs_sheet_sources s ON s.id = run.source_id
                 WHERE b.deposit_amount > 0
                   AND b.service_date <= :to
                   AND lower(trim(COALESCE(b.service_status, ''))) NOT IN (
@@ -717,9 +721,11 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
                   )
                   AND NOT EXISTS (
                       SELECT 1 FROM v_agenda_latest a
+                      JOIN qs_sheet_import_runs arun ON arun.id = a.import_run_id
+                      JOIN qs_sheet_sources asrc ON asrc.id = arun.source_id
                       WHERE a.stable_external_id = b.stable_external_id
                          OR (a.calendar_event_id IS NOT NULL AND b.calendar_event_id IS NOT NULL AND a.calendar_event_id = b.calendar_event_id)
-                         OR b.agenda_reference = 'Agenda: ' || a.source_sheet || '!' || a.source_row
+                         OR b.agenda_reference = 'Agenda: ' || asrc.sheet_name || '!' || a.source_row
                   )
             ), cash_open AS (
                 SELECT
@@ -729,9 +735,11 @@ final class PostgresFinanceReadRepository implements FinanceReadRepository
                     'Caja' AS source_type,
                     c.service_status AS status,
                     c.deposit_amount::bigint AS amount,
-                    c.source_sheet,
+                    s.sheet_name AS source_sheet,
                     c.source_row
                 FROM v_cash_tracking_latest c
+                JOIN qs_sheet_import_runs run ON run.id = c.import_run_id
+                JOIN qs_sheet_sources s ON s.id = run.source_id
                 WHERE c.deposit_amount > 0
                   AND c.service_date <= :to
                   AND lower(trim(COALESCE(c.service_status, ''))) NOT IN (
