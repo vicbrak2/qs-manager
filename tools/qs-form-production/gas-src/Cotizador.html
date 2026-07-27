@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
 :root{--black:#171218;--ink:#241c27;--muted:#746778;--line:#e8dfe9;--bg:#fbf7fb;--panel:#fff;--pink:#f4b8cf;--pink-strong:#df6e9c;--pink-soft:#fff0f6;--lilac:#d9c2f0;--lilac-soft:#f4edfb;--white:#fff;--ok:#26735a;--danger:#b4234d;--shadow:0 12px 34px rgba(35,20,40,.09)}
-*{box-sizing:border-box}body{margin:0;background-color:var(--bg);color:var(--ink);font:15px/1.5 Inter,Arial,sans-serif;letter-spacing:0}
+*{box-sizing:border-box}body{margin:0;background-color:var(--bg);color:var(--ink);font:15px/1.5 Inter,Arial,sans-serif;letter-spacing:0;cursor:default}
 body:before{content:"✦";position:fixed;right:22px;bottom:14px;color:rgba(223,110,156,.18);font-size:64px;pointer-events:none}
 header{position:sticky;top:0;z-index:5;background:var(--black);color:var(--white);border-bottom:4px solid var(--pink);padding:18px 24px;box-shadow:0 8px 24px rgba(23,18,24,.16)}
 header strong{font-size:20px}header span{display:block;color:#eadfed;font-size:13px;margin-top:4px}
@@ -17,6 +17,7 @@ legend{font-weight:800;font-size:16px;padding:0 10px 0 0;margin-bottom:16px;colo
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}.wide{grid-column:1/-1}
 .field label{display:block;font-weight:750;font-size:13px;margin-bottom:7px;color:#3c3040}.field small{display:block;color:var(--muted);font-weight:400;margin-top:4px}
 input,select,textarea{width:100%;min-height:46px;border:1px solid #d8ccda;border-radius:6px;background:var(--white);color:var(--ink);padding:11px 13px;font:inherit;transition:border-color .18s,box-shadow .18s,transform .18s}
+input:not([readonly]):not([disabled]):not([type=checkbox]),textarea:not([disabled]){cursor:text}select:not([disabled]),button:not([disabled]){cursor:pointer}input[readonly]{cursor:default}
 textarea{min-height:88px;resize:vertical}input:hover,select:hover,textarea:hover{border-color:#be9fc5}
 input:focus,select:focus,textarea:focus{outline:0;border-color:var(--pink-strong);box-shadow:0 0 0 4px rgba(223,110,156,.17)}
 input[readonly]{background:#f7f2f8;font-weight:800}.hidden{display:none!important}

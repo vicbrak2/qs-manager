@@ -100,6 +100,10 @@ duplicados. `inviteAssignedStaff` debe permanecer habilitado en `Codigo.gs`.
 - Version 24 (2026-07-27): actualiza regla de descuento de traslado multi-servicio:
   20% cuando hay 2 servicios y 40% cuando hay mas de 2. El detalle de cotizacion y
   las observaciones de Agenda indican el motivo del descuento aplicado.
+- Version 25 (2026-07-27): ajusta cursores de la UI para evitar el indicador de
+  texto sobre titulos, detalles y cards no editables. El cursor de texto queda solo
+  en inputs/textarea editables; botones, selects y checks mantienen cursor
+  interactivo.
 
 Antes de desplegar, el contenido completo de `Codigo.gs` y `Cotizador.html` debe
 versionarse en este directorio. No se debe publicar una implementacion nueva si el
